@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^2.0.0",
     "dependency-cruiser": "^16.0.0",
     "eslint": "^9.0.0",
     "jscpd": "^4.0.0",

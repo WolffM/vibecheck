@@ -23,13 +23,7 @@ import {
   parseKnipOutput,
   parseSemgrepOutput,
 } from "./parsers.js";
-import type { Finding, Cadence } from "./types.js";
-
-interface VerboseOptions {
-  rootPath: string;
-  outputDir: string;
-  cadence: Cadence;
-}
+import type { Finding } from "./types.js";
 
 interface ToolResult {
   tool: string;
@@ -633,7 +627,7 @@ async function main() {
     JSON.stringify(mergedFindings, null, 2),
   );
 
-  const issuePreviews = mergedFindings.map((f, i) =>
+  const issuePreviews = mergedFindings.map((f, _i) =>
     generateIssuePreview(f, 1),
   );
 
