@@ -194,6 +194,13 @@ function runTrunk(rootPath: string, args: string[] = ["check"]): Finding[] {
 
     // Trunk outputs JSON but may include ANSI codes, extract JSON portion
     const output = trunkResult.stdout || "";
+    const stderr = trunkResult.stderr || "";
+
+    console.log(`  Trunk exit code: ${trunkResult.status}`);
+    if (stderr && stderr.length < 500) {
+      console.log(`  Trunk stderr: ${stderr}`);
+    }
+
     const jsonMatch = output.match(/\{[\s\S]*\}(?=\s*$)/);
     if (jsonMatch) {
       try {
@@ -201,11 +208,19 @@ function runTrunk(rootPath: string, args: string[] = ["check"]): Finding[] {
         return parseTrunkOutput(trunkOutput);
       } catch {
         console.warn("Failed to parse Trunk JSON output");
+        console.log("Raw output:", output.substring(0, 500));
+      }
+    } else {
+      console.log("  No JSON found in trunk output");
+      if (output.length < 1000) {
+        console.log("  Raw output:", output);
+      } else {
+        console.log("  Output length:", output.length);
       }
     }
 
     if (trunkResult.stderr) {
-      console.log("Trunk stderr:", trunkResult.stderr);
+      console.log("Trunk stderr:", trunkResult.stderr.substring(0, 500));
     }
   } catch (error) {
     console.warn("Trunk not available or failed:", error);
