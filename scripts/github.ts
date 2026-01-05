@@ -6,9 +6,16 @@
  * Reference: vibeCop_spec.md sections 8, 12
  */
 
-import { Octokit } from '@octokit/rest';
-import type { ExistingIssue, IssueCreateParams, IssueUpdateParams } from './types.js';
-import { extractFingerprintFromBody, extractRunMetadata } from './fingerprints.js';
+import { Octokit } from "@octokit/rest";
+import type {
+  ExistingIssue,
+  IssueCreateParams,
+  IssueUpdateParams,
+} from "./types.js";
+import {
+  extractFingerprintFromBody,
+  extractRunMetadata,
+} from "./fingerprints.js";
 
 // ============================================================================
 // Client Initialization
@@ -24,7 +31,9 @@ function getOctokit(): Octokit {
   if (!octokitInstance) {
     const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
     if (!token) {
-      throw new Error('GITHUB_TOKEN or GH_TOKEN environment variable is required');
+      throw new Error(
+        "GITHUB_TOKEN or GH_TOKEN environment variable is required",
+      );
     }
     octokitInstance = new Octokit({ auth: token });
   }
@@ -42,21 +51,24 @@ export async function searchIssuesByLabel(
   owner: string,
   repo: string,
   labels: string[],
-  state: 'open' | 'closed' | 'all' = 'open'
+  state: "open" | "closed" | "all" = "open",
 ): Promise<ExistingIssue[]> {
   const octokit = getOctokit();
   const issues: ExistingIssue[] = [];
 
   // GitHub search query
-  const labelQuery = labels.map((l) => `label:"${l}"`).join(' ');
+  const labelQuery = labels.map((l) => `label:"${l}"`).join(" ");
   const q = `repo:${owner}/${repo} is:issue state:${state} ${labelQuery}`;
 
   try {
     // Use search API for more flexible querying
-    const iterator = octokit.paginate.iterator(octokit.rest.search.issuesAndPullRequests, {
-      q,
-      per_page: 100,
-    });
+    const iterator = octokit.paginate.iterator(
+      octokit.rest.search.issuesAndPullRequests,
+      {
+        q,
+        per_page: 100,
+      },
+    );
 
     for await (const response of iterator) {
       for (const issue of response.data) {
@@ -66,9 +78,11 @@ export async function searchIssuesByLabel(
         const existingIssue: ExistingIssue = {
           number: issue.number,
           title: issue.title,
-          body: issue.body || '',
-          state: issue.state as 'open' | 'closed',
-          labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name || '')),
+          body: issue.body || "",
+          state: issue.state as "open" | "closed",
+          labels: issue.labels.map((l) =>
+            typeof l === "string" ? l : l.name || "",
+          ),
         };
 
         // Extract metadata from body
@@ -88,7 +102,7 @@ export async function searchIssuesByLabel(
     }
   } catch (error) {
     // Fallback to issues list if search fails
-    console.warn('Search API failed, falling back to issues list:', error);
+    console.warn("Search API failed, falling back to issues list:", error);
     return fetchIssuesByLabel(owner, repo, labels, state);
   }
 
@@ -102,7 +116,7 @@ async function fetchIssuesByLabel(
   owner: string,
   repo: string,
   labels: string[],
-  state: 'open' | 'closed' | 'all' = 'open'
+  state: "open" | "closed" | "all" = "open",
 ): Promise<ExistingIssue[]> {
   const octokit = getOctokit();
   const issues: ExistingIssue[] = [];
@@ -110,7 +124,7 @@ async function fetchIssuesByLabel(
   const iterator = octokit.paginate.iterator(octokit.rest.issues.listForRepo, {
     owner,
     repo,
-    labels: labels.join(','),
+    labels: labels.join(","),
     state,
     per_page: 100,
   });
@@ -123,9 +137,11 @@ async function fetchIssuesByLabel(
       const existingIssue: ExistingIssue = {
         number: issue.number,
         title: issue.title,
-        body: issue.body || '',
-        state: issue.state as 'open' | 'closed',
-        labels: issue.labels.map((l) => (typeof l === 'string' ? l : l.name || '')),
+        body: issue.body || "",
+        state: issue.state as "open" | "closed",
+        labels: issue.labels.map((l) =>
+          typeof l === "string" ? l : l.name || "",
+        ),
       };
 
       // Extract metadata from body
@@ -150,7 +166,9 @@ async function fetchIssuesByLabel(
 /**
  * Build a map of fingerprint -> issue for quick lookup.
  */
-export function buildFingerprintMap(issues: ExistingIssue[]): Map<string, ExistingIssue> {
+export function buildFingerprintMap(
+  issues: ExistingIssue[],
+): Map<string, ExistingIssue> {
   const map = new Map<string, ExistingIssue>();
   for (const issue of issues) {
     if (issue.metadata?.fingerprint) {
@@ -170,7 +188,7 @@ export function buildFingerprintMap(issues: ExistingIssue[]): Map<string, Existi
 export async function createIssue(
   owner: string,
   repo: string,
-  params: IssueCreateParams
+  params: IssueCreateParams,
 ): Promise<number> {
   const octokit = getOctokit();
 
@@ -192,7 +210,7 @@ export async function createIssue(
 export async function updateIssue(
   owner: string,
   repo: string,
-  params: IssueUpdateParams
+  params: IssueUpdateParams,
 ): Promise<void> {
   const octokit = getOctokit();
 
@@ -200,6 +218,7 @@ export async function updateIssue(
     owner,
     repo,
     issue_number: params.number,
+    title: params.title,
     body: params.body,
     labels: params.labels,
     state: params.state,
@@ -213,7 +232,7 @@ export async function addIssueComment(
   owner: string,
   repo: string,
   issueNumber: number,
-  body: string
+  body: string,
 ): Promise<void> {
   const octokit = getOctokit();
 
@@ -232,7 +251,7 @@ export async function closeIssue(
   owner: string,
   repo: string,
   issueNumber: number,
-  reason?: string
+  reason?: string,
 ): Promise<void> {
   const octokit = getOctokit();
 
@@ -244,8 +263,8 @@ export async function closeIssue(
     owner,
     repo,
     issue_number: issueNumber,
-    state: 'closed',
-    state_reason: 'completed',
+    state: "closed",
+    state_reason: "completed",
   });
 }
 
@@ -259,7 +278,7 @@ export async function closeIssue(
 export async function ensureLabels(
   owner: string,
   repo: string,
-  labels: { name: string; color: string; description?: string }[]
+  labels: { name: string; color: string; description?: string }[],
 ): Promise<void> {
   const octokit = getOctokit();
 
@@ -285,28 +304,72 @@ export async function ensureLabels(
  * Default vibeCop labels to create.
  */
 export const DEFAULT_LABELS = [
-  { name: 'vibeCop', color: '5319e7', description: 'Created by vibeCop static analysis' },
-  { name: 'severity:critical', color: 'd73a4a', description: 'Critical severity finding' },
-  { name: 'severity:high', color: 'e99695', description: 'High severity finding' },
-  { name: 'severity:medium', color: 'fbca04', description: 'Medium severity finding' },
-  { name: 'severity:low', color: 'c5def5', description: 'Low severity finding' },
-  { name: 'confidence:high', color: '0e8a16', description: 'High confidence finding' },
-  { name: 'confidence:medium', color: 'bfd4f2', description: 'Medium confidence finding' },
-  { name: 'confidence:low', color: 'd4c5f9', description: 'Low confidence finding' },
-  { name: 'effort:S', color: 'c2e0c6', description: 'Small effort to fix' },
-  { name: 'effort:M', color: 'fef2c0', description: 'Medium effort to fix' },
-  { name: 'effort:L', color: 'f9d0c4', description: 'Large effort to fix' },
-  { name: 'autofix:safe', color: '0e8a16', description: 'Safe to auto-fix' },
-  { name: 'layer:code', color: 'bfdadc', description: 'Code-level finding' },
-  { name: 'layer:architecture', color: 'd4c5f9', description: 'Architecture-level finding' },
-  { name: 'layer:security', color: 'd73a4a', description: 'Security-related finding' },
-  { name: 'tool:eslint', color: '4b32c3', description: 'Found by ESLint' },
-  { name: 'tool:tsc', color: '3178c6', description: 'Found by TypeScript' },
-  { name: 'tool:jscpd', color: 'ff6b6b', description: 'Found by jscpd' },
-  { name: 'tool:dependency-cruiser', color: '00b4d8', description: 'Found by dependency-cruiser' },
-  { name: 'tool:knip', color: 'fca311', description: 'Found by Knip' },
-  { name: 'tool:semgrep', color: '14b8a6', description: 'Found by Semgrep' },
-  { name: 'tool:trunk', color: '10b981', description: 'Found by Trunk' },
+  {
+    name: "vibeCop",
+    color: "5319e7",
+    description: "Created by vibeCop static analysis",
+  },
+  {
+    name: "severity:critical",
+    color: "d73a4a",
+    description: "Critical severity finding",
+  },
+  {
+    name: "severity:high",
+    color: "e99695",
+    description: "High severity finding",
+  },
+  {
+    name: "severity:medium",
+    color: "fbca04",
+    description: "Medium severity finding",
+  },
+  {
+    name: "severity:low",
+    color: "c5def5",
+    description: "Low severity finding",
+  },
+  {
+    name: "confidence:high",
+    color: "0e8a16",
+    description: "High confidence finding",
+  },
+  {
+    name: "confidence:medium",
+    color: "bfd4f2",
+    description: "Medium confidence finding",
+  },
+  {
+    name: "confidence:low",
+    color: "d4c5f9",
+    description: "Low confidence finding",
+  },
+  { name: "effort:S", color: "c2e0c6", description: "Small effort to fix" },
+  { name: "effort:M", color: "fef2c0", description: "Medium effort to fix" },
+  { name: "effort:L", color: "f9d0c4", description: "Large effort to fix" },
+  { name: "autofix:safe", color: "0e8a16", description: "Safe to auto-fix" },
+  { name: "layer:code", color: "bfdadc", description: "Code-level finding" },
+  {
+    name: "layer:architecture",
+    color: "d4c5f9",
+    description: "Architecture-level finding",
+  },
+  {
+    name: "layer:security",
+    color: "d73a4a",
+    description: "Security-related finding",
+  },
+  { name: "tool:eslint", color: "4b32c3", description: "Found by ESLint" },
+  { name: "tool:tsc", color: "3178c6", description: "Found by TypeScript" },
+  { name: "tool:jscpd", color: "ff6b6b", description: "Found by jscpd" },
+  {
+    name: "tool:dependency-cruiser",
+    color: "00b4d8",
+    description: "Found by dependency-cruiser",
+  },
+  { name: "tool:knip", color: "fca311", description: "Found by Knip" },
+  { name: "tool:semgrep", color: "14b8a6", description: "Found by Semgrep" },
+  { name: "tool:trunk", color: "10b981", description: "Found by Trunk" },
 ];
 
 // ============================================================================
@@ -316,11 +379,14 @@ export const DEFAULT_LABELS = [
 /**
  * Parse repository from GITHUB_REPOSITORY env var.
  */
-export function parseGitHubRepository(): { owner: string; repo: string } | null {
+export function parseGitHubRepository(): {
+  owner: string;
+  repo: string;
+} | null {
   const fullRepo = process.env.GITHUB_REPOSITORY;
   if (!fullRepo) return null;
 
-  const [owner, repo] = fullRepo.split('/');
+  const [owner, repo] = fullRepo.split("/");
   if (!owner || !repo) return null;
 
   return { owner, repo };
@@ -343,7 +409,7 @@ function delay(ms: number): Promise<void> {
  */
 export async function withRateLimit<T>(
   fn: () => Promise<T>,
-  delayMs: number = 100
+  delayMs: number = 100,
 ): Promise<T> {
   const result = await fn();
   await delay(delayMs);

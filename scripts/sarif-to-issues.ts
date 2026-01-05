@@ -241,23 +241,57 @@ export async function processFindings(
   // Track which fingerprints we've seen in this run
   const seenFingerprints = new Set<string>();
 
+  // Build a secondary lookup by tool|ruleId for fallback matching
+  const toolRuleMap = new Map<string, ExistingIssue>();
+  for (const issue of existingIssues) {
+    // Extract tool and rule from issue title like "[vibeCop] knip: files in ..."
+    const titleMatch = issue.title.match(/\[vibeCop\]\s+(\w+):\s+(\S+)/i);
+    if (titleMatch) {
+      const key = `${titleMatch[1].toLowerCase()}|${titleMatch[2].toLowerCase()}`;
+      // Only keep the first (oldest) match to update
+      if (!toolRuleMap.has(key)) {
+        toolRuleMap.set(key, issue);
+      }
+    }
+  }
+
   // Process each finding
   for (const finding of actionableFindings) {
     seenFingerprints.add(finding.fingerprint);
 
-    const existingIssue = fingerprintMap.get(finding.fingerprint);
+    // Try fingerprint match first, then fallback to tool|rule match
+    let existingIssue = fingerprintMap.get(finding.fingerprint);
+    const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
+
+    if (!existingIssue) {
+      // Fallback: check if there's an existing issue for same tool+rule
+      existingIssue = toolRuleMap.get(toolRuleKey);
+      if (existingIssue) {
+        console.log(
+          `Found existing issue #${existingIssue.number} by tool+rule match`,
+        );
+        // Add to fingerprint map so we track it
+        fingerprintMap.set(finding.fingerprint, existingIssue);
+        // Mark the old fingerprint as seen to avoid closing it
+        if (existingIssue.metadata?.fingerprint) {
+          seenFingerprints.add(existingIssue.metadata.fingerprint);
+        }
+      }
+    }
 
     if (existingIssue) {
-      // Update existing issue
+      // Update existing issue (including title)
       if (existingIssue.state === "open") {
         console.log(
           `Updating issue #${existingIssue.number} for ${finding.ruleId}`,
         );
+        const title = generateIssueTitle(finding);
         const body = generateIssueBody(finding, context);
 
         await withRateLimit(() =>
           updateIssue(owner, repo, {
-            number: existingIssue.number,
+            number: existingIssue!.number,
+            title, // Update title too
             body,
             labels: getLabelsForFinding(finding, issuesConfig.label),
           }),

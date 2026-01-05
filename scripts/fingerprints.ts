@@ -224,7 +224,12 @@ export function deduplicateFindings<T extends { fingerprint: string }>(
 // Issue Merging
 // ============================================================================
 
-export type MergeStrategy = "none" | "same-file" | "same-rule" | "same-tool";
+export type MergeStrategy =
+  | "none"
+  | "same-file"
+  | "same-rule"
+  | "same-tool"
+  | "same-linter";
 
 /**
  * Build a merge key based on the strategy.
@@ -232,6 +237,7 @@ export type MergeStrategy = "none" | "same-file" | "same-rule" | "same-tool";
  * - 'same-file': Merge findings with same tool + ruleId + file
  * - 'same-rule': Merge findings with same tool + ruleId (across files)
  * - 'same-tool': Merge all findings from same tool
+ * - 'same-linter': For trunk, merge by sublinter (markdownlint, yamllint, etc.)
  */
 function buildMergeKey(finding: Finding, strategy: MergeStrategy): string {
   const tool = finding.tool.toLowerCase();
@@ -249,16 +255,52 @@ function buildMergeKey(finding: Finding, strategy: MergeStrategy): string {
       return `${tool}|${ruleId}`;
     case "same-tool":
       return tool;
+    case "same-linter": {
+      // For trunk findings, extract the sublinter from the title
+      // e.g., "markdownlint: MD026" -> "markdownlint"
+      // e.g., "yamllint: quoted-strings" -> "yamllint"
+      const sublinter = extractSublinter(finding);
+      return `${tool}|${sublinter}`;
+    }
     default:
       return finding.fingerprint;
   }
 }
 
 /**
+ * Extract sublinter name from a trunk finding.
+ * Trunk findings have titles like "markdownlint: MD026" or "yamllint: syntax"
+ */
+function extractSublinter(finding: Finding): string {
+  // Check if title has format "sublinter: rule"
+  const titleMatch = finding.title.match(/^(\w+):\s/);
+  if (titleMatch) {
+    return titleMatch[1].toLowerCase();
+  }
+  // Check if ruleId has a prefix
+  const ruleMatch = finding.ruleId.match(/^([A-Z]+)\d/);
+  if (ruleMatch) {
+    // MD rules -> markdownlint, CKV -> checkov, etc.
+    const prefix = ruleMatch[1].toLowerCase();
+    const prefixMap: Record<string, string> = {
+      md: "markdownlint",
+      ckv: "checkov",
+      ghsa: "osv-scanner",
+    };
+    return prefixMap[prefix] || finding.ruleId;
+  }
+  return finding.ruleId;
+}
+
+/**
  * Merge multiple findings into a single combined finding.
  * Combines all locations, evidence, and creates a summary message.
+ * Returns finding without fingerprint - caller sets it based on merge key.
  */
-function mergeFindings(findings: Finding[]): Finding {
+function mergeFindings(
+  findings: Finding[],
+  strategy: MergeStrategy = "same-file",
+): Omit<Finding, "fingerprint"> {
   if (findings.length === 0) {
     throw new Error("Cannot merge empty findings array");
   }
@@ -317,6 +359,7 @@ function mergeFindings(findings: Finding[]): Finding {
 
   // Build summary message
   const uniqueFiles = [...new Set(allLocations.map((l) => l.path))];
+  const uniqueRules = [...new Set(findings.map((f) => f.ruleId))];
   const locationSummary =
     uniqueFiles.length === 1
       ? `${allLocations.length} occurrence${allLocations.length > 1 ? "s" : ""} in ${uniqueFiles[0]}`
@@ -324,23 +367,34 @@ function mergeFindings(findings: Finding[]): Finding {
 
   const message = `${base.message}\n\n**Found ${locationSummary}:**\n${allLocations.map((l) => `- \`${l.path}\` line ${l.startLine}`).join("\n")}`;
 
+  // Build title based on strategy
+  let title: string;
+  if (strategy === "same-linter" && uniqueRules.length > 1) {
+    // For same-linter merge with multiple rules, use sublinter name
+    const sublinter = extractSublinter(base);
+    title = `${sublinter} (${allLocations.length} issues across ${uniqueRules.length} rules)`;
+  } else if (allLocations.length > 1) {
+    title = `${base.title} (${allLocations.length} occurrences)`;
+  } else {
+    title = base.title;
+  }
+
   // Create merged finding
   const merged: Omit<Finding, "fingerprint"> = {
     ...base,
     locations: allLocations,
     evidence: combinedEvidence,
     message,
-    title: `${base.title} (${allLocations.length} occurrences)`,
+    title,
+    // For same-linter merges, update ruleId to reflect multiple rules
+    ruleId:
+      strategy === "same-linter" && uniqueRules.length > 1
+        ? uniqueRules.join("+")
+        : base.ruleId,
   };
 
-  // Generate new fingerprint for merged finding based on merge key
-  const mergeKey = `merged|${base.tool}|${base.ruleId}|${uniqueFiles.sort().join(",")}`;
-  const fingerprint = computeFingerprint(mergeKey);
-
-  return {
-    ...merged,
-    fingerprint,
-  };
+  // Fingerprint is set by caller based on merge key
+  return merged;
 }
 
 /**
@@ -370,8 +424,14 @@ export function mergeIssues(
 
   // Merge each group
   const merged: Finding[] = [];
-  for (const group of groups.values()) {
-    merged.push(mergeFindings(group));
+  for (const [mergeKey, group] of groups.entries()) {
+    const mergedFinding = mergeFindings(group, strategy);
+    // Use merge key for stable fingerprint (doesn't change as files are added/removed)
+    const stableFingerprint = computeFingerprint(mergeKey);
+    merged.push({
+      ...mergedFinding,
+      fingerprint: stableFingerprint,
+    });
   }
 
   return merged;

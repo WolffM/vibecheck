@@ -116,7 +116,7 @@ export const DEFAULT_CONFIG: VibeCopConfig = {
     max_new_per_run: 25,
     severity_threshold: "info",
     confidence_threshold: "low",
-    close_resolved: false,
+    close_resolved: true, // Auto-close issues when findings are resolved
     assignees: [],
     pr_branch_prefix: "vibecop/fix-",
   },
@@ -346,6 +346,7 @@ export interface IssueCreateParams {
 
 export interface IssueUpdateParams {
   number: number;
+  title?: string;
   body?: string;
   labels?: string[];
   state?: "open" | "closed";
