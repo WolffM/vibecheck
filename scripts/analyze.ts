@@ -46,15 +46,15 @@ import { DEFAULT_CONFIG } from "./types.js";
 /**
  * Validate severity threshold value.
  */
-function isValidSeverityThreshold(value: string): value is Severity | 'info' {
-  return ['info', 'low', 'medium', 'high', 'critical'].includes(value);
+function isValidSeverityThreshold(value: string): value is Severity | "info" {
+  return ["info", "low", "medium", "high", "critical"].includes(value);
 }
 
 /**
  * Validate confidence threshold value.
  */
 function isValidConfidenceThreshold(value: string): value is Confidence {
-  return ['low', 'medium', 'high'].includes(value);
+  return ["low", "medium", "high"].includes(value);
 }
 
 /**
@@ -201,21 +201,33 @@ function runTrunk(rootPath: string, args: string[] = ["check"]): Finding[] {
       console.log(`  Trunk stderr: ${stderr}`);
     }
 
-    const jsonMatch = output.match(/\{[\s\S]*\}(?=\s*$)/);
+    // Strip ANSI codes before parsing
+    const cleanOutput = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
+
+    // Try to find JSON object in output (could start anywhere)
+    const jsonMatch = cleanOutput.match(/\{[\s\S]*"issues"[\s\S]*\}/);
     if (jsonMatch) {
       try {
         const trunkOutput = JSON.parse(jsonMatch[0]);
-        return parseTrunkOutput(trunkOutput);
-      } catch {
-        console.warn("Failed to parse Trunk JSON output");
-        console.log("Raw output:", output.substring(0, 500));
+        const findings = parseTrunkOutput(trunkOutput);
+        console.log(`  Parsed ${findings.length} findings from trunk JSON`);
+        return findings;
+      } catch (e) {
+        console.warn("Failed to parse Trunk JSON output:", e);
+        console.log("JSON match start:", jsonMatch[0].substring(0, 200));
       }
     } else {
       console.log("  No JSON found in trunk output");
-      if (output.length < 1000) {
-        console.log("  Raw output:", output);
+      if (cleanOutput.length < 1000) {
+        console.log("  Clean output:", cleanOutput);
       } else {
-        console.log("  Output length:", output.length);
+        console.log("  Output length:", cleanOutput.length);
+        // Print first and last 200 chars to see format
+        console.log("  First 200:", cleanOutput.substring(0, 200));
+        console.log(
+          "  Last 200:",
+          cleanOutput.substring(cleanOutput.length - 200),
+        );
       }
     }
 
@@ -494,12 +506,12 @@ export async function analyze(
   // Validate threshold values
   if (!isValidSeverityThreshold(severityThreshold)) {
     throw new Error(
-      `Invalid severity threshold: "${severityThreshold}". Must be one of: info, low, medium, high, critical`
+      `Invalid severity threshold: "${severityThreshold}". Must be one of: info, low, medium, high, critical`,
     );
   }
   if (!isValidConfidenceThreshold(confidenceThreshold)) {
     throw new Error(
-      `Invalid confidence threshold: "${confidenceThreshold}". Must be one of: low, medium, high`
+      `Invalid confidence threshold: "${confidenceThreshold}". Must be one of: low, medium, high`,
     );
   }
 
