@@ -79,7 +79,7 @@ jobs:
             --severity-threshold "info" \
             --confidence-threshold "low" \
             --merge-strategy "same-rule" \
-            ${{ inputs.skip_issues == 'true' && '--skip-issues' || '' }}
+            ${{ inputs.skip_issues == true && '--skip-issues' || '' }}
 
       - name: Upload SARIF to Code Scanning
         if: always() && hashFiles('.vibecop-output/results.sarif') != ''
