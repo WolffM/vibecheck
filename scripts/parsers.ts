@@ -222,7 +222,7 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
 // dependency-cruiser Parser
 // ============================================================================
 
-export interface DepcruiseViolation {
+interface DepcruiseViolation {
   type?: string;
   from: string;
   to: string;
@@ -299,14 +299,14 @@ export function parseDepcruiseOutput(output: DepcruiseOutput): Finding[] {
 // knip Parser
 // ============================================================================
 
-export interface KnipIssueItem {
+interface KnipIssueItem {
   name: string;
   line?: number;
   col?: number;
   pos?: number;
 }
 
-export interface KnipFileIssues {
+interface KnipFileIssues {
   file: string;
   dependencies: KnipIssueItem[];
   devDependencies: KnipIssueItem[];
@@ -464,7 +464,7 @@ function createKnipFinding(
 // Semgrep Parser
 // ============================================================================
 
-export interface SemgrepResult {
+interface SemgrepResult {
   check_id: string;
   path: string;
   start: { line: number; col: number };
@@ -540,7 +540,7 @@ export function parseSemgrepOutput(output: SemgrepOutput): Finding[] {
 // Trunk Parser
 // ============================================================================
 
-export interface TrunkIssue {
+interface TrunkIssue {
   file: string;
   line: number;
   column: number;
