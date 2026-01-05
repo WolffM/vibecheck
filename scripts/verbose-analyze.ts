@@ -633,7 +633,7 @@ async function main() {
     JSON.stringify(mergedFindings, null, 2),
   );
 
-  const issuePreviews = mergedFindings.map((f, i) =>
+  const issuePreviews = mergedFindings.map((f, _i) =>
     generateIssuePreview(f, 1),
   );
 
