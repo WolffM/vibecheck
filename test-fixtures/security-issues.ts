@@ -26,7 +26,7 @@ import { exec } from 'child_process';
 
 export function unsafeExec(filename: string): void {
   // Direct user input in shell command
-  exec('cat ' + filename, (error, stdout) => {
+  exec('cat ' + filename, (_error, stdout) => {
     console.log(stdout);
   });
 }
