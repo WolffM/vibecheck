@@ -9,13 +9,13 @@
 // Configuration Types (vibecop.yml schema)
 // ============================================================================
 
-export type Cadence = 'daily' | 'weekly' | 'monthly';
-type ToolEnablement = 'auto' | boolean | Cadence;
-export type Severity = 'low' | 'medium' | 'high' | 'critical';
-export type Confidence = 'low' | 'medium' | 'high';
-export type Effort = 'S' | 'M' | 'L';
-export type AutofixLevel = 'none' | 'safe' | 'requires_review';
-export type Layer = 'code' | 'architecture' | 'system' | 'security';
+export type Cadence = "daily" | "weekly" | "monthly";
+type ToolEnablement = "auto" | boolean | Cadence;
+export type Severity = "low" | "medium" | "high" | "critical";
+export type Confidence = "low" | "medium" | "high";
+export type Effort = "S" | "M" | "L";
+export type AutofixLevel = "none" | "safe" | "requires_review";
+export type Layer = "code" | "architecture" | "system" | "security";
 
 interface ToolConfig {
   enabled: ToolEnablement;
@@ -105,12 +105,36 @@ export interface VibeCopConfig {
   llm?: LlmConfig;
 }
 
+/**
+ * Default configuration values
+ */
+export const DEFAULT_CONFIG: VibeCopConfig = {
+  version: 1,
+  issues: {
+    enabled: true,
+    label: "vibeCop",
+    max_new_per_run: 25,
+    severity_threshold: "info",
+    confidence_threshold: "low",
+    close_resolved: false,
+    assignees: [],
+    pr_branch_prefix: "vibecop/fix-",
+  },
+};
+
 // ============================================================================
 // Repo Detection Types
 // ============================================================================
 
-export type Language = 'typescript' | 'javascript' | 'python' | 'go' | 'rust' | 'java' | 'other';
-export type PackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun' | 'unknown';
+export type Language =
+  | "typescript"
+  | "javascript"
+  | "python"
+  | "go"
+  | "rust"
+  | "java"
+  | "other";
+export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "unknown";
 
 export interface RepoProfile {
   languages: Language[];
@@ -150,15 +174,15 @@ export interface SuggestedFix {
 }
 
 export type ToolName =
-  | 'eslint'
-  | 'tsc'
-  | 'prettier'
-  | 'jscpd'
-  | 'dependency-cruiser'
-  | 'knip'
-  | 'semgrep'
-  | 'trunk'
-  | 'custom';
+  | "eslint"
+  | "tsc"
+  | "prettier"
+  | "jscpd"
+  | "dependency-cruiser"
+  | "knip"
+  | "semgrep"
+  | "trunk"
+  | "custom";
 
 export interface Finding {
   fingerprint: string;
@@ -202,9 +226,9 @@ export interface LlmJsonOutput {
   version: number;
   repo: RepoInfo;
   generatedAt: string;
-  profile: Pick<RepoProfile, 'isMonorepo' | 'languages' | 'packageManager'>;
+  profile: Pick<RepoProfile, "isMonorepo" | "languages" | "packageManager">;
   summary: LlmJsonSummary;
-  findings: Omit<Finding, 'rawOutput'>[];
+  findings: Omit<Finding, "rawOutput">[];
 }
 
 // ============================================================================
@@ -238,7 +262,7 @@ export interface SarifLocation {
 
 export interface SarifResult {
   ruleId: string;
-  level: 'none' | 'note' | 'warning' | 'error';
+  level: "none" | "note" | "warning" | "error";
   message: SarifMessage;
   locations: SarifLocation[];
   fingerprints?: Record<string, string>;
@@ -258,7 +282,7 @@ export interface SarifRule {
   fullDescription?: SarifMessage;
   helpUri?: string;
   defaultConfiguration?: {
-    level?: 'none' | 'note' | 'warning' | 'error';
+    level?: "none" | "note" | "warning" | "error";
   };
   properties?: Record<string, unknown>;
 }
@@ -289,7 +313,7 @@ export interface SarifRun {
 }
 
 export interface SarifLog {
-  version: '2.1.0';
+  version: "2.1.0";
   $schema: string;
   runs: SarifRun[];
 }
@@ -308,7 +332,7 @@ export interface ExistingIssue {
   number: number;
   title: string;
   body: string;
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   labels: string[];
   metadata?: IssueMetadata;
 }
@@ -324,7 +348,7 @@ export interface IssueUpdateParams {
   number: number;
   body?: string;
   labels?: string[];
-  state?: 'open' | 'closed';
+  state?: "open" | "closed";
 }
 
 // ============================================================================
