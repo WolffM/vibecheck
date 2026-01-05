@@ -30,9 +30,11 @@ import {
 } from "./fingerprints.js";
 import type {
   Cadence,
+  Confidence,
   Finding,
   RepoProfile,
   RunContext,
+  Severity,
   VibeCopConfig,
 } from "./types.js";
 import { DEFAULT_CONFIG } from "./types.js";
