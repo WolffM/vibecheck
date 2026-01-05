@@ -6,7 +6,7 @@
  * Reference: vibeCop_spec.md section 6.1
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import type {
   Finding,
   RunContext,
@@ -15,24 +15,25 @@ import type {
   SarifRule,
   SarifRun,
   Severity,
-} from './types.js';
+} from "./types.js";
 
-const SARIF_SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json';
+const SARIF_SCHEMA =
+  "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json";
 
 /**
  * Map our severity to SARIF level.
  */
-function severityToSarifLevel(severity: Severity): SarifResult['level'] {
+function severityToSarifLevel(severity: Severity): SarifResult["level"] {
   switch (severity) {
-    case 'critical':
-    case 'high':
-      return 'error';
-    case 'medium':
-      return 'warning';
-    case 'low':
-      return 'note';
+    case "critical":
+    case "high":
+      return "error";
+    case "medium":
+      return "warning";
+    case "low":
+      return "note";
     default:
-      return 'warning';
+      return "warning";
   }
 }
 
@@ -90,14 +91,14 @@ function findingToSarifResult(finding: Finding): SarifResult {
     locations: finding.locations.map((loc) => ({
       physicalLocation: {
         artifactLocation: {
-          uri: loc.path.replace(/\\/g, '/'),
-          uriBaseId: '%SRCROOT%',
+          uri: loc.path.replace(/\\/g, "/"),
+          uriBaseId: "%SRCROOT%",
         },
         region: {
-          startLine: loc.startLine,
-          startColumn: loc.startColumn,
-          endLine: loc.endLine,
-          endColumn: loc.endColumn,
+          startLine: Number(loc.startLine) || 1,
+          startColumn: Number(loc.startColumn) || 1,
+          endLine: Number(loc.endLine) || Number(loc.startLine) || 1,
+          endColumn: Number(loc.endColumn) || 1,
         },
       },
     })),
@@ -120,7 +121,7 @@ function findingToSarifResult(finding: Finding): SarifResult {
 function buildSarifRun(
   toolName: string,
   findings: Finding[],
-  context: RunContext
+  context: RunContext,
 ): SarifRun {
   const rules = extractRules(findings);
   const results = findings.map(findingToSarifResult);
@@ -129,8 +130,8 @@ function buildSarifRun(
     tool: {
       driver: {
         name: `vibeCop/${toolName}`,
-        version: '0.1.0',
-        informationUri: 'https://github.com/<OWNER>/vibeCop',
+        version: "0.1.0",
+        informationUri: "https://github.com/<OWNER>/vibeCop",
         rules,
       },
     },
@@ -139,7 +140,7 @@ function buildSarifRun(
         executionSuccessful: true,
         startTimeUtc: new Date().toISOString(),
         workingDirectory: {
-          uri: context.workspacePath.replace(/\\/g, '/'),
+          uri: context.workspacePath.replace(/\\/g, "/"),
         },
       },
     ],
@@ -150,7 +151,10 @@ function buildSarifRun(
 /**
  * Build complete SARIF log from findings.
  */
-export function buildSarifLog(findings: Finding[], context: RunContext): SarifLog {
+export function buildSarifLog(
+  findings: Finding[],
+  context: RunContext,
+): SarifLog {
   const groupedFindings = groupFindingsByTool(findings);
   const runs: SarifRun[] = [];
 
@@ -163,9 +167,9 @@ export function buildSarifLog(findings: Finding[], context: RunContext): SarifLo
     runs.push({
       tool: {
         driver: {
-          name: 'vibeCop',
-          version: '0.1.0',
-          informationUri: 'https://github.com/<OWNER>/vibeCop',
+          name: "vibeCop",
+          version: "0.1.0",
+          informationUri: "https://github.com/<OWNER>/vibeCop",
         },
       },
       results: [],
@@ -173,7 +177,7 @@ export function buildSarifLog(findings: Finding[], context: RunContext): SarifLo
   }
 
   return {
-    version: '2.1.0',
+    version: "2.1.0",
     $schema: SARIF_SCHEMA,
     runs,
   };
@@ -183,7 +187,7 @@ export function buildSarifLog(findings: Finding[], context: RunContext): SarifLo
  * Write SARIF log to file.
  */
 export function writeSarifFile(sarif: SarifLog, outputPath: string): void {
-  writeFileSync(outputPath, JSON.stringify(sarif, null, 2), 'utf-8');
+  writeFileSync(outputPath, JSON.stringify(sarif, null, 2), "utf-8");
 }
 
 /**
@@ -197,7 +201,7 @@ export function mergeSarifLogs(logs: SarifLog[]): SarifLog {
   }
 
   return {
-    version: '2.1.0',
+    version: "2.1.0",
     $schema: SARIF_SCHEMA,
     runs,
   };
@@ -211,7 +215,7 @@ export function loadSarifFile(path: string): SarifLog | null {
     return null;
   }
   try {
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(path, "utf-8");
     return JSON.parse(content) as SarifLog;
   } catch {
     return null;
@@ -223,9 +227,9 @@ export function loadSarifFile(path: string): SarifLog | null {
  */
 async function main() {
   const args = process.argv.slice(2);
-  const findingsPath = args[0] || 'findings.json';
-  const outputPath = args[1] || 'results.sarif';
-  const contextPath = args[2] || 'context.json';
+  const findingsPath = args[0] || "findings.json";
+  const outputPath = args[1] || "results.sarif";
+  const contextPath = args[2] || "context.json";
 
   // Load findings
   if (!existsSync(findingsPath)) {
@@ -233,24 +237,24 @@ async function main() {
     process.exit(1);
   }
 
-  const findings: Finding[] = JSON.parse(readFileSync(findingsPath, 'utf-8'));
+  const findings: Finding[] = JSON.parse(readFileSync(findingsPath, "utf-8"));
 
   // Load or build context
   let context: RunContext;
   if (existsSync(contextPath)) {
-    context = JSON.parse(readFileSync(contextPath, 'utf-8'));
+    context = JSON.parse(readFileSync(contextPath, "utf-8"));
   } else {
     // Minimal context for standalone use
     context = {
       repo: {
-        owner: process.env.GITHUB_REPOSITORY_OWNER || 'unknown',
-        name: process.env.GITHUB_REPOSITORY?.split('/')[1] || 'unknown',
-        defaultBranch: 'main',
-        commit: process.env.GITHUB_SHA || 'unknown',
+        owner: process.env.GITHUB_REPOSITORY_OWNER || "unknown",
+        name: process.env.GITHUB_REPOSITORY?.split("/")[1] || "unknown",
+        defaultBranch: "main",
+        commit: process.env.GITHUB_SHA || "unknown",
       },
       profile: {
-        languages: ['typescript'],
-        packageManager: 'pnpm',
+        languages: ["typescript"],
+        packageManager: "pnpm",
         isMonorepo: false,
         workspacePackages: [],
         hasTypeScript: true,
@@ -262,10 +266,10 @@ async function main() {
         rootPath: process.cwd(),
       },
       config: { version: 1 },
-      cadence: 'weekly',
-      runNumber: parseInt(process.env.GITHUB_RUN_NUMBER || '1', 10),
+      cadence: "weekly",
+      runNumber: parseInt(process.env.GITHUB_RUN_NUMBER || "1", 10),
       workspacePath: process.cwd(),
-      outputDir: '.',
+      outputDir: ".",
     };
   }
 
@@ -275,7 +279,9 @@ async function main() {
 
   console.log(`SARIF output written to: ${outputPath}`);
   console.log(`Total runs: ${sarif.runs.length}`);
-  console.log(`Total results: ${sarif.runs.reduce((sum, run) => sum + run.results.length, 0)}`);
+  console.log(
+    `Total results: ${sarif.runs.reduce((sum, run) => sum + run.results.length, 0)}`,
+  );
 }
 
 // Run if called directly
