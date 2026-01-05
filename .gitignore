@@ -6,6 +6,9 @@
 node_modules/
 package-lock.json
 
+# Lock files (project uses pnpm)
+package-lock.json
+
 # Build outputs
 dist/
 

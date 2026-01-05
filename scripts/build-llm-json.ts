@@ -369,7 +369,7 @@ function getGenericFix(finding: Finding): SuggestedFix {
  */
 function buildSummary(
   findings: Finding[],
-  severityThreshold: Severity,
+  severityThreshold: Severity | "info",
   confidenceThreshold: Confidence
 ): LlmJsonSummary {
   const bySeverity: Record<Severity, number> = {

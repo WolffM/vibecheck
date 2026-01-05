@@ -193,8 +193,8 @@ export async function processFindings(
     enabled: true,
     label: "vibeCop",
     max_new_per_run: 25,
-    severity_threshold: "info",
-    confidence_threshold: "low",
+    severity_threshold: "info" as const,
+    confidence_threshold: "low" as const,
     close_resolved: false,
     ...context.config.issues,
   };

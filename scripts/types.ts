@@ -77,7 +77,7 @@ export interface IssuesConfig {
   enabled: boolean;
   label: string;
   max_new_per_run: number;
-  severity_threshold: Severity;
+  severity_threshold: Severity | "info";
   confidence_threshold: Confidence;
   close_resolved: boolean;
   assignees?: string[];
