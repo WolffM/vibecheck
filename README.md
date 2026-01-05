@@ -2,7 +2,9 @@
 
 > Cross-repo static analysis + actionable GitHub issue generator for AI agents
 
-vibeCop is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents (like Codex).
+vibeCop is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents.
+
+**[📋 See Example Issues](https://github.com/WolffM/vibecop/issues?q=is%3Aissue+label%3AvibeCop)** - Live demo of what vibeCop creates
 
 ## Features
 
@@ -14,19 +16,19 @@ vibeCop is a **GitHub Action** that runs static analysis on any repository and t
 - ⚙️ **Configurable**: Per-repo overrides via `vibecop.yml`
 - 📅 **Cadence-aware**: Schedule heavy tools for weekly/monthly runs only
 
-## Quick Start
+## Quick Start (2 minutes)
 
-### Option 1: GitHub Action (Recommended)
+### Step 1: Add the workflow file
 
-Create `.github/workflows/vibecop.yml`:
+Create `.github/workflows/vibecop.yml` in your repository:
 
 ```yaml
 name: vibeCop Analysis
 
 on:
   schedule:
-    - cron: "0 3 * * 1" # Weekly: Mondays 3am UTC
-  workflow_dispatch: {}
+    - cron: "0 3 * * 1" # Weekly on Mondays at 3am UTC
+  workflow_dispatch: {} # Manual trigger button
 
 permissions:
   contents: read
@@ -44,66 +46,71 @@ jobs:
       - uses: WolffM/vibecop@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          cadence: "weekly"
-          severity_threshold: "low"
-          merge_strategy: "same-linter"
 ```
 
-### Option 2: Reusable Workflow
+**That's it!** No other changes needed. The workflow will:
+
+- Run automatically every Monday at 3am UTC
+- Can be triggered manually from the Actions tab
+- Uses your repo's built-in `GITHUB_TOKEN` (no secrets to configure)
+
+### Step 2: Trigger it manually (optional)
+
+1. Go to your repo's **Actions** tab
+2. Click **vibeCop Analysis** in the sidebar
+3. Click **Run workflow**
+
+---
+
+## Configuration Options
+
+### Workflow Inputs
+
+Customize the action in your workflow file:
 
 ```yaml
-name: vibeCop Analysis
-
-on:
-  schedule:
-    - cron: "0 3 * * 1"
-  workflow_dispatch: {}
-
-jobs:
-  vibeCop:
-    uses: WolffM/vibecop/.github/workflows/reusable-analyze.yml@main
-    with:
-      cadence: "weekly"
-    secrets:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- uses: WolffM/vibecop@main
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    cadence: "weekly" # daily | weekly | monthly
+    severity_threshold: "low" # critical | high | medium | low | info
+    confidence_threshold: "medium" # high | medium | low
+    merge_strategy: "same-linter" # none | same-file | same-rule | same-linter | same-tool
+    skip_issues: "false" # true to do a dry run
 ```
 
-## Configuration
+| Input                  | Description                       | Default       |
+| ---------------------- | --------------------------------- | ------------- |
+| `github_token`         | GitHub token (auto-provided)      | **Required**  |
+| `cadence`              | How often heavy tools run         | `weekly`      |
+| `severity_threshold`   | Min severity for issues           | `info`        |
+| `confidence_threshold` | Min confidence for issues         | `low`         |
+| `merge_strategy`       | How to group findings into issues | `same-linter` |
+| `skip_issues`          | Skip issue creation (dry run)     | `false`       |
 
-### Action Inputs
+### Per-Repo Configuration (Optional)
 
-| Input                  | Description                                                  | Default       |
-| ---------------------- | ------------------------------------------------------------ | ------------- |
-| `github_token`         | GitHub token for issues/SARIF                                | **Required**  |
-| `cadence`              | `daily`, `weekly`, or `monthly`                              | `weekly`      |
-| `severity_threshold`   | Min severity: `critical`, `high`, `medium`, `low`, `info`    | `info`        |
-| `confidence_threshold` | Min confidence: `high`, `medium`, `low`                      | `low`         |
-| `merge_strategy`       | `none`, `same-file`, `same-rule`, `same-linter`, `same-tool` | `same-linter` |
-| `skip_issues`          | Skip issue creation (`true`/`false`)                         | `false`       |
-| `config_path`          | Path to `vibecop.yml`                                        | `vibecop.yml` |
-
-### Repo Configuration (vibecop.yml)
-
-Create `vibecop.yml` at your repository root for fine-tuned control:
+For fine-tuned control, create `vibecop.yml` at your repository root:
 
 ```yaml
 version: 1
 
 issues:
-  severity_threshold: "medium" # Override action input
-  confidence_threshold: "high"
-  max_new_per_run: 25
+  severity_threshold: "medium" # Only medium+ severity
+  confidence_threshold: "high" # Only high confidence
+  max_new_per_run: 10 # Limit new issues per run
   close_resolved: true # Auto-close fixed issues
 
 tools:
   jscpd:
-    enabled: weekly # Only run on weekly cadence
-    min_tokens: 70
-  knip:
-    enabled: monthly # Only run on monthly cadence
+    enabled: false # Disable duplicate detection
   semgrep:
-    enabled: true # Always run
+    enabled: true # Always run security scanning
+  knip:
+    enabled: weekly # Run unused code detection weekly
 ```
+
+---
 
 ## How It Works
 
