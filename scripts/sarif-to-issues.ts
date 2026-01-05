@@ -241,16 +241,41 @@ export async function processFindings(
   // Track which fingerprints we've seen in this run
   const seenFingerprints = new Set<string>();
 
-  // Build a secondary lookup by tool|ruleId for fallback matching
+  // Build secondary lookups for fallback matching
   const toolRuleMap = new Map<string, ExistingIssue>();
+  const sublinterMap = new Map<string, ExistingIssue>(); // For trunk sublinters
+
   for (const issue of existingIssues) {
     // Extract tool and rule from issue title like "[vibeCop] knip: files in ..."
-    const titleMatch = issue.title.match(/\[vibeCop\]\s+(\w+):\s+(\S+)/i);
+    // Also handles "[vibeCop] yamllint: quoted-strings" and "[vibeCop] markdownlint (12 issues..."
+    const titleMatch = issue.title.match(
+      /\[vibeCop\]\s+(\w+)(?::\s+(\S+)|[\s(])/i,
+    );
     if (titleMatch) {
-      const key = `${titleMatch[1].toLowerCase()}|${titleMatch[2].toLowerCase()}`;
-      // Only keep the first (oldest) match to update
-      if (!toolRuleMap.has(key)) {
-        toolRuleMap.set(key, issue);
+      const toolOrSublinter = titleMatch[1].toLowerCase();
+      const ruleId = titleMatch[2]?.toLowerCase();
+
+      if (ruleId) {
+        // Standard format: "[vibeCop] tool: ruleId ..."
+        const key = `${toolOrSublinter}|${ruleId}`;
+        if (!toolRuleMap.has(key)) {
+          toolRuleMap.set(key, issue);
+        }
+      }
+
+      // Also map by sublinter for trunk findings (yamllint, markdownlint, etc.)
+      const sublinters = [
+        "yamllint",
+        "markdownlint",
+        "checkov",
+        "osv-scanner",
+        "prettier",
+      ];
+      if (sublinters.includes(toolOrSublinter)) {
+        const sublinterKey = `trunk|${toolOrSublinter}`;
+        if (!sublinterMap.has(sublinterKey)) {
+          sublinterMap.set(sublinterKey, issue);
+        }
       }
     }
   }
@@ -259,16 +284,27 @@ export async function processFindings(
   for (const finding of actionableFindings) {
     seenFingerprints.add(finding.fingerprint);
 
-    // Try fingerprint match first, then fallback to tool|rule match
+    // Try fingerprint match first
     let existingIssue = fingerprintMap.get(finding.fingerprint);
-    const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
 
     if (!existingIssue) {
-      // Fallback: check if there's an existing issue for same tool+rule
+      // Fallback 1: check if there's an existing issue for same tool+rule
+      const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
       existingIssue = toolRuleMap.get(toolRuleKey);
+
+      // Fallback 2: for trunk findings with merged rules, check by sublinter
+      if (!existingIssue && finding.tool.toLowerCase() === "trunk") {
+        // Extract sublinter from title (e.g., "yamllint (18 issues..." or "yamllint: quoted-strings")
+        const sublinterMatch = finding.title.match(/^(\w+)[\s:(]/);
+        if (sublinterMatch) {
+          const sublinterKey = `trunk|${sublinterMatch[1].toLowerCase()}`;
+          existingIssue = sublinterMap.get(sublinterKey);
+        }
+      }
+
       if (existingIssue) {
         console.log(
-          `Found existing issue #${existingIssue.number} by tool+rule match`,
+          `Found existing issue #${existingIssue.number} by fallback match`,
         );
         // Add to fingerprint map so we track it
         fingerprintMap.set(finding.fingerprint, existingIssue);
@@ -336,9 +372,196 @@ export async function processFindings(
       context.runNumber,
       stats,
     );
+
+    // Also close issues that are superseded by merged findings
+    await closeSupersededIssues(
+      owner,
+      repo,
+      existingIssues,
+      actionableFindings,
+      seenFingerprints,
+      stats,
+    );
+
+    // Close duplicate issues (same normalized title, keep only newest updated)
+    await closeDuplicateIssues(owner, repo, existingIssues, stats);
   }
 
   return stats;
+}
+
+/**
+ * Extract sublinter name from an issue title.
+ * e.g., "[vibeCop] yamllint: quoted-strings" -> "yamllint"
+ * e.g., "[vibeCop] markdownlint (12 issues..." -> "markdownlint"
+ */
+function extractSublinterFromTitle(title: string): string | null {
+  // Match patterns like "[vibeCop] yamllint: ..." or "[vibeCop] yamllint (..."
+  const match = title.match(/\[vibeCop\]\s+(\w+)[\s:(\-]/i);
+  return match ? match[1].toLowerCase() : null;
+}
+
+/**
+ * Check if an issue is superseded by a merged finding.
+ * An issue is superseded if:
+ * 1. It's a trunk issue for a specific rule (e.g., "yamllint: quoted-strings")
+ * 2. There's a current merged finding for the same sublinter (e.g., "yamllint (18 issues...)")
+ * 3. The issue's fingerprint wasn't directly matched (meaning it's an old-style issue)
+ */
+function isSupersededByMergedFinding(
+  issue: ExistingIssue,
+  findings: Finding[],
+  seenFingerprints: Set<string>,
+): { superseded: boolean; supersededBy?: Finding } {
+  // If this issue's fingerprint was seen, it's not superseded (it was updated)
+  if (
+    issue.metadata?.fingerprint &&
+    seenFingerprints.has(issue.metadata.fingerprint)
+  ) {
+    return { superseded: false };
+  }
+
+  const issueSublinter = extractSublinterFromTitle(issue.title);
+  if (!issueSublinter) {
+    return { superseded: false };
+  }
+
+  // Check if this is an old-style single-rule issue (has a colon in the title)
+  const isSingleRuleIssue = /\[vibeCop\]\s+\w+:\s+\S+/.test(issue.title);
+  if (!isSingleRuleIssue) {
+    return { superseded: false };
+  }
+
+  // Look for a merged finding for the same sublinter
+  for (const finding of findings) {
+    if (finding.tool !== "trunk") continue;
+
+    // Check if this finding is a merged sublinter finding
+    const findingSublinter = extractSublinterFromTitle(finding.title);
+    if (findingSublinter !== issueSublinter) continue;
+
+    // Check if the finding is a merged one (has multiple rules or "issues across")
+    const isMergedFinding =
+      finding.ruleId.includes("+") ||
+      finding.title.includes("issues across") ||
+      finding.title.includes("occurrences)");
+
+    if (isMergedFinding) {
+      return { superseded: true, supersededBy: finding };
+    }
+  }
+
+  return { superseded: false };
+}
+
+/**
+ * Close issues that are superseded by merged findings.
+ */
+async function closeSupersededIssues(
+  owner: string,
+  repo: string,
+  existingIssues: ExistingIssue[],
+  findings: Finding[],
+  seenFingerprints: Set<string>,
+  stats: IssueStats,
+): Promise<void> {
+  for (const issue of existingIssues) {
+    if (issue.state !== "open") continue;
+
+    const { superseded, supersededBy } = isSupersededByMergedFinding(
+      issue,
+      findings,
+      seenFingerprints,
+    );
+
+    if (superseded && supersededBy) {
+      console.log(
+        `Closing issue #${issue.number} (superseded by merged finding: ${supersededBy.title})`,
+      );
+
+      await withRateLimit(() =>
+        closeIssue(
+          owner,
+          repo,
+          issue.number,
+          `🔄 This issue has been superseded by a consolidated issue that groups all related findings together.\n\nThe individual findings are now tracked in a single merged issue for better organization.\n\nClosed automatically by vibeCop.`,
+        ),
+      );
+
+      stats.closed++;
+    }
+  }
+}
+
+/**
+ * Normalize an issue title for duplicate detection.
+ * Removes occurrence counts and normalizes whitespace.
+ * e.g., "[vibeCop] Duplicate Code: 22 lines (126 occurrences)" -> "duplicate code: 22 lines"
+ */
+function normalizeIssueTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/\[vibecop\]\s*/i, "") // Remove [vibeCop] prefix
+    .replace(/\s*\(\d+\s*occurrences?\)/gi, "") // Remove occurrence counts
+    .replace(/\s+in\s+\S+$/, "") // Remove "in filename" suffix
+    .replace(/\s+/g, " ") // Normalize whitespace
+    .trim();
+}
+
+/**
+ * Close duplicate issues, keeping only the one most recently updated.
+ */
+async function closeDuplicateIssues(
+  owner: string,
+  repo: string,
+  existingIssues: ExistingIssue[],
+  stats: IssueStats,
+): Promise<void> {
+  // Group open issues by normalized title
+  const issuesByTitle = new Map<string, ExistingIssue[]>();
+
+  for (const issue of existingIssues) {
+    if (issue.state !== "open") continue;
+
+    const normalizedTitle = normalizeIssueTitle(issue.title);
+    const existing = issuesByTitle.get(normalizedTitle);
+    if (existing) {
+      existing.push(issue);
+    } else {
+      issuesByTitle.set(normalizedTitle, [issue]);
+    }
+  }
+
+  // Close duplicates (keep the highest numbered one, which is most recent)
+  for (const [normalizedTitle, issues] of issuesByTitle.entries()) {
+    if (issues.length <= 1) continue;
+
+    // Sort by issue number descending (highest = most recent)
+    issues.sort((a, b) => b.number - a.number);
+
+    // Keep the first one (highest number), close the rest
+    const keepIssue = issues[0];
+    const duplicates = issues.slice(1);
+
+    console.log(
+      `Found ${duplicates.length} duplicate(s) of "${normalizedTitle}", keeping #${keepIssue.number}`,
+    );
+
+    for (const dup of duplicates) {
+      console.log(`Closing duplicate issue #${dup.number}`);
+
+      await withRateLimit(() =>
+        closeIssue(
+          owner,
+          repo,
+          dup.number,
+          `🔄 This is a duplicate issue. The same finding is tracked in #${keepIssue.number}.\n\nClosed automatically by vibeCop.`,
+        ),
+      );
+
+      stats.closed++;
+    }
+  }
 }
 
 /**
