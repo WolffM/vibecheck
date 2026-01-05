@@ -71,14 +71,14 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           # Run the analysis directly (we ARE vibeCop)
-          # Using default settings: weekly cadence, info threshold, same-rule merging
+          # Using same-linter to consolidate markdownlint/yamllint issues
           npx tsx scripts/analyze.ts \
             --root "${{ github.workspace }}" \
             --cadence "weekly" \
             --output "${{ github.workspace }}/.vibecop-output" \
             --severity-threshold "info" \
             --confidence-threshold "low" \
-            --merge-strategy "same-rule" \
+            --merge-strategy "same-linter" \
             ${{ inputs.skip_issues == true && '--skip-issues' || '' }}
 
       - name: Upload SARIF to Code Scanning
