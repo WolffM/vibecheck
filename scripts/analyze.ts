@@ -288,7 +288,7 @@ function runJscpd(rootPath: string, minTokens: number = 70): Finding[] {
         "--min-lines=5",
         "--reporters=json",
         `--output=${outputDir}`,
-        '--ignore="**/node_modules/**,**/dist/**,**/build/**,**/.git/**,**/.vibecop-output/**"',
+        '--ignore="**/node_modules/**,**/dist/**,**/build/**,**/.git/**,**/.vibecop-output/**,**/.trunk/**"',
       ],
       {
         cwd: rootPath,

@@ -71,7 +71,6 @@ ${suggestedFix.acceptance.map((a) => `- [ ] ${a}`).join("\n")}
 `
     : "";
 
-  const agentHint = context.config.llm?.agent_hint || "codex";
   const branchPrefix = context.config.llm?.pr_branch_prefix || "vibecop/";
 
   const body = `## Summary
@@ -92,14 +91,9 @@ ${finding.locations.length > 1 ? `\n*Plus ${finding.locations.length - 1} additi
 ${evidenceSection}
 ${fixSection}
 
-## Agent Instructions
+## Suggested Branch
 
-This issue is designed to be resolved by an AI coding agent (e.g., ${agentHint}).
-
-1. Create a branch: \`${branchPrefix}${shortFingerprint(finding.fingerprint)}/${finding.ruleId.replace(/[^a-z0-9]/gi, "-").toLowerCase()}\`
-2. Implement the suggested fix
-3. Run \`trunk check\` and \`pnpm test\` to verify
-4. Open a PR referencing this issue: "Fixes #ISSUE_NUMBER"
+\`${branchPrefix}${shortFingerprint(finding.fingerprint)}/${finding.ruleId.replace(/[^a-z0-9]/gi, "-").toLowerCase()}\`
 
 ## Metadata
 
