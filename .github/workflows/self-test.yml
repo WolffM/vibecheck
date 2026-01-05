@@ -18,36 +18,6 @@ on:
   # Manual trigger for testing
   workflow_dispatch:
     inputs:
-      cadence:
-        description: "Analysis depth"
-        required: false
-        default: "weekly"
-        type: choice
-        options:
-          - daily
-          - weekly
-          - monthly
-      severity_threshold:
-        description: "Minimum severity for issues"
-        required: false
-        default: "info"
-        type: choice
-        options:
-          - critical
-          - high
-          - medium
-          - low
-          - info
-      merge_strategy:
-        description: "How to group findings into issues"
-        required: false
-        default: "same-rule"
-        type: choice
-        options:
-          - none
-          - same-file
-          - same-rule
-          - same-tool
       skip_issues:
         description: "Skip issue creation (dry run)"
         required: false
@@ -101,14 +71,15 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           # Run the analysis directly (we ARE vibeCop)
+          # Using default settings: weekly cadence, info threshold, same-rule merging
           npx tsx scripts/analyze.ts \
             --root "${{ github.workspace }}" \
-            --cadence "${{ inputs.cadence || 'weekly' }}" \
+            --cadence "weekly" \
             --output "${{ github.workspace }}/.vibecop-output" \
-            --severity-threshold "${{ inputs.severity_threshold || 'info' }}" \
+            --severity-threshold "info" \
             --confidence-threshold "low" \
-            --merge-strategy "${{ inputs.merge_strategy || 'same-rule' }}" \
-            ${{ inputs.skip_issues == 'true' && '--skip-issues' || '' }}
+            --merge-strategy "same-rule" \
+            ${{ inputs.skip_issues == true && '--skip-issues' || '' }}
 
       - name: Upload SARIF to Code Scanning
         if: always() && hashFiles('.vibecop-output/results.sarif') != ''
