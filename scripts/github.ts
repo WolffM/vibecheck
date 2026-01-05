@@ -20,7 +20,7 @@ let octokitInstance: Octokit | null = null;
  * Get or create Octokit instance.
  * Uses GITHUB_TOKEN from environment.
  */
-export function getOctokit(): Octokit {
+function getOctokit(): Octokit {
   if (!octokitInstance) {
     const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
     if (!token) {
@@ -29,13 +29,6 @@ export function getOctokit(): Octokit {
     octokitInstance = new Octokit({ auth: token });
   }
   return octokitInstance;
-}
-
-/**
- * Set a custom Octokit instance (for testing).
- */
-export function setOctokit(octokit: Octokit): void {
-  octokitInstance = octokit;
 }
 
 // ============================================================================
@@ -321,25 +314,6 @@ export const DEFAULT_LABELS = [
 // ============================================================================
 
 /**
- * Get repository information.
- */
-export async function getRepoInfo(
-  owner: string,
-  repo: string
-): Promise<{ defaultBranch: string }> {
-  const octokit = getOctokit();
-
-  const response = await octokit.rest.repos.get({
-    owner,
-    repo,
-  });
-
-  return {
-    defaultBranch: response.data.default_branch,
-  };
-}
-
-/**
  * Parse repository from GITHUB_REPOSITORY env var.
  */
 export function parseGitHubRepository(): { owner: string; repo: string } | null {
@@ -359,7 +333,7 @@ export function parseGitHubRepository(): { owner: string; repo: string } | null 
 /**
  * Simple delay function for rate limiting.
  */
-export function delay(ms: number): Promise<void> {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

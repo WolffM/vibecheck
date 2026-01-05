@@ -77,7 +77,7 @@ export interface IssuesConfig {
   enabled: boolean;
   label: string;
   max_new_per_run: number;
-  severity_threshold: Severity;
+  severity_threshold: Severity | "info";
   confidence_threshold: Confidence;
   close_resolved: boolean;
   assignees?: string[];
@@ -104,47 +104,6 @@ export interface VibeCopConfig {
   output?: OutputConfig;
   llm?: LlmConfig;
 }
-
-export const DEFAULT_CONFIG: VibeCopConfig = {
-  version: 1,
-  schedule: {
-    cadence: 'weekly',
-    deep_scan: false,
-  },
-  trunk: {
-    enabled: true,
-    arguments: 'check',
-    extra_args: [],
-  },
-  tools: {
-    tsc: { enabled: 'auto' },
-    eslint: { enabled: 'auto' },
-    prettier: { enabled: 'auto' },
-    jscpd: { enabled: 'weekly', min_tokens: 70, threshold: 1 },
-    dependency_cruiser: { enabled: 'weekly' },
-    knip: { enabled: 'monthly' },
-    semgrep: { enabled: 'monthly', config: 'p/default' },
-  },
-  issues: {
-    enabled: true,
-    label: 'vibeCop',
-    max_new_per_run: 25,
-    severity_threshold: 'medium',
-    confidence_threshold: 'high',
-    close_resolved: false,
-    assignees: [],
-    project: null,
-  },
-  output: {
-    sarif: true,
-    llm_json: true,
-    artifact_retention_days: 14,
-  },
-  llm: {
-    agent_hint: 'codex',
-    pr_branch_prefix: 'vibecop/',
-  },
-};
 
 // ============================================================================
 // Repo Detection Types
