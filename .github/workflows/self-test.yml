@@ -1,0 +1,65 @@
+# vibeCop Self-Test Workflow
+#
+# This workflow runs vibeCop on itself to:
+# 1. Test that the pipeline works
+# 2. Create demo issues from test-fixtures
+# 3. Dogfood our own tooling
+
+name: vibeCop Analysis
+
+on:
+  # Weekly schedule
+  schedule:
+    - cron: "17 3 * * 1"
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      cadence:
+        description: "Analysis depth"
+        required: false
+        default: "weekly"
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+      severity_threshold:
+        description: "Minimum severity for issues"
+        required: false
+        default: "info"
+        type: choice
+        options:
+          - critical
+          - high
+          - medium
+          - low
+          - info
+      merge_strategy:
+        description: "How to group findings into issues"
+        required: false
+        default: "same-rule"
+        type: choice
+        options:
+          - none
+          - same-file
+          - same-rule
+          - same-tool
+      skip_issues:
+        description: "Skip issue creation (dry run)"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  analyze:
+    uses: ./.github/workflows/reusable-analyze.yml
+    with:
+      cadence: ${{ inputs.cadence || 'weekly' }}
+      severity_threshold: ${{ inputs.severity_threshold || 'info' }}
+      confidence_threshold: "low"
+      merge_strategy: ${{ inputs.merge_strategy || 'same-rule' }}
+      skip_issues: ${{ inputs.skip_issues || false }}
+      issue_label: "vibeCop"
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
