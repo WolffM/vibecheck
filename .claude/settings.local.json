@@ -14,7 +14,8 @@
       "Bash(pnpm analyze:*)",
       "Bash(git commit:*)",
       "Bash(gh workflow run:*)",
-      "Bash(gh run:*)"
+      "Bash(gh run:*)",
+      "Bash(pnpm typecheck:*)"
     ]
   }
 }
