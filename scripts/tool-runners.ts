@@ -680,12 +680,8 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
 
     // Use quickstart ruleset if no config provided
     const rulesets = configPath || "rulesets/java/quickstart.xml";
-    // Include Java-specific excludes
-    const excludeDirs = [
-      ...COMMON_EXCLUDE_DIRS.slice(0, 3),
-      "build",
-      "target",
-    ].join(",");
+    // PMD 7.x requires a file for --ignore-list, so we use glob patterns instead
+    // to exclude common directories from scanning
     const args = [
       "check",
       "-d",
@@ -695,8 +691,6 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
       "-f",
       "json",
       "--no-progress",
-      "--ignore-list",
-      excludeDirs,
     ];
 
     const result = spawnSync("pmd", args, {
