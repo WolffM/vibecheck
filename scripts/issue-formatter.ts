@@ -7,7 +7,6 @@
 import {
   generateFingerprintMarker,
   generateRunMetadataMarker,
-  isTestFixtureFinding,
   shortFingerprint,
 } from "./fingerprints.js";
 import { getRuleDocUrl } from "./rule-docs.js";
@@ -112,11 +111,58 @@ export function generateIssueTitle(finding: Finding): string {
 // ============================================================================
 
 /**
+ * Map tool name to language for labeling.
+ * Returns null for tools that work across languages (semgrep, trunk, jscpd).
+ */
+export function getToolLanguage(tool: string): string | null {
+  const toolLower = tool.toLowerCase();
+
+  // TypeScript/JavaScript tools
+  if (["tsc", "eslint", "dependency-cruiser", "knip"].includes(toolLower)) {
+    return "typescript";
+  }
+
+  // Python tools
+  if (["ruff", "mypy", "bandit"].includes(toolLower)) {
+    return "python";
+  }
+
+  // Java tools
+  if (["pmd", "spotbugs"].includes(toolLower)) {
+    return "java";
+  }
+
+  // Multi-language tools return null
+  return null;
+}
+
+/**
+ * Detect which languages have findings in a set of findings.
+ * Returns a set of language names (typescript, python, java).
+ */
+export function detectLanguagesInFindings(findings: Finding[]): Set<string> {
+  const languages = new Set<string>();
+
+  for (const finding of findings) {
+    const lang = getToolLanguage(finding.tool);
+    if (lang) {
+      languages.add(lang);
+    }
+  }
+
+  return languages;
+}
+
+/**
  * Get labels for a finding.
+ * @param finding - The finding to label
+ * @param baseLabel - The base label (e.g., "vibeCop")
+ * @param languagesInRun - Set of languages detected in this run (for conditional lang: labels)
  */
 export function getLabelsForFinding(
   finding: Finding,
   baseLabel: string,
+  languagesInRun?: Set<string>,
 ): string[] {
   const labels = [
     baseLabel,
@@ -130,9 +176,12 @@ export function getLabelsForFinding(
     labels.push("autofix:safe");
   }
 
-  // Add "demo" label for test-fixtures findings
-  if (isTestFixtureFinding(finding)) {
-    labels.push("demo");
+  // Add language label only when multiple languages have findings
+  if (languagesInRun && languagesInRun.size > 1) {
+    const lang = getToolLanguage(finding.tool);
+    if (lang) {
+      labels.push(`lang:${lang}`);
+    }
   }
 
   return labels;

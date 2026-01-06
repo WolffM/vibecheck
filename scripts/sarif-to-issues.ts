@@ -21,6 +21,7 @@ import {
   withRateLimit,
 } from "./github.js";
 import {
+  detectLanguagesInFindings,
   generateIssueBody,
   generateIssueTitle,
   getLabelsForFinding,
@@ -113,6 +114,14 @@ export async function processFindings(
     uniqueFindings.length - actionableFindings.length;
   console.log(`${actionableFindings.length} findings meet thresholds`);
 
+  // Detect which languages have findings (for conditional lang: labels)
+  const languagesInRun = detectLanguagesInFindings(actionableFindings);
+  if (languagesInRun.size > 1) {
+    console.log(
+      `Multiple languages detected: ${[...languagesInRun].join(", ")} - adding lang: labels`,
+    );
+  }
+
   // Track which fingerprints we've seen in this run
   const seenFingerprints = new Set<string>();
 
@@ -204,7 +213,7 @@ export async function processFindings(
             number: existingIssue!.number,
             title, // Update title too
             body,
-            labels: getLabelsForFinding(finding, issuesConfig.label),
+            labels: getLabelsForFinding(finding, issuesConfig.label, languagesInRun),
           }),
         );
 
@@ -221,7 +230,7 @@ export async function processFindings(
       console.log(`Creating issue for ${finding.ruleId}`);
       const title = generateIssueTitle(finding);
       const body = generateIssueBody(finding, context);
-      const labels = getLabelsForFinding(finding, issuesConfig.label);
+      const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
 
       const issueNumber = await withRateLimit(() =>
         createIssue(owner, repo, {
