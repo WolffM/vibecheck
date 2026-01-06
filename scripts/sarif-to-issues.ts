@@ -8,6 +8,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
+import { getSuggestedFix } from "./build-llm-json.js";
 import {
   deduplicateFindings,
   FLAP_PROTECTION_RUNS,
@@ -133,6 +134,7 @@ function generateIssueBody(finding: Finding, context: RunContext): string {
 
   // Handle multiple locations - always show all, use collapsible for large lists
   let additionalLocations = "";
+  let prioritizationHint = "";
   if (finding.locations.length > 1) {
     const otherLocations = finding.locations.slice(1);
     const locationLines = otherLocations.map((loc) => {
@@ -146,6 +148,20 @@ function generateIssueBody(finding: Finding, context: RunContext): string {
     } else {
       // Use collapsible section for more than 10 locations
       additionalLocations = `\n\n<details>\n<summary><strong>View all ${otherLocations.length} additional locations</strong></summary>\n\n${locationLines.join("\n")}\n</details>`;
+    }
+
+    // Add prioritization hint for large issues
+    if (finding.locations.length >= 5) {
+      const uniqueFiles = [...new Set(finding.locations.map((l) => l.path))];
+      // Find the file with most occurrences
+      const fileCounts = new Map<string, number>();
+      for (const loc of finding.locations) {
+        fileCounts.set(loc.path, (fileCounts.get(loc.path) || 0) + 1);
+      }
+      const sortedFiles = [...fileCounts.entries()].sort((a, b) => b[1] - a[1]);
+      const topFile = sortedFiles[0];
+
+      prioritizationHint = `\n\n> **💡 Where to start:** Focus on \`${topFile[0].split("/").pop()}\` first (${topFile[1]} occurrences). ${uniqueFiles.length > 3 ? `This issue spans ${uniqueFiles.length} files - consider fixing incrementally.` : ""}`;
     }
   }
 
@@ -175,18 +191,30 @@ function generateIssueBody(finding: Finding, context: RunContext): string {
     }
   }
 
-  // Build suggested fix section
-  const suggestedFix = finding.suggestedFix;
+  // Build suggested fix section - always generate one using templates
+  const suggestedFix = finding.suggestedFix || getSuggestedFix(finding);
   let fixSection = "";
   if (suggestedFix) {
     fixSection = `\n## How to Fix\n\n**Goal:** ${suggestedFix.goal}\n\n**Steps:**\n${suggestedFix.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}\n\n**Done when:**\n${suggestedFix.acceptance.map((a) => `- [ ] ${a}`).join("\n")}`;
   }
 
   // Build rule documentation link
-  const ruleDocUrl = getRuleDocUrl(finding.tool, finding.ruleId);
-  const ruleLink = ruleDocUrl
-    ? `[\`${finding.ruleId}\`](${ruleDocUrl})`
-    : `\`${finding.ruleId}\``;
+  // Handle merged rules (e.g., "MD036+MD034+MD040") - show individual links
+  let ruleLink: string;
+  if (finding.ruleId.includes("+")) {
+    const rules = finding.ruleId.split("+");
+    // Create individual links for each rule
+    const ruleLinks = rules.map((r) => {
+      const url = getRuleDocUrl(finding.tool, r);
+      return url ? `[\`${r}\`](${url})` : `\`${r}\``;
+    });
+    ruleLink = ruleLinks.join(", ");
+  } else {
+    const ruleDocUrl = getRuleDocUrl(finding.tool, finding.ruleId);
+    ruleLink = ruleDocUrl
+      ? `[\`${finding.ruleId}\`](${ruleDocUrl})`
+      : `\`${finding.ruleId}\``;
+  }
 
   // Build evidence links section
   let referencesSection = "";
@@ -223,7 +251,7 @@ ${severityDesc}
 
 ## Location
 
-${locationSection}${additionalLocations}
+${locationSection}${additionalLocations}${prioritizationHint}
 ${evidenceSection}
 ${fixSection}
 ${referencesSection}
@@ -250,19 +278,46 @@ ${generateRunMetadataMarker(runNumber, timestamp)}
 }
 
 /**
- * Generate the issue title for a finding.
+ * Truncate text to max length, avoiding cutting mid-word.
  */
-function generateIssueTitle(finding: Finding): string {
-  const location = finding.locations[0];
-  const locationHint = location ? ` in ${location.path.split("/").pop()}` : "";
-  const maxLen = 100;
-
-  let title = `[vibeCop] ${finding.title}${locationHint}`;
-  if (title.length > maxLen) {
-    title = title.substring(0, maxLen - 3) + "...";
+function truncateAtWordBoundary(text: string, maxLen: number): string {
+  if (text.length <= maxLen) {
+    return text;
   }
 
-  return title;
+  // Find the last space before maxLen - 3 (to leave room for "...")
+  const truncateAt = maxLen - 3;
+  const lastSpace = text.lastIndexOf(" ", truncateAt);
+
+  // If there's a space within a reasonable distance, cut there
+  // Otherwise, cut at the limit (for single long words)
+  if (lastSpace > truncateAt - 20 && lastSpace > 0) {
+    return text.substring(0, lastSpace) + "...";
+  }
+
+  return text.substring(0, truncateAt) + "...";
+}
+
+function generateIssueTitle(finding: Finding): string {
+  const maxLen = 100;
+
+  // Build location hint based on number of unique files
+  let locationHint = "";
+  if (finding.locations.length > 0) {
+    const uniqueFiles = [
+      ...new Set(finding.locations.map((l) => l.path.split("/").pop())),
+    ];
+    if (uniqueFiles.length === 1) {
+      locationHint = ` in ${uniqueFiles[0]}`;
+    } else if (uniqueFiles.length <= 3) {
+      // Show first file + count for small sets
+      locationHint = ` in ${uniqueFiles[0]} +${uniqueFiles.length - 1} more`;
+    }
+    // For many files, omit location hint (title already says "X files")
+  }
+
+  const title = `[vibeCop] ${finding.title}${locationHint}`;
+  return truncateAtWordBoundary(title, maxLen);
 }
 
 /**

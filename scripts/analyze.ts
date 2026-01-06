@@ -26,7 +26,11 @@ import {
   parseSpotBugsOutput,
 } from "./parsers.js";
 import { buildSarifLog, writeSarifFile } from "./build-sarif.js";
-import { buildLlmJson, writeLlmJsonFile } from "./build-llm-json.js";
+import {
+  buildLlmJson,
+  writeLlmJsonFile,
+  type FindingStats,
+} from "./build-llm-json.js";
 import { processFindings } from "./sarif-to-issues.js";
 import {
   deduplicateFindings,
@@ -404,21 +408,34 @@ function runDependencyCruiser(
   console.log("Running dependency-cruiser...");
 
   try {
-    // Check if dependency-cruiser is available
-    const versionCheck = spawnSync("pnpm", ["exec", "depcruise", "--version"], {
-      cwd: rootPath,
+    // Check if dependency-cruiser is available (globally installed or via npx)
+    const versionCheck = spawnSync("depcruise", ["--version"], {
       encoding: "utf-8",
       shell: true,
     });
 
     if (versionCheck.error || versionCheck.status !== 0) {
-      console.log("  dependency-cruiser not installed, skipping");
-      return [];
+      // Try npx as fallback
+      const npxCheck = spawnSync("npx", ["depcruise", "--version"], {
+        encoding: "utf-8",
+        shell: true,
+      });
+      if (npxCheck.error || npxCheck.status !== 0) {
+        console.log("  dependency-cruiser not installed, skipping");
+        return [];
+      }
     }
 
     // Determine source directories to scan
     const srcDirs: string[] = [];
-    const commonDirs = ["src", "lib", "app", "scripts", "packages"];
+    const commonDirs = [
+      "src",
+      "lib",
+      "app",
+      "scripts",
+      "packages",
+      "test-fixtures",
+    ];
     for (const dir of commonDirs) {
       if (existsSync(join(rootPath, dir))) {
         srcDirs.push(dir);
@@ -438,7 +455,7 @@ function runDependencyCruiser(
     const hasConfig = existsSync(fullConfigPath);
 
     // Build args - use --no-config with --validate for cycle detection if no config
-    const args = ["exec", "depcruise", ...srcDirs, "--output-type", "json"];
+    const args = [...srcDirs, "--output-type", "json"];
 
     if (hasConfig) {
       args.push("--config", config);
@@ -449,12 +466,23 @@ function runDependencyCruiser(
       console.log("  Running with built-in cycle detection (no config file)");
     }
 
-    const result = spawnSync("pnpm", args, {
+    // Try global install first, fall back to npx
+    let result = spawnSync("depcruise", args, {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
       maxBuffer: 50 * 1024 * 1024,
     });
+
+    // If global command failed, try npx
+    if (result.error || (result.status !== 0 && !result.stdout)) {
+      result = spawnSync("npx", ["depcruise", ...args], {
+        cwd: rootPath,
+        encoding: "utf-8",
+        shell: true,
+        maxBuffer: 50 * 1024 * 1024,
+      });
+    }
 
     // dependency-cruiser outputs JSON to stdout even with violations
     const output = result.stdout;
@@ -486,20 +514,26 @@ function runKnip(rootPath: string, configPath?: string): Finding[] {
   console.log("Running knip...");
 
   try {
-    // Check if knip is available
-    const versionCheck = spawnSync("pnpm", ["exec", "knip", "--version"], {
-      cwd: rootPath,
+    // Check if knip is available (globally installed or via npx)
+    const versionCheck = spawnSync("knip", ["--version"], {
       encoding: "utf-8",
       shell: true,
     });
 
     if (versionCheck.error || versionCheck.status !== 0) {
-      console.log("  knip not installed, skipping");
-      return [];
+      // Try npx as fallback
+      const npxCheck = spawnSync("npx", ["knip", "--version"], {
+        encoding: "utf-8",
+        shell: true,
+      });
+      if (npxCheck.error || npxCheck.status !== 0) {
+        console.log("  knip not installed, skipping");
+        return [];
+      }
     }
 
     // Build args - knip auto-detects project structure without config
-    const args = ["exec", "knip", "--reporter", "json"];
+    const args = ["--reporter", "json"];
 
     // Check for config file (optional)
     const config = configPath || "knip.json";
@@ -521,12 +555,23 @@ function runKnip(rootPath: string, configPath?: string): Finding[] {
       }
     }
 
-    const result = spawnSync("pnpm", args, {
+    // Try global install first, fall back to npx
+    let result = spawnSync("knip", args, {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
       maxBuffer: 50 * 1024 * 1024,
     });
+
+    // If global command failed, try npx
+    if (result.error || (result.status !== 0 && !result.stdout)) {
+      result = spawnSync("npx", ["knip", ...args], {
+        cwd: rootPath,
+        encoding: "utf-8",
+        shell: true,
+        maxBuffer: 50 * 1024 * 1024,
+      });
+    }
 
     // knip outputs JSON to stdout, exits with code 1 if issues found
     const output = result.stdout;
@@ -1016,13 +1061,13 @@ export async function analyze(
     console.log(`  jscpd: ${jscpdFindings.length} findings`);
   }
 
-  // dependency-cruiser (weekly/monthly)
+  // dependency-cruiser (weekly) - runs for any JS/TS project, no config needed
   if (
     shouldRunTool(
       config.tools?.dependency_cruiser?.enabled || "weekly",
       profile,
       cadence,
-      () => profile.hasDependencyCruiser,
+      () => profile.hasTypeScript || profile.languages.includes("javascript"),
     )
   ) {
     const depcruiseFindings = runDependencyCruiser(
@@ -1033,13 +1078,13 @@ export async function analyze(
     console.log(`  dependency-cruiser: ${depcruiseFindings.length} findings`);
   }
 
-  // knip (monthly)
+  // knip (weekly) - runs for any JS/TS project, auto-detects without config
   if (
     shouldRunTool(
-      config.tools?.knip?.enabled || "monthly",
+      config.tools?.knip?.enabled || "weekly",
       profile,
       cadence,
-      () => profile.hasKnip,
+      () => profile.hasTypeScript || profile.languages.includes("javascript"),
     )
   ) {
     const knipFindings = runKnip(rootPath, config.tools?.knip?.config_path);
@@ -1216,7 +1261,12 @@ export async function analyze(
 
   // Build LLM JSON (use merged findings for agent consumption)
   if (config.output?.llm_json !== false) {
-    const llmJson = buildLlmJson(mergedFindings, context);
+    const findingStats: FindingStats = {
+      totalFindings: allFindings.length,
+      uniqueFindings: uniqueFindings.length,
+      mergedFindings: mergedFindings.length,
+    };
+    const llmJson = buildLlmJson(mergedFindings, context, findingStats);
     const llmJsonPath = join(outputDir, "results.llm.json");
     writeLlmJsonFile(llmJson, llmJsonPath);
     console.log(`  LLM JSON: ${llmJsonPath}`);
