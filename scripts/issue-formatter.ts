@@ -200,7 +200,6 @@ function buildLocationSection(
 ): {
   mainLocation: string;
   additionalLocations: string;
-  prioritizationHint: string;
 } {
   const location = finding.locations[0];
 
@@ -215,7 +214,6 @@ function buildLocationSection(
 
   // Handle multiple locations - always show all, use collapsible for large lists
   let additionalLocations = "";
-  let prioritizationHint = "";
 
   if (finding.locations.length > 1) {
     const otherLocations = finding.locations.slice(1);
@@ -231,23 +229,9 @@ function buildLocationSection(
       // Use collapsible section for more than 10 locations
       additionalLocations = `\n\n<details>\n<summary><strong>View all ${otherLocations.length} additional locations</strong></summary>\n\n${locationLines.join("\n")}\n</details>`;
     }
-
-    // Add prioritization hint for large issues
-    if (finding.locations.length >= 5) {
-      const uniqueFiles = [...new Set(finding.locations.map((l) => l.path))];
-      // Find the file with most occurrences
-      const fileCounts = new Map<string, number>();
-      for (const loc of finding.locations) {
-        fileCounts.set(loc.path, (fileCounts.get(loc.path) || 0) + 1);
-      }
-      const sortedFiles = [...fileCounts.entries()].sort((a, b) => b[1] - a[1]);
-      const topFile = sortedFiles[0];
-
-      prioritizationHint = `\n\n> **💡 Where to start:** Focus on \`${topFile[0].split("/").pop()}\` first (${topFile[1]} occurrences). ${uniqueFiles.length > 3 ? `This issue spans ${uniqueFiles.length} files - consider fixing incrementally.` : ""}`;
-    }
   }
 
-  return { mainLocation, additionalLocations, prioritizationHint };
+  return { mainLocation, additionalLocations };
 }
 
 /**
@@ -330,36 +314,36 @@ export function generateIssueBody(
   const severityEmoji = getSeverityEmoji(finding.severity);
 
   // Build sections
-  const { mainLocation, additionalLocations, prioritizationHint } =
+  const { mainLocation, additionalLocations } =
     buildLocationSection(finding, repo);
   const evidenceSection = buildEvidenceSection(finding);
   const ruleLink = buildRuleLink(finding);
   const referencesSection = buildReferencesSection(finding);
 
-
-  const body = `${severityEmoji} **${finding.severity.toUpperCase()}** severity · ${finding.confidence} confidence · Effort: ${finding.effort}
-
-${finding.message}
-
-## Details
+  const body = `## Details
 
 | Property | Value |
 |----------|-------|
+| Severity | ${severityEmoji} ${finding.severity.toUpperCase()} |
+| Confidence | ${finding.confidence} |
+| Effort | ${finding.effort} |
 | Tool | \`${finding.tool}\` |
 | Rule | ${ruleLink} |
 | Layer | ${finding.layer} |
 | Autofix | ${finding.autofix === "safe" ? "✅ Safe autofix available" : finding.autofix === "requires_review" ? "⚠️ Autofix requires review" : "Manual fix required"} |
 
+${finding.message}
+
 ## Location
 
-${mainLocation}${additionalLocations}${prioritizationHint}
+${mainLocation}${additionalLocations}
 ${evidenceSection}
 ${referencesSection}
 
 ---
 
 <details>
-<summary>Metadata (for automation)</summary>
+<summary>Metadata</summary>
 
 - **Fingerprint:** \`${shortFingerprint(finding.fingerprint)}\`
 - **Full fingerprint:** \`${finding.fingerprint}\`

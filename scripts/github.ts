@@ -414,10 +414,11 @@ function delay(ms: number): Promise<void> {
 /**
  * Execute with rate limit awareness.
  * Adds delays between API calls to avoid hitting rate limits.
+ * Default 500ms is safer for GitHub's secondary rate limits on content creation.
  */
 export async function withRateLimit<T>(
   fn: () => Promise<T>,
-  delayMs: number = 100,
+  delayMs: number = 500,
 ): Promise<T> {
   const result = await fn();
   await delay(delayMs);
