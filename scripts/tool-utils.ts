@@ -152,6 +152,19 @@ export function safeParseJson<T>(output: string): T | null {
 // Directory Utilities
 // ============================================================================
 
+/** Common directories to exclude from analysis */
+export const COMMON_EXCLUDE_DIRS = [
+  ".trunk",
+  "node_modules",
+  ".git",
+  "build",
+  "target",
+  "dist",
+  "venv",
+  ".venv",
+  "__pycache__",
+];
+
 /**
  * Find existing directories from a list of common source directories.
  */
@@ -163,4 +176,61 @@ export function findSourceDirs(
   const dirs = candidates || defaultCandidates;
 
   return dirs.filter((dir) => existsSync(join(rootPath, dir)));
+}
+
+// ============================================================================
+// Output Processing
+// ============================================================================
+
+/**
+ * Strip ANSI escape codes from output.
+ */
+export function stripAnsiCodes(output: string): string {
+  return output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
+}
+
+/**
+ * Extract JSON object or array from mixed output (may contain ANSI codes, progress text, etc.).
+ * Returns the extracted JSON string or null if not found.
+ */
+export function extractJsonFromMixedOutput(
+  output: string,
+  marker?: string,
+): string | null {
+  // Strip ANSI codes first
+  const clean = stripAnsiCodes(output);
+
+  // If a marker is provided, look for JSON containing that marker
+  if (marker) {
+    const pattern = new RegExp(
+      `\\{[\\s\\S]*"${marker}"[\\s\\S]*\\}(?=\\s*$|\\n)`,
+    );
+    const match = clean.match(pattern);
+    return match ? match[0] : null;
+  }
+
+  // Otherwise try to find any JSON object or array
+  // Look for JSON object
+  const objMatch = clean.match(/\{[\s\S]*\}(?=\s*$|\n)/);
+  if (objMatch) {
+    try {
+      JSON.parse(objMatch[0]);
+      return objMatch[0];
+    } catch {
+      // Not valid JSON, continue
+    }
+  }
+
+  // Look for JSON array
+  const arrMatch = clean.match(/\[[\s\S]*\](?=\s*$|\n)/);
+  if (arrMatch) {
+    try {
+      JSON.parse(arrMatch[0]);
+      return arrMatch[0];
+    } catch {
+      // Not valid JSON
+    }
+  }
+
+  return null;
 }

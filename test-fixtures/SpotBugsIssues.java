@@ -5,10 +5,12 @@
  */
 package testfixtures;
 
-import java.util.*;
+import java.util.List;
+import java.util.Date;
+import java.util.Random;
 import java.io.*;
-import java.sql.*;
 import java.security.*;
+import java.sql.*;
 
 public class SpotBugsIssues {
 

@@ -8,7 +8,12 @@
 
 import { fingerprintFinding } from "./fingerprints.js";
 import {
-  classifyLayer,
+  buildLocation,
+  buildLocationFromRowCol,
+  createFinding,
+  parseResults,
+} from "./parser-utils.js";
+import {
   determineAutofixLevel,
   estimateEffort,
   mapBanditConfidence,
@@ -44,43 +49,19 @@ import type { Finding, JscpdOutput, Location, TscDiagnostic } from "./types.js";
  * file.ts(line,col): error TSxxxx: message
  */
 export function parseTscOutput(diagnostics: TscDiagnostic[]): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const diag of diagnostics) {
-    const location: Location = {
-      path: diag.file,
-      startLine: diag.line,
-      startColumn: diag.column,
-    };
-
+  return parseResults(diagnostics, (diag) => {
     const ruleId = `TS${diag.code}`;
-    const severity = mapTscSeverity(diag.code);
-    const confidence = mapTscConfidence(diag.code);
-    const effort = estimateEffort("tsc", ruleId, 1, false);
-    const layer = classifyLayer("tsc", ruleId);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer,
+    return createFinding({
+      result: diag,
       tool: "tsc",
       ruleId,
-      title: `TypeScript: ${ruleId}`, // Simplified title
+      title: `TypeScript: ${ruleId}`,
       message: diag.message,
-      severity,
-      confidence,
-      effort,
-      autofix: "none",
-      locations: [location],
-      labels: ["vibeCop", "tool:tsc", `severity:${severity}`],
-      rawOutput: diag,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
+      severity: mapTscSeverity(diag.code),
+      confidence: mapTscConfidence(diag.code),
+      location: buildLocation(diag.file, diag.line, diag.column),
     });
-  }
-
-  return findings;
+  });
 }
 
 /**
@@ -192,55 +173,29 @@ export interface DepcruiseOutput {
  * Parse dependency-cruiser JSON output into Findings.
  */
 export function parseDepcruiseOutput(output: DepcruiseOutput): Finding[] {
-  const findings: Finding[] = [];
-
   // Handle both top-level violations and summary.violations
   const violations = output.violations || output.summary?.violations || [];
 
-  for (const violation of violations) {
-    const location: Location = {
-      path: violation.from,
-      startLine: 1, // dependency-cruiser doesn't provide line numbers
-    };
-
+  return parseResults(violations, (violation) => {
     const violationType = violation.type || violation.rule.name;
-    const severity = mapDepcruiseSeverity(violationType);
-    const confidence = mapDepcruiseConfidence(violationType);
-    const effort = estimateEffort(
-      "dependency-cruiser",
-      violationType,
-      1,
-      false,
-    );
-
     let message = `Dependency violation: ${violation.from} -> ${violation.to}`;
     if (violation.cycle) {
       const cycleNames = violation.cycle.map((c) => c.name);
       message = `Circular dependency detected: ${[violation.from, ...cycleNames].join(" -> ")}`;
     }
 
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer: "architecture",
+    return createFinding({
+      result: violation,
       tool: "dependency-cruiser",
       ruleId: violation.rule.name,
       title: `Dependency: ${violation.rule.name}`,
       message,
-      severity,
-      confidence,
-      effort,
-      autofix: "none",
-      locations: [location],
-      labels: ["vibeCop", "tool:dependency-cruiser", `severity:${severity}`],
-      rawOutput: violation,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
+      severity: mapDepcruiseSeverity(violationType),
+      confidence: mapDepcruiseConfidence(violationType),
+      location: buildLocation(violation.from, 1), // dependency-cruiser doesn't provide line numbers
+      layer: "architecture",
     });
-  }
-
-  return findings;
+  });
 }
 
 // ============================================================================
@@ -437,51 +392,31 @@ export interface SemgrepOutput {
  * Parse semgrep JSON output into Findings.
  */
 export function parseSemgrepOutput(output: SemgrepOutput): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const result of output.results) {
-    const location: Location = {
-      path: result.path,
-      startLine: result.start.line,
-      startColumn: result.start.col,
-      endLine: result.end.line,
-      endColumn: result.end.col,
-    };
-
-    const severity = mapSemgrepSeverity(result.extra.severity);
-    const confidence = mapSemgrepConfidence(
-      result.extra.metadata?.confidence as string | undefined,
-    );
+  return parseResults(output.results, (result) => {
     const hasAutofix = !!result.extra.fix;
-    const autofix = hasAutofix ? "requires_review" : "none";
-    const effort = estimateEffort("semgrep", result.check_id, 1, hasAutofix);
-    const layer = classifyLayer("semgrep", result.check_id);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer,
+    return createFinding({
+      result,
       tool: "semgrep",
       ruleId: result.check_id,
       title: `Semgrep: ${result.check_id}`,
       message: result.extra.message,
-      severity,
-      confidence,
-      effort,
-      autofix,
-      locations: [location],
+      severity: mapSemgrepSeverity(result.extra.severity),
+      confidence: mapSemgrepConfidence(
+        result.extra.metadata?.confidence as string | undefined,
+      ),
+      location: buildLocation(
+        result.path,
+        result.start.line,
+        result.start.col,
+        result.end.line,
+        result.end.col,
+      ),
+      hasAutofix,
       evidence: result.extra.lines
         ? { snippet: result.extra.lines }
         : undefined,
-      labels: ["vibeCop", "tool:semgrep", `severity:${severity}`],
-      rawOutput: result,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
     });
-  }
-
-  return findings;
+  });
 }
 
 // ============================================================================
@@ -503,72 +438,46 @@ export interface TrunkOutput {
   issues: TrunkIssue[];
 }
 
+/** Map Trunk level to severity */
+function mapTrunkSeverity(level: string): Finding["severity"] {
+  const normalized = level.toLowerCase().replace("level_", "");
+  switch (normalized) {
+    case "high":
+    case "error":
+      return "high";
+    case "medium":
+    case "warning":
+      return "medium";
+    default:
+      return "low";
+  }
+}
+
+/** Map Trunk linter to confidence */
+function mapTrunkConfidence(linter: string): Finding["confidence"] {
+  return ["tsc", "typescript"].includes(linter.toLowerCase())
+    ? "high"
+    : "medium";
+}
+
 /**
  * Parse Trunk check JSON output into Findings.
  */
 export function parseTrunkOutput(output: TrunkOutput): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const issue of output.issues) {
-    const location: Location = {
-      path: issue.file,
-      startLine: issue.line,
-      startColumn: issue.column,
-    };
-
-    // Map Trunk level to severity (handles LEVEL_HIGH, LEVEL_MEDIUM, LEVEL_LOW)
-    let severity: Finding["severity"];
-    const level = issue.level.toLowerCase().replace("level_", "");
-    switch (level) {
-      case "high":
-      case "error":
-        severity = "high";
-        break;
-      case "medium":
-      case "warning":
-        severity = "medium";
-        break;
-      default:
-        severity = "low";
-    }
-
-    // Infer confidence based on linter
-    let confidence: Finding["confidence"] = "medium";
-    if (["tsc", "typescript"].includes(issue.linter.toLowerCase())) {
-      confidence = "high";
-    }
-
+  return parseResults(output.issues, (issue) => {
     const ruleId = issue.code || `${issue.linter}/unknown`;
-    const layer = classifyLayer("trunk", ruleId);
-    const effort = estimateEffort("trunk", ruleId, 1, false);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer,
+    return createFinding({
+      result: issue,
       tool: "trunk",
       ruleId,
       title: `${issue.linter}: ${issue.code || "issue"}`,
       message: issue.message,
-      severity,
-      confidence,
-      effort,
-      autofix: "none",
-      locations: [location],
-      labels: [
-        "vibeCop",
-        `tool:trunk`,
-        `linter:${issue.linter}`,
-        `severity:${severity}`,
-      ],
-      rawOutput: issue,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
+      severity: mapTrunkSeverity(issue.level),
+      confidence: mapTrunkConfidence(issue.linter),
+      location: buildLocation(issue.file, issue.line, issue.column),
+      extraLabels: [`linter:${issue.linter}`],
     });
-  }
-
-  return findings;
+  });
 }
 
 // ============================================================================
@@ -606,46 +515,25 @@ interface RuffResult {
  * Ruff outputs JSON with --output-format json
  */
 export function parseRuffOutput(output: RuffResult[]): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const result of output) {
-    const location: Location = {
-      path: result.filename,
-      startLine: result.location.row,
-      startColumn: result.location.column,
-      endLine: result.end_location.row,
-      endColumn: result.end_location.column,
-    };
-
-    const severity = mapRuffSeverity(result.code);
-    const confidence = mapRuffConfidence(result.code);
+  return parseResults(output, (result) => {
     const hasAutofix = !!result.fix;
-    const autofix = determineAutofixLevel("ruff", result.code, hasAutofix);
-    const effort = estimateEffort("ruff", result.code, 1, hasAutofix);
-    const layer = classifyLayer("ruff", result.code);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer,
+    return createFinding({
+      result,
       tool: "ruff",
       ruleId: result.code,
       title: `Ruff: ${result.code}`,
       message: result.message,
-      severity,
-      confidence,
-      effort,
-      autofix,
-      locations: [location],
-      labels: ["vibeCop", "tool:ruff", `severity:${severity}`],
-      rawOutput: result,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
+      severity: mapRuffSeverity(result.code),
+      confidence: mapRuffConfidence(result.code),
+      location: buildLocationFromRowCol(
+        result.filename,
+        result.location,
+        result.end_location,
+      ),
+      hasAutofix,
+      autofix: determineAutofixLevel("ruff", result.code, hasAutofix),
     });
-  }
-
-  return findings;
+  });
 }
 
 // Mypy JSON output types
@@ -664,48 +552,24 @@ interface MypyError {
  * Mypy outputs JSON with --output json (Python 3.10+) or via mypy-json-report plugin
  */
 export function parseMypyOutput(errors: MypyError[]): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const error of errors) {
+  return parseResults(errors, (error) => {
     // Skip notes unless they're relevant
     if (error.severity === "note" && !error.code) {
-      continue;
+      return null;
     }
 
-    const location: Location = {
-      path: error.file,
-      startLine: error.line,
-      startColumn: error.column,
-    };
-
     const errorCode = error.code || "unknown";
-    const severity = mapMypySeverity(errorCode);
-    const confidence = mapMypyConfidence(errorCode);
-    const effort = estimateEffort("mypy", errorCode, 1, false);
-    const layer = classifyLayer("mypy", errorCode);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer,
+    return createFinding({
+      result: error,
       tool: "mypy",
       ruleId: errorCode,
       title: `Mypy: ${errorCode}`,
       message: error.message + (error.hint ? `\nHint: ${error.hint}` : ""),
-      severity,
-      confidence,
-      effort,
-      autofix: "none",
-      locations: [location],
-      labels: ["vibeCop", "tool:mypy", `severity:${severity}`],
-      rawOutput: error,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
+      severity: mapMypySeverity(errorCode),
+      confidence: mapMypyConfidence(errorCode),
+      location: buildLocation(error.file, error.line, error.column),
     });
-  }
-
-  return findings;
+  });
 }
 
 // Bandit JSON output types
@@ -737,55 +601,32 @@ export interface BanditOutput {
  * Bandit outputs JSON with -f json
  */
 export function parseBanditOutput(output: BanditOutput): Finding[] {
-  const findings: Finding[] = [];
-
-  for (const result of output.results) {
-    const location: Location = {
-      path: result.filename,
-      startLine: result.line_number,
-      startColumn: result.col_offset,
-      endLine:
-        result.line_range.length > 0
-          ? result.line_range[result.line_range.length - 1]
-          : result.line_number,
-      endColumn: result.end_col_offset,
-    };
-
-    const severity = mapBanditSeverity(result.issue_severity);
-    const confidence = mapBanditConfidence(result.issue_confidence);
-    const effort = estimateEffort("bandit", result.test_id, 1, false);
-
-    const finding: Omit<Finding, "fingerprint"> = {
-      layer: "security",
+  return parseResults(output.results, (result) =>
+    createFinding({
+      result,
       tool: "bandit",
       ruleId: result.test_id,
       title: `Bandit: ${result.test_name}`,
       message: result.issue_text,
-      severity,
-      confidence,
-      effort,
-      autofix: "none",
-      locations: [location],
+      severity: mapBanditSeverity(result.issue_severity),
+      confidence: mapBanditConfidence(result.issue_confidence),
+      location: buildLocation(
+        result.filename,
+        result.line_number,
+        result.col_offset,
+        result.line_range.length > 0
+          ? result.line_range[result.line_range.length - 1]
+          : result.line_number,
+        result.end_col_offset,
+      ),
+      layer: "security",
       evidence: {
         snippet: result.code,
         links: [result.more_info, result.issue_cwe.link].filter(Boolean),
       },
-      labels: [
-        "vibeCop",
-        "tool:bandit",
-        `severity:${severity}`,
-        `cwe:${result.issue_cwe.id}`,
-      ],
-      rawOutput: result,
-    };
-
-    findings.push({
-      ...finding,
-      fingerprint: fingerprintFinding(finding),
-    });
-  }
-
-  return findings;
+      extraLabels: [`cwe:${result.issue_cwe.id}`],
+    }),
+  );
 }
 
 // ============================================================================
@@ -827,48 +668,29 @@ export function parsePmdOutput(output: PmdOutput): Finding[] {
   const findings: Finding[] = [];
 
   for (const file of output.files) {
-    for (const violation of file.violations) {
-      const location: Location = {
-        path: file.filename,
-        startLine: violation.beginline,
-        startColumn: violation.begincolumn,
-        endLine: violation.endline,
-        endColumn: violation.endcolumn,
-      };
-
-      const severity = mapPmdSeverity(violation.priority);
-      const confidence = mapPmdConfidence(violation.ruleset);
-      const effort = estimateEffort("pmd", violation.rule, 1, false);
-      const layer = classifyLayer("pmd", violation.rule);
-
-      const finding: Omit<Finding, "fingerprint"> = {
-        layer,
+    const fileFindings = parseResults(file.violations, (violation) =>
+      createFinding({
+        result: violation,
         tool: "pmd",
         ruleId: violation.rule,
         title: `PMD: ${violation.rule}`,
         message: violation.description,
-        severity,
-        confidence,
-        effort,
-        autofix: "none",
-        locations: [location],
+        severity: mapPmdSeverity(violation.priority),
+        confidence: mapPmdConfidence(violation.ruleset),
+        location: buildLocation(
+          file.filename,
+          violation.beginline,
+          violation.begincolumn,
+          violation.endline,
+          violation.endcolumn,
+        ),
         evidence: {
           links: violation.externalInfoUrl ? [violation.externalInfoUrl] : [],
         },
-        labels: [
-          "vibeCop",
-          "tool:pmd",
-          `severity:${severity}`,
-          `ruleset:${violation.ruleset}`,
-        ],
-        rawOutput: violation,
-      };
-
-      findings.push({
-        ...finding,
-        fingerprint: fingerprintFinding(finding),
-      });
-    }
+        extraLabels: [`ruleset:${violation.ruleset}`],
+      }),
+    );
+    findings.push(...fileFindings);
   }
 
   return findings;
@@ -944,55 +766,34 @@ export function parseSpotBugsOutput(output: SpotBugsSarifOutput): Finding[] {
       });
     }
 
-    for (const result of run.results) {
+    const runFindings = parseResults(run.results, (result) => {
       const loc = result.locations[0]?.physicalLocation;
-      if (!loc) continue;
-
-      const location: Location = {
-        path: loc.artifactLocation.uri.replace(/^file:\/\//, ""),
-        startLine: loc.region?.startLine ?? 1,
-        startColumn: loc.region?.startColumn,
-        endLine: loc.region?.endLine,
-        endColumn: loc.region?.endColumn,
-      };
+      if (!loc) return null;
 
       const rank = result.properties?.rank ?? 10;
       const category = result.properties?.category as string | undefined;
-      const confidenceNum = result.properties?.confidence ?? 2;
-
-      const severity = mapSpotBugsSeverity(rank, category);
-      const confidence = mapSpotBugsConfidence(confidenceNum);
-      const effort = estimateEffort("spotbugs", result.ruleId, 1, false);
-      const layer = classifyLayer("spotbugs", result.ruleId);
-
       const ruleInfo = ruleMap.get(result.ruleId);
 
-      const finding: Omit<Finding, "fingerprint"> = {
-        layer,
+      return createFinding({
+        result,
         tool: "spotbugs",
         ruleId: result.ruleId,
         title: `SpotBugs: ${ruleInfo?.name || result.ruleId}`,
         message: result.message.text,
-        severity,
-        confidence,
-        effort,
-        autofix: "none",
-        locations: [location],
+        severity: mapSpotBugsSeverity(rank, category),
+        confidence: mapSpotBugsConfidence(result.properties?.confidence ?? 2),
+        location: buildLocation(
+          loc.artifactLocation.uri.replace(/^file:\/\//, ""),
+          loc.region?.startLine ?? 1,
+          loc.region?.startColumn,
+          loc.region?.endLine,
+          loc.region?.endColumn,
+        ),
         evidence: ruleInfo?.helpUri ? { links: [ruleInfo.helpUri] } : undefined,
-        labels: [
-          "vibeCop",
-          "tool:spotbugs",
-          `severity:${severity}`,
-          ...(category ? [`category:${category}`] : []),
-        ],
-        rawOutput: result,
-      };
-
-      findings.push({
-        ...finding,
-        fingerprint: fingerprintFinding(finding),
+        extraLabels: category ? [`category:${category}`] : [],
       });
-    }
+    });
+    findings.push(...runFindings);
   }
 
   return findings;

@@ -1,26 +1,20 @@
 /**
- * TypeScript Test Fixtures
+ * TypeScript Test Fixtures - Real Errors
  *
- * NOTE: These files are excluded from tsconfig.json to prevent build failures.
- * TypeScript errors are demonstrated here but won't be reported by tsc.
- * Real TypeScript issues are detected in actual project source code.
- *
- * For demo purposes, these errors are covered by ESLint/trunk instead.
+ * This file contains intentional TypeScript errors for testing.
+ * It uses test-fixtures/tsconfig.json which is separate from the main project.
  */
 
 // TS2322: Type 'string' is not assignable to type 'number'
-// @ts-expect-error - Intentional demo error (excluded from tsc)
 const numberValue: number = "this is not a number";
 
 // TS2345: Argument of type 'string' is not assignable to parameter of type 'number'
 function addNumbers(a: number, b: number): number {
   return a + b;
 }
-// @ts-expect-error - Intentional demo error
 addNumbers("one", "two");
 
 // TS2304: Cannot find name
-// @ts-expect-error - Intentional demo error
 const result = nonExistentFunction();
 
 // TS2339: Property does not exist on type
@@ -30,13 +24,26 @@ interface User {
 }
 
 const user: User = { name: "Alice", age: 30 };
-// @ts-expect-error - Intentional demo error
 const email = user.email; // Property 'email' does not exist
 
-// TS7006: Parameter implicitly has 'any' type (with strict mode)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function processData(data: any) {
-  return data.value;
+// TS2741: Property is missing in type
+interface RequiredFields {
+  id: number;
+  name: string;
+  email: string;
 }
 
-export { addNumbers, processData };
+const incomplete: RequiredFields = {
+  id: 1,
+  name: "Test",
+  // missing 'email' property
+};
+
+// TS2554: Expected 2 arguments, but got 1
+function multiply(a: number, b: number): number {
+  return a * b;
+}
+multiply(5);
+
+// Export to make this a module
+export { addNumbers, multiply };

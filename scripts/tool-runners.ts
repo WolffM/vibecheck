@@ -10,11 +10,13 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Finding } from "./types.js";
 import {
+  COMMON_EXCLUDE_DIRS,
+  extractJsonFromMixedOutput,
+  findConfigFile,
+  findSourceDirs,
   isToolAvailable,
   runTool,
-  findConfigFile,
   safeParseJson,
-  findSourceDirs,
 } from "./tool-utils.js";
 import {
   parseTscTextOutput,
@@ -147,14 +149,11 @@ export function runTrunk(
       console.log(`  Trunk stderr: ${stderr}`);
     }
 
-    // Strip ANSI codes before parsing
-    const cleanOutput = output.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
-
-    // Try to find JSON object in output (could start anywhere)
-    const jsonMatch = cleanOutput.match(/\{[\s\S]*"issues"[\s\S]*\}/);
-    if (jsonMatch) {
+    // Extract JSON from mixed output (handles ANSI codes)
+    const jsonStr = extractJsonFromMixedOutput(output, "issues");
+    if (jsonStr) {
       try {
-        const trunkOutput = JSON.parse(jsonMatch[0]);
+        const trunkOutput = JSON.parse(jsonStr);
         const findings = parseTrunkOutput(trunkOutput);
         console.log(`  Parsed ${findings.length} findings from trunk JSON`);
         return findings;
@@ -163,8 +162,8 @@ export function runTrunk(
       }
     } else {
       console.log("  No JSON found in trunk output");
-      if (cleanOutput.length < 1000) {
-        console.log("  Clean output:", cleanOutput);
+      if (output.length < 1000) {
+        console.log("  Output:", output);
       }
     }
   } catch (error) {
@@ -179,8 +178,10 @@ export function runTrunk(
  */
 export function runTsc(rootPath: string): Finding[] {
   console.log("Running TypeScript check...");
+  const allFindings: Finding[] = [];
 
   try {
+    // Check main project
     const result = spawnSync("npx", ["tsc", "--noEmit", "--pretty", "false"], {
       cwd: rootPath,
       encoding: "utf-8",
@@ -190,12 +191,37 @@ export function runTsc(rootPath: string): Finding[] {
     // tsc exits with error code when there are type errors
     const output = result.stdout + result.stderr;
     const diagnostics = parseTscTextOutput(output);
-    return parseTscOutput(diagnostics);
+    allFindings.push(...parseTscOutput(diagnostics));
+
+    // Also check test-fixtures if it has its own tsconfig
+    const testFixturesConfig = join(rootPath, "test-fixtures", "tsconfig.json");
+    if (existsSync(testFixturesConfig)) {
+      console.log("  Also checking test-fixtures...");
+      const fixturesResult = spawnSync(
+        "npx",
+        [
+          "tsc",
+          "--project",
+          testFixturesConfig,
+          "--noEmit",
+          "--pretty",
+          "false",
+        ],
+        {
+          cwd: rootPath,
+          encoding: "utf-8",
+          shell: true,
+        },
+      );
+      const fixturesOutput = fixturesResult.stdout + fixturesResult.stderr;
+      const fixturesDiagnostics = parseTscTextOutput(fixturesOutput);
+      allFindings.push(...parseTscOutput(fixturesDiagnostics));
+    }
   } catch (error) {
     console.warn("TypeScript check failed:", error);
   }
 
-  return [];
+  return allFindings;
 }
 
 /**
@@ -417,13 +443,14 @@ export function runSemgrep(rootPath: string, configPath?: string): Finding[] {
 
     // Use security-audit ruleset by default (works better than 'auto' on Windows)
     const config = configPath || "p/security-audit";
+    const excludeDirs = COMMON_EXCLUDE_DIRS.slice(0, 3).join(","); // .trunk,node_modules,.git
     const args = [
       "scan",
       "--json",
       "--config",
       config,
       "--exclude",
-      ".trunk,node_modules,.git",
+      excludeDirs,
       ".",
     ];
 
@@ -481,13 +508,8 @@ export function runRuff(rootPath: string, configPath?: string): Finding[] {
       return [];
     }
 
-    const args = [
-      "check",
-      "--output-format",
-      "json",
-      "--exclude",
-      ".trunk,node_modules,.git",
-    ];
+    const excludeDirs = COMMON_EXCLUDE_DIRS.slice(0, 3).join(","); // .trunk,node_modules,.git
+    const args = ["check", "--output-format", "json", "--exclude", excludeDirs];
     if (configPath) {
       args.push("--config", configPath);
     }
@@ -531,12 +553,13 @@ export function runMypy(rootPath: string, configPath?: string): Finding[] {
     }
 
     // Use --output=json for native JSON output (Python 3.10+)
-    const args = [
-      "--output",
-      "json",
-      "--exclude",
-      ".trunk,node_modules,.git,venv,.venv",
-    ];
+    // Include Python-specific excludes
+    const excludeDirs = [
+      ...COMMON_EXCLUDE_DIRS.slice(0, 3),
+      "venv",
+      ".venv",
+    ].join(",");
+    const args = ["--output", "json", "--exclude", excludeDirs];
     if (configPath) {
       args.push("--config-file", configPath);
     }
@@ -595,14 +618,13 @@ export function runBandit(rootPath: string, configPath?: string): Finding[] {
       return [];
     }
 
-    const args = [
-      "-f",
-      "json",
-      "-r",
-      ".",
-      "--exclude",
-      ".trunk,node_modules,.git,venv,.venv",
-    ];
+    // Include Python-specific excludes
+    const excludeDirs = [
+      ...COMMON_EXCLUDE_DIRS.slice(0, 3),
+      "venv",
+      ".venv",
+    ].join(",");
+    const args = ["-f", "json", "-r", ".", "--exclude", excludeDirs];
     if (configPath) {
       args.push("-c", configPath);
     }
@@ -646,6 +668,12 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
 
     // Use quickstart ruleset if no config provided
     const rulesets = configPath || "rulesets/java/quickstart.xml";
+    // Include Java-specific excludes
+    const excludeDirs = [
+      ...COMMON_EXCLUDE_DIRS.slice(0, 3),
+      "build",
+      "target",
+    ].join(",");
     const args = [
       "check",
       "-d",
@@ -655,9 +683,8 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
       "-f",
       "json",
       "--no-progress",
-      // Exclude common directories that shouldn't be analyzed
       "--ignore-list",
-      ".trunk,node_modules,.git,build,target",
+      excludeDirs,
     ];
 
     const result = spawnSync("pmd", args, {
@@ -688,18 +715,31 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
   console.log("Running SpotBugs...");
 
   try {
-    // Check if compiled classes exist
+    // Check if compiled classes exist (standard locations + test-fixtures)
     const targetClasses = join(rootPath, "target", "classes");
     const buildClasses = join(rootPath, "build", "classes");
+    const testFixturesClasses = join(
+      rootPath,
+      "test-fixtures",
+      "target",
+      "classes",
+    );
 
-    if (!existsSync(targetClasses) && !existsSync(buildClasses)) {
+    let classesDir: string | null = null;
+    if (existsSync(targetClasses)) {
+      classesDir = targetClasses;
+    } else if (existsSync(buildClasses)) {
+      classesDir = buildClasses;
+    } else if (existsSync(testFixturesClasses)) {
+      classesDir = testFixturesClasses;
+    }
+
+    if (!classesDir) {
       console.log(
-        "  No compiled classes found (target/classes or build/classes), skipping",
+        "  No compiled classes found (target/classes, build/classes, or test-fixtures/target/classes), skipping",
       );
       return [];
     }
-
-    const classesDir = existsSync(targetClasses) ? targetClasses : buildClasses;
 
     const { available } = isToolAvailable("spotbugs", false);
     if (!available) {
