@@ -235,6 +235,21 @@ export async function processFindings(
 
       console.log(`Created issue #${issueNumber}`);
       stats.created++;
+
+      // Add to fingerprint map so we don't create duplicates if multiple
+      // merged findings share the same fingerprint
+      fingerprintMap.set(finding.fingerprint, {
+        number: issueNumber,
+        title,
+        body,
+        state: "open",
+        labels,
+        metadata: {
+          fingerprint: finding.fingerprint,
+          lastSeenRun: context.runNumber,
+          consecutiveMisses: 0,
+        },
+      });
     }
   }
 
