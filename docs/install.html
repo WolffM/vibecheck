@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install vibeCop</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+    }
+    h1 {
+      color: #58a6ff;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #8b949e;
+      margin-bottom: 32px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #161b22;
+      color: #c9d1d9;
+      margin-bottom: 16px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+    input::placeholder {
+      color: #6e7681;
+    }
+    button {
+      width: 100%;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      background: #238636;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    button:disabled {
+      background: #21262d;
+      color: #6e7681;
+      cursor: not-allowed;
+    }
+    .help {
+      margin-top: 24px;
+      padding: 16px;
+      background: #161b22;
+      border-radius: 6px;
+      border: 1px solid #30363d;
+    }
+    .help h3 {
+      margin-top: 0;
+      color: #8b949e;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .help p {
+      margin: 0;
+      color: #8b949e;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .help code {
+      background: #0d1117;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    a {
+      color: #58a6ff;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    .error {
+      color: #f85149;
+      font-size: 14px;
+      margin-top: -12px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">🛡️</div>
+  <h1>Install vibeCop</h1>
+  <p class="subtitle">Add automated code analysis to your repository in one click</p>
+
+  <form id="installForm">
+    <label for="repo">Repository (owner/repo)</label>
+    <input
+      type="text"
+      id="repo"
+      name="repo"
+      placeholder="e.g., octocat/my-project"
+      pattern="^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"
+      required
+    >
+    <p class="error" id="error">Please enter a valid repository (owner/repo)</p>
+
+    <button type="submit" id="submitBtn">Add vibeCop workflow</button>
+  </form>
+
+  <div class="help">
+    <h3>What happens next?</h3>
+    <p>
+      You'll be taken to GitHub to create a new file in your repository.
+      The workflow file will be pre-filled - just click <strong>"Commit changes"</strong> to add vibeCop.
+    </p>
+  </div>
+
+  <div class="help" style="margin-top: 16px;">
+    <h3>What does vibeCop do?</h3>
+    <p>
+      Runs static analysis tools (ESLint, TypeScript, Semgrep, etc.) and creates GitHub issues
+      that AI coding agents can automatically fix.
+      <a href="https://github.com/WolffM/vibecop" target="_blank">Learn more →</a>
+    </p>
+  </div>
+
+  <script>
+    const workflowContent = `# vibeCop Analysis Workflow
+#
+# This workflow runs vibeCop static analysis on your repository.
+# For more info: https://github.com/WolffM/vibecop
+
+name: vibeCop Analysis
+
+on:
+  # Run weekly on Monday at 3am UTC
+  schedule:
+    - cron: "0 3 * * 1"
+
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      cadence:
+        description: "Analysis cadence"
+        required: false
+        default: "weekly"
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+
+jobs:
+  analyze:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run vibeCop
+        uses: WolffM/vibecop@main
+        with:
+          github_token: \${{ secrets.GITHUB_TOKEN }}
+          cadence: \${{ github.event.inputs.cadence || 'weekly' }}
+`;
+
+    const form = document.getElementById('installForm');
+    const repoInput = document.getElementById('repo');
+    const errorEl = document.getElementById('error');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Validate on input
+    repoInput.addEventListener('input', () => {
+      const valid = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repoInput.value);
+      errorEl.classList.toggle('show', repoInput.value && !valid);
+      submitBtn.disabled = repoInput.value && !valid;
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const repo = repoInput.value.trim();
+      if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo)) {
+        errorEl.classList.add('show');
+        return;
+      }
+
+      const encoded = encodeURIComponent(workflowContent);
+      const url = `https://github.com/${repo}/new/main?filename=.github/workflows/vibecop.yml&value=${encoded}`;
+
+      window.location.href = url;
+    });
+  </script>
+</body>
+</html>

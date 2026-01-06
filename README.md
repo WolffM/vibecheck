@@ -16,11 +16,31 @@ vibeCop is a **GitHub Action** that runs static analysis on any repository and t
 - ⚙️ **Configurable**: Per-repo overrides via `vibecop.yml`
 - 📅 **Cadence-aware**: Schedule heavy tools for weekly/monthly runs only
 
-## Quick Start (2 minutes)
+## Quick Start
 
-### Step 1: Add the workflow file
+Choose your preferred installation method:
 
-Create `.github/workflows/vibecop.yml` in your repository:
+### Option 1: One-Click Install (Recommended)
+
+**[Add vibeCop to your repo](https://wolffm.github.io/vibecop/install)** - Enter your repo name and click to create the workflow file.
+
+### Option 2: Direct URL
+
+Replace `OWNER/REPO` with your repository and open this URL:
+
+```
+https://github.com/OWNER/REPO/new/main?filename=.github/workflows/vibecop.yml&value=name%3A%20vibeCop%20Analysis%0A%0Aon%3A%0A%20%20schedule%3A%0A%20%20%20%20-%20cron%3A%20%220%203%20*%20*%201%22%0A%20%20workflow_dispatch%3A%0A%20%20%20%20inputs%3A%0A%20%20%20%20%20%20cadence%3A%0A%20%20%20%20%20%20%20%20description%3A%20%22Analysis%20cadence%22%0A%20%20%20%20%20%20%20%20default%3A%20%22weekly%22%0A%20%20%20%20%20%20%20%20type%3A%20choice%0A%20%20%20%20%20%20%20%20options%3A%20%5Bdaily%2C%20weekly%2C%20monthly%5D%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%20%20issues%3A%20write%0A%20%20security-events%3A%20write%0A%0Ajobs%3A%0A%20%20analyze%3A%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20fetch-depth%3A%200%0A%20%20%20%20%20%20-%20uses%3A%20WolffM%2Fvibecop%40main%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20github_token%3A%20%24%7B%7B%20secrets.GITHUB_TOKEN%20%7D%7D%0A%20%20%20%20%20%20%20%20%20%20cadence%3A%20%24%7B%7B%20inputs.cadence%20%7C%7C%20%27weekly%27%20%7D%7D
+```
+
+This opens GitHub's file editor with the workflow pre-filled. Just click **"Commit changes"**.
+
+### Option 3: Copy the Template
+
+1. Copy [`.github/workflows/vibecop.yml`](.github/workflows/vibecop.yml) from this repo
+2. Add it to your repo at the same path
+3. Commit and push
+
+Or create `.github/workflows/vibecop.yml` manually:
 
 ```yaml
 name: vibeCop Analysis
@@ -48,13 +68,15 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-**That's it!** No other changes needed. The workflow will:
+---
+
+**That's it!** The workflow will:
 
 - Run automatically every Monday at 3am UTC
 - Can be triggered manually from the Actions tab
 - Uses your repo's built-in `GITHUB_TOKEN` (no secrets to configure)
 
-### Step 2: Trigger it manually (optional)
+### Trigger it manually (optional)
 
 1. Go to your repo's **Actions** tab
 2. Click **vibeCop Analysis** in the sidebar
