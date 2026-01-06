@@ -48,7 +48,7 @@ import {
  */
 export function runTrunk(
   rootPath: string,
-  args: string[] = ["check"],
+  args: string[] = ["check", "--all"],
 ): Finding[] {
   console.log("Running Trunk...");
 
@@ -150,10 +150,22 @@ export function runTrunk(
     }
 
     // Extract JSON from mixed output (handles ANSI codes)
-    const jsonStr = extractJsonFromMixedOutput(output, "issues");
+    // Try to find JSON with "issues" field first, then fall back to any JSON
+    let jsonStr = extractJsonFromMixedOutput(output, "issues");
+    if (!jsonStr) {
+      // Trunk may return JSON without issues field when there are no findings
+      jsonStr = extractJsonFromMixedOutput(output);
+    }
+
     if (jsonStr) {
       try {
         const trunkOutput = JSON.parse(jsonStr);
+        // Check if issues field exists
+        if (!trunkOutput.issues || trunkOutput.issues.length === 0) {
+          const fileCount = trunkOutput.checkStats?.fileCount || "unknown";
+          console.log(`  Trunk checked ${fileCount} files, no issues found`);
+          return [];
+        }
         const findings = parseTrunkOutput(trunkOutput);
         console.log(`  Parsed ${findings.length} findings from trunk JSON`);
         return findings;

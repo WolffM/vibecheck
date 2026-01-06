@@ -19,12 +19,21 @@ lint:
   enabled:
     - actionlint@1.7.10
     - checkov@3.2.497
+    - eslint@9.28.0
     - git-diff-check
     - markdownlint@0.45.0
     - osv-scanner@2.3.1
     - prettier@3.6.2
     - trufflehog@3.92.4
     - yamllint@1.37.1
+  # Ensure test-fixtures are scanned (they contain intentional issues for demo)
+  ignore:
+    - linters: [ALL]
+      paths:
+        - node_modules/**
+        - .trunk/**
+        - "*.lock"
+        - pnpm-lock.yaml
 actions:
   enabled:
     - trunk-announce
