@@ -1,12 +1,11 @@
 # vibeCop Self-Test Workflow
 #
 # This workflow runs vibeCop on itself (dogfooding) to:
-# 1. Test that the pipeline works
-# 2. Create demo issues from test-fixtures
+# 1. Test that the action works correctly
+# 2. Catch issues in the vibeCop codebase itself
 # 3. Validate changes before release
 #
-# Note: This is a direct workflow, not using the reusable template,
-# since we ARE the vibeCop repo.
+# Uses the local action (uses: ./) to test the actual composite action.
 
 name: vibeCop Self-Test
 
@@ -15,9 +14,22 @@ on:
   schedule:
     - cron: "17 3 * * 1"
 
+  # Run on push to main to catch issues early
+  push:
+    branches: [main]
+
   # Manual trigger for testing
   workflow_dispatch:
     inputs:
+      cadence:
+        description: "Analysis cadence"
+        required: false
+        default: "weekly"
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
       skip_issues:
         description: "Skip issue creation (dry run)"
         required: false
@@ -40,79 +52,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Use the local action (dogfooding)
+      - name: Run vibeCop
+        uses: ./
         with:
-          node-version: "20"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          cadence: ${{ inputs.cadence || 'weekly' }}
+          severity_threshold: "info"
+          confidence_threshold: "low"
+          merge_strategy: "same-linter"
+          skip_issues: ${{ inputs.skip_issues || 'false' }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup Trunk
-        uses: trunk-io/trunk-action/setup@v1
-
-      - name: Setup Python (for Semgrep)
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Semgrep
-        run: pip install semgrep
-
-      - name: Run Analysis
-        id: analyze
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          # Run the analysis directly (we ARE vibeCop)
-          # Using same-linter to consolidate markdownlint/yamllint issues
-          npx tsx scripts/analyze.ts \
-            --root "${{ github.workspace }}" \
-            --cadence "weekly" \
-            --output "${{ github.workspace }}/.vibecop-output" \
-            --severity-threshold "info" \
-            --confidence-threshold "low" \
-            --merge-strategy "same-linter" \
-            ${{ inputs.skip_issues == true && '--skip-issues' || '' }}
-
-      - name: Upload SARIF to Code Scanning
-        if: always() && hashFiles('.vibecop-output/results.sarif') != ''
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: .vibecop-output/results.sarif
-          category: vibeCop-self-test
-
-      - name: Upload Analysis Artifacts
-        if: always()
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: vibecop-self-test-results
-          path: |
-            .vibecop-output/results.sarif
-            .vibecop-output/results.llm.json
-            .vibecop-output/findings.json
-            .vibecop-output/context.json
+          path: .vibecop-output/
           retention-days: 14
-
-      - name: Summary
-        if: always()
-        run: |
-          echo "## vibeCop Self-Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          if [ -f ".vibecop-output/findings.json" ]; then
-            FINDING_COUNT=$(jq 'length' .vibecop-output/findings.json)
-            echo "**Merged Issues:** $FINDING_COUNT" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            
-            echo "### By Tool" >> $GITHUB_STEP_SUMMARY
-            jq -r 'group_by(.tool) | map({tool: .[0].tool, count: length}) | .[] | "- **\(.tool)**: \(.count)"' .vibecop-output/findings.json >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No findings file generated" >> $GITHUB_STEP_SUMMARY
-          fi
