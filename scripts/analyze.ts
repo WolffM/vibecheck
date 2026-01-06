@@ -225,6 +225,7 @@ function runTrunk(rootPath: string, args: string[] = ["check"]): Finding[] {
     }
 
     const trunkArgs = [...args, "--output=json", "--no-progress"];
+    console.log(`  Running: ${trunkCmd[0]} ${[...trunkCmd.slice(1), ...trunkArgs].join(" ")}`);
 
     const trunkResult = spawnSync(
       trunkCmd[0],
@@ -242,6 +243,7 @@ function runTrunk(rootPath: string, args: string[] = ["check"]): Finding[] {
     const stderr = trunkResult.stderr || "";
 
     console.log(`  Trunk exit code: ${trunkResult.status}`);
+    console.log(`  Trunk cwd: ${rootPath}`);
     if (stderr && stderr.length < 500) {
       console.log(`  Trunk stderr: ${stderr}`);
     }
