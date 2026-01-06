@@ -94,25 +94,48 @@ runs:
           pip install ruff mypy bandit
         fi
 
+    - name: Install JS/TS Analysis Tools
+      shell: bash
+      run: |
+        # Install dependency-cruiser and knip globally for cross-repo analysis
+        # These tools work without config files (depcruise uses --no-config, knip auto-detects)
+        npm install -g dependency-cruiser knip
+
+    - name: Detect Java files
+      id: detect-java
+      shell: bash
+      run: |
+        # Check for Java project files OR Java source files
+        if [ -n "$(find "${{ github.workspace }}" -name "pom.xml" -o -name "build.gradle" -o -name "build.gradle.kts" 2>/dev/null | head -1)" ]; then
+          echo "has_java=true" >> $GITHUB_OUTPUT
+          echo "Java project files detected"
+        elif [ -n "$(find "${{ github.workspace }}" -name "*.java" -type f 2>/dev/null | head -1)" ]; then
+          echo "has_java=true" >> $GITHUB_OUTPUT
+          echo "Java source files detected"
+        else
+          echo "has_java=false" >> $GITHUB_OUTPUT
+          echo "No Java files detected"
+        fi
+
     - name: Setup Java (if needed)
-      if: hashFiles('**/pom.xml', '**/build.gradle', '**/build.gradle.kts') != ''
+      if: steps.detect-java.outputs.has_java == 'true'
       uses: actions/setup-java@v4
       with:
         distribution: "temurin"
         java-version: "17"
 
     - name: Install PMD (if Java detected)
-      if: hashFiles('**/pom.xml', '**/build.gradle', '**/build.gradle.kts') != ''
+      if: steps.detect-java.outputs.has_java == 'true'
       shell: bash
       run: |
-        echo "Java files detected, installing PMD..."
+        echo "Installing PMD..."
         PMD_VERSION="7.0.0"
         curl -L "https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip" -o pmd.zip
         unzip -q pmd.zip -d /tmp
         echo "/tmp/pmd-bin-${PMD_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Install SpotBugs (if Java detected)
-      if: hashFiles('**/pom.xml', '**/build.gradle', '**/build.gradle.kts') != ''
+      if: steps.detect-java.outputs.has_java == 'true'
       shell: bash
       run: |
         echo "Installing SpotBugs..."

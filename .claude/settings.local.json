@@ -5,7 +5,11 @@
       "Bash(gh run view:*)",
       "Bash(cat:*)",
       "Bash(gh issue list:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add Python/Java tools and improve issue formatting\n\nPython static analysis support:\n- Add ruff linting with JSON output parsing\n- Add mypy type checking with JSON report parsing  \n- Add bandit security scanning with JSON output parsing\n- Auto-detect Python repos via pyproject.toml, requirements.txt, setup.py, Pipfile\n\nJava static analysis support:\n- Add PMD code analysis with JSON output parsing\n- Add SpotBugs bytecode analysis with SARIF output parsing\n- Auto-detect Java repos via pom.xml, build.gradle, build.gradle.kts\n- Add test fixture files for Python and Java tools\n\nIssue formatting improvements:\n- Add severity emojis for visual distinction \\(🔴 critical, 🟠 high, etc.\\)\n- Add clickable GitHub file links with line numbers\n- Add rule documentation links \\(ESLint, Semgrep, Ruff, GHSA advisories\\)\n- Add file context headers to evidence snippets\n- Show all locations \\(collapsible for >10\\) instead of truncating\n- Link commit SHAs to GitHub\n- Cleaner, more actionable issue body format\n\nOther improvements:\n- Exclude lock files from jscpd duplicate detection \\(package-lock.json, etc.\\)\n- Fix security layer classification for GHSA/CVE/CWE findings\n- Make knip and dependency-cruiser work without config files\n- Add tool installation steps to action.yml for Python/Java\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(npx knip:*)",
+      "Bash(npx jscpd:*)"
     ]
   }
 }

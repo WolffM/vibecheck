@@ -419,7 +419,21 @@ function mergeFindings(
       ? `${allLocations.length} occurrence${allLocations.length > 1 ? "s" : ""} in ${uniqueFiles[0]}`
       : `${allLocations.length} occurrence${allLocations.length > 1 ? "s" : ""} across ${uniqueFiles.length} files`;
 
-  const message = `${base.message}\n\n**Found ${locationSummary}:**\n${allLocations.map((l) => `- \`${l.path}\` line ${l.startLine}`).join("\n")}`;
+  // Build message - special handling for tools with context-specific base messages
+  let baseMessage: string;
+  if (base.tool === "jscpd" && findings.length > 1) {
+    // jscpd messages say "between X and Y" which is confusing when merged
+    // Calculate total duplicate lines from all findings
+    const totalLines = findings.reduce((sum, f) => {
+      const match = f.title.match(/(\d+)\s*lines/);
+      return sum + (match ? parseInt(match[1], 10) : 0);
+    }, 0);
+    baseMessage = `Found ${totalLines} total duplicate lines across ${uniqueFiles.length} files. Consider extracting shared logic into reusable functions or modules.`;
+  } else {
+    baseMessage = base.message;
+  }
+
+  const message = `${baseMessage}\n\n**Found ${locationSummary}:**\n${allLocations.map((l) => `- \`${l.path}\` line ${l.startLine}`).join("\n")}`;
 
   // Build title based on strategy
   let title: string;
@@ -428,7 +442,13 @@ function mergeFindings(
     const sublinter = extractSublinter(base);
     title = `${sublinter} (${allLocations.length} issues across ${uniqueRules.length} rules)`;
   } else if (allLocations.length > 1) {
-    title = `${base.title} (${allLocations.length} occurrences)`;
+    // For jscpd, don't add occurrence count - the title already shows "X lines" of duplication
+    // Adding "(Y occurrences)" is redundant and confusing
+    if (base.tool === "jscpd") {
+      title = base.title;
+    } else {
+      title = `${base.title} (${allLocations.length} occurrences)`;
+    }
   } else {
     title = base.title;
   }
