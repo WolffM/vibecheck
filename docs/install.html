@@ -119,16 +119,15 @@
   <p class="subtitle">Add automated code analysis to your repository in one click</p>
 
   <form id="installForm">
-    <label for="repo">Repository (owner/repo)</label>
+    <label for="repo">Repository (owner/repo or GitHub URL)</label>
     <input
       type="text"
       id="repo"
       name="repo"
-      placeholder="e.g., octocat/my-project"
-      pattern="^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$"
+      placeholder="e.g., octocat/my-project or https://github.com/octocat/my-project"
       required
     >
-    <p class="error" id="error">Please enter a valid repository (owner/repo)</p>
+    <p class="error" id="error">Please enter a valid repository (owner/repo or GitHub URL)</p>
 
     <button type="submit" id="submitBtn">Add vibeCop workflow</button>
   </form>
@@ -204,9 +203,32 @@ jobs:
     const errorEl = document.getElementById('error');
     const submitBtn = document.getElementById('submitBtn');
 
+    // Extract owner/repo from various input formats
+    function parseRepo(input) {
+      const trimmed = input.trim();
+
+      // Try to match GitHub URL formats
+      // https://github.com/owner/repo
+      // https://github.com/owner/repo/anything
+      // github.com/owner/repo
+      const urlMatch = trimmed.match(/(?:https?:\/\/)?github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/);
+      if (urlMatch) {
+        return `${urlMatch[1]}/${urlMatch[2]}`;
+      }
+
+      // Try owner/repo format
+      const simpleMatch = trimmed.match(/^([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)$/);
+      if (simpleMatch) {
+        return trimmed;
+      }
+
+      return null;
+    }
+
     // Validate on input
     repoInput.addEventListener('input', () => {
-      const valid = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repoInput.value);
+      const repo = parseRepo(repoInput.value);
+      const valid = repo !== null;
       errorEl.classList.toggle('show', repoInput.value && !valid);
       submitBtn.disabled = repoInput.value && !valid;
     });
@@ -214,8 +236,8 @@ jobs:
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      const repo = repoInput.value.trim();
-      if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repo)) {
+      const repo = parseRepo(repoInput.value);
+      if (!repo) {
         errorEl.classList.add('show');
         return;
       }
