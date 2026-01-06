@@ -153,26 +153,6 @@ export function safeParseJson<T>(output: string): T | null {
 // ============================================================================
 
 /**
- * Common directories to exclude from analysis.
- * These are tool-specific data, build artifacts, dependencies, etc.
- */
-export const EXCLUDE_DIRS = [
-  ".trunk",
-  ".git",
-  "node_modules",
-  ".venv",
-  "venv",
-  "__pycache__",
-  ".cache",
-  "dist",
-  "build",
-  "target",
-  ".next",
-  ".nuxt",
-  "coverage",
-];
-
-/**
  * Find existing directories from a list of common source directories.
  */
 export function findSourceDirs(
