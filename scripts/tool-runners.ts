@@ -226,7 +226,12 @@ export function runTsc(rootPath: string): Finding[] {
         },
       );
       const fixturesOutput = fixturesResult.stdout + fixturesResult.stderr;
+      // Debug: Show first 500 chars of output if any
+      if (fixturesOutput.trim()) {
+        console.log(`  tsc output (first 500 chars): ${fixturesOutput.substring(0, 500)}`);
+      }
       const fixturesDiagnostics = parseTscTextOutput(fixturesOutput);
+      console.log(`  Parsed ${fixturesDiagnostics.length} diagnostics from test-fixtures`);
       allFindings.push(...parseTscOutput(fixturesDiagnostics));
     }
   } catch (error) {
