@@ -10,6 +10,7 @@
 import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { analyze } from "../src/core/analyze.js";
+import { DEFAULT_MERGE_STRATEGY } from "../src/core/types.js";
 import {
   generateIssueBody,
   generateIssueTitle,
@@ -59,7 +60,7 @@ async function main() {
     skipIssues: true,
     severityThreshold: "low",
     confidenceThreshold: "medium",
-    mergeStrategy: "same-rule", // Match action.yml default
+    mergeStrategy: DEFAULT_MERGE_STRATEGY,
     outputDir,
   });
 

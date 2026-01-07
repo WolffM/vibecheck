@@ -16,6 +16,17 @@ export type Confidence = "low" | "medium" | "high";
 export type AutofixLevel = "none" | "safe" | "requires_review";
 export type Layer = "code" | "architecture" | "system" | "security";
 
+// Merge strategy for grouping findings into issues
+export type MergeStrategy =
+  | "none"
+  | "same-file"
+  | "same-rule"
+  | "same-tool"
+  | "same-linter";
+
+/** Default merge strategy - single source of truth for all configs */
+export const DEFAULT_MERGE_STRATEGY: MergeStrategy = "same-rule";
+
 interface ToolConfig {
   enabled: ToolEnablement;
   [key: string]: unknown;

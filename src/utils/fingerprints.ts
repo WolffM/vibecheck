@@ -8,8 +8,12 @@
  */
 
 import { createHash } from "node:crypto";
-import type { Finding } from "../core/types.js";
+import type { Finding, MergeStrategy } from "../core/types.js";
+import { DEFAULT_MERGE_STRATEGY } from "../core/types.js";
 import { groupBy } from "./shared.js";
+
+// Re-export for backwards compatibility
+export type { MergeStrategy } from "../core/types.js";
 
 /**
  * Line bucket size for fingerprinting.
@@ -227,13 +231,6 @@ export function deduplicateFindings<T extends { fingerprint: string }>(
 // Issue Merging
 // ============================================================================
 
-export type MergeStrategy =
-  | "none"
-  | "same-file"
-  | "same-rule"
-  | "same-tool"
-  | "same-linter";
-
 /**
  * Check if a finding is from the test-fixtures directory.
  * Test-fixtures findings are kept separate (as "demo" issues) from real issues.
@@ -385,7 +382,7 @@ function formatLocationsGroupedByFile(
  */
 function mergeFindings(
   findings: Finding[],
-  strategy: MergeStrategy = "same-file",
+  strategy: MergeStrategy = DEFAULT_MERGE_STRATEGY,
 ): Omit<Finding, "fingerprint"> {
   if (findings.length === 0) {
     throw new Error("Cannot merge empty findings array");
@@ -570,7 +567,7 @@ function mergeFindings(
  */
 export function mergeIssues(
   findings: Finding[],
-  strategy: MergeStrategy = "same-file",
+  strategy: MergeStrategy = DEFAULT_MERGE_STRATEGY,
 ): Finding[] {
   if (strategy === "none") {
     return findings;

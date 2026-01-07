@@ -20,7 +20,6 @@ import { processFindings } from "../github/sarif-to-issues.js";
 import {
   deduplicateFindings,
   mergeIssues,
-  type MergeStrategy,
 } from "../utils/fingerprints.js";
 import { buildRepoInfo, getRunNumber } from "../utils/shared.js";
 import {
@@ -35,12 +34,13 @@ import type {
   Cadence,
   Confidence,
   Finding,
+  MergeStrategy,
   RepoProfile,
   RunContext,
   Severity,
   VibeCopConfig,
 } from "./types.js";
-import { DEFAULT_CONFIG } from "./types.js";
+import { DEFAULT_CONFIG, DEFAULT_MERGE_STRATEGY } from "./types.js";
 
 // ============================================================================
 // Exported Types
@@ -84,7 +84,7 @@ export async function analyze(
   const cadence = options.cadence || "weekly";
   const severityThreshold = options.severityThreshold || "info";
   const confidenceThreshold = options.confidenceThreshold || "low";
-  const mergeStrategy = options.mergeStrategy || "same-rule";
+  const mergeStrategy = options.mergeStrategy || DEFAULT_MERGE_STRATEGY;
   const outputDir = options.outputDir || join(rootPath, ".vibecheck-output");
 
   // Validate threshold values

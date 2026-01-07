@@ -648,12 +648,12 @@
   </div>
 
   <script>
-    // Default values
+    // Default values - keep mergeStrategy in sync with DEFAULT_MERGE_STRATEGY in src/core/types.ts
     const DEFAULTS = {
       cadence: 'manual',
       severity: 'low',
       confidence: 'medium',
-      mergeStrategy: 'same-rule'
+      mergeStrategy: 'same-rule'  // Source of truth: src/core/types.ts
     };
 
     // All tools that are enabled by default

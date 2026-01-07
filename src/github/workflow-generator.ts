@@ -2,14 +2,17 @@
  * Workflow Generator Module
  *
  * Generates GitHub Actions workflow YAML for vibeCheck installation.
- * This module is shared between the install page (browser) and tests (Node.js).
+ * Used by tests. The install page (docs/install.html) has its own copy
+ * that should be kept in sync with DEFAULT_MERGE_STRATEGY in types.ts.
  */
+
+import { DEFAULT_MERGE_STRATEGY, type MergeStrategy } from "../core/types.js";
 
 export interface WorkflowOptions {
   cadence: 'manual' | 'daily' | 'weekly' | 'monthly';
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   confidence: 'low' | 'medium' | 'high';
-  mergeStrategy: 'none' | 'same-file' | 'same-rule' | 'same-linter' | 'same-tool';
+  mergeStrategy: MergeStrategy;
   disabledTools: string[];
 }
 
@@ -17,7 +20,7 @@ export const DEFAULTS: WorkflowOptions = {
   cadence: 'manual',
   severity: 'low',
   confidence: 'medium',
-  mergeStrategy: 'same-rule',
+  mergeStrategy: DEFAULT_MERGE_STRATEGY,
   disabledTools: [],
 };
 
