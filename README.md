@@ -79,6 +79,32 @@ Customize the action in your workflow file:
 | `confidence_threshold` | Min confidence for issues         | `medium`    |
 | `merge_strategy`       | How to group findings into issues | `same-rule` |
 | `skip_issues`          | Skip issue creation (dry run)     | `false`     |
+| `create_config_pr`     | Create PR with generated configs  | `false`     |
+
+### Auto-commit Config Files (Optional)
+
+On first run, vibeCheck generates config files (`.trunk/`, etc.) that are lost after the workflow ends. 
+To persist these and speed up future runs, enable `create_config_pr`:
+
+```yaml
+permissions:
+  contents: write        # Required for pushing branch
+  pull-requests: write   # Required for creating PR
+  issues: write
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: WolffM/vibecheck@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          create_config_pr: "true"  # Creates PR with .trunk/ etc.
+```
+
+This creates a one-time PR adding the config files to your repo.
 
 ### Per-Repo Configuration (Optional)
 
