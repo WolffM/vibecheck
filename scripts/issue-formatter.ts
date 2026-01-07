@@ -374,20 +374,22 @@ function buildEvidenceSection(finding: Finding): string {
   const language = inferLanguageFromPath(primaryLoc?.path);
 
   const formattedSnippets = limitedSnippets.map((s, index) => {
-    const lines = s.split("\n");
+    const trimmedSnippet = s.trim();
+    const lines = trimmedSnippet.split("\n");
     const content =
       lines.length > 50
         ? lines.slice(0, 50).join("\n") + "\n... (truncated)"
-        : s;
+        : trimmedSnippet;
 
     // Check if snippet already has embedded file context (from merged findings)
-    const hasEmbeddedContext = s.startsWith("📄 ");
+    // This happens when findings are merged and snippets already have "📄 path:line" headers
+    const hasEmbeddedContext = trimmedSnippet.startsWith("📄 ");
 
     // Get location for this snippet (fall back to first if not available)
     const loc = finding.locations[index] || primaryLoc;
 
     // Build consistent file header: "📄 path/to/file.ext:line"
-    // Skip if snippet already has embedded context
+    // Skip if snippet already has embedded context to avoid duplication
     let fileHeader = "";
     if (loc && !hasEmbeddedContext) {
       const lineInfo =
@@ -397,7 +399,7 @@ function buildEvidenceSection(finding: Finding): string {
       fileHeader = `📄 ${loc.path}:${lineInfo}\n`;
     }
 
-    return `\`\`\`${language}\n${fileHeader}${content.trim()}\n\`\`\``;
+    return `\`\`\`${language}\n${fileHeader}${content}\n\`\`\``;
   });
 
   if (formattedSnippets.length === 1) {
