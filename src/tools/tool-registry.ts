@@ -5,6 +5,8 @@
  * Provides a data-driven approach to tool execution.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type {
   Cadence,
   Finding,
@@ -52,17 +54,13 @@ export interface ToolDefinition {
 // ============================================================================
 
 /**
- * Linters that Trunk can run natively.
- * When Trunk is enabled, we skip these standalone tools to avoid duplicates.
+ * Map of tool names to their Trunk linter equivalents.
+ * Used to check if Trunk has these linters enabled before skipping.
  */
-const TRUNK_MANAGED_LINTERS: Record<string, ToolName[]> = {
-  // Python linters that Trunk manages
-  python: ["ruff", "bandit", "mypy"],
-  // JS/TS linters that Trunk manages (via eslint, etc.)
-  javascript: [],
-  typescript: [],
-  // Java linters
-  java: [],
+const TOOL_TO_TRUNK_LINTER: Record<string, string> = {
+  ruff: "ruff",
+  bandit: "bandit",
+  mypy: "mypy",
 };
 
 /**
@@ -199,8 +197,39 @@ function getToolConfig(
 }
 
 /**
+ * Read the enabled linters from trunk.yaml if it exists.
+ * Returns a Set of linter names that Trunk has enabled.
+ */
+function getTrunkEnabledLinters(rootPath: string): Set<string> {
+  const trunkYaml = join(rootPath, ".trunk", "trunk.yaml");
+  if (!existsSync(trunkYaml)) {
+    return new Set();
+  }
+
+  try {
+    const content = readFileSync(trunkYaml, "utf-8");
+    // Simple YAML parsing for the enabled linters list
+    // Looks for patterns like "    - ruff@1.2.3" or "    - ruff"
+    const enabledLinters = new Set<string>();
+    const lintSection = content.match(/lint:\s*\n\s*enabled:\s*\n((?:\s+-[^\n]+\n)+)/);
+    if (lintSection) {
+      const lines = lintSection[1].split("\n");
+      for (const line of lines) {
+        const match = line.match(/^\s+-\s+([a-z-]+)/i);
+        if (match) {
+          enabledLinters.add(match[1].toLowerCase());
+        }
+      }
+    }
+    return enabledLinters;
+  } catch {
+    return new Set();
+  }
+}
+
+/**
  * Get tools that should run for a given profile and cadence.
- * Skips standalone tools when Trunk is enabled and covers them.
+ * Skips standalone tools when Trunk is enabled AND has those linters configured.
  */
 export function getToolsToRun(
   profile: RepoProfile,
@@ -211,23 +240,17 @@ export function getToolsToRun(
   const trunkConfig = getToolConfig(config, "trunk");
   const trunkEnabled = trunkConfig?.enabled !== false; // Trunk enabled by default
 
-  // Get tools that Trunk would manage for this profile's languages
-  const trunkManagedTools = new Set<string>();
-  if (trunkEnabled) {
-    for (const lang of profile.languages) {
-      const managed = TRUNK_MANAGED_LINTERS[lang] || [];
-      for (const tool of managed) {
-        trunkManagedTools.add(tool);
-      }
-    }
-  }
+  // Get the actual linters that Trunk has enabled in trunk.yaml
+  const trunkLinters = trunkEnabled ? getTrunkEnabledLinters(profile.rootPath) : new Set<string>();
 
   return TOOL_REGISTRY.filter((tool) => {
     const toolConfig = getToolConfig(config, tool.configKey);
     const enabled = toolConfig?.enabled ?? tool.defaultCadence;
 
-    // Skip tools that Trunk already covers (unless explicitly enabled)
-    if (trunkEnabled && trunkManagedTools.has(tool.name) && toolConfig?.enabled === undefined) {
+    // Skip tools that Trunk already covers (unless explicitly enabled in vibecheck config)
+    // Only skip if Trunk actually has the equivalent linter enabled in trunk.yaml
+    const trunkLinter = TOOL_TO_TRUNK_LINTER[tool.name];
+    if (trunkEnabled && trunkLinter && trunkLinters.has(trunkLinter) && toolConfig?.enabled === undefined) {
       console.log(`  Skipping ${tool.name} (covered by Trunk)`);
       return false;
     }
