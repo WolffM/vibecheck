@@ -12,7 +12,7 @@ import {
   DEFAULTS,
   DEFAULT_TOOLS,
   type WorkflowOptions,
-} from './workflow-generator.js';
+} from '../src/github/workflow-generator.js';
 
 /** Create test options with defaults and optional overrides */
 function createTestOptions(overrides: Partial<WorkflowOptions> = {}): WorkflowOptions {

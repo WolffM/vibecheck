@@ -42,7 +42,7 @@ export default tseslint.config(
   },
   // Scripts - allow console.log (it's a CLI tool)
   {
-    files: ["scripts/**/*.ts"],
+    files: ["src/**/*.ts", "tests/**/*.ts"],
     rules: {
       "no-console": "off",
     },

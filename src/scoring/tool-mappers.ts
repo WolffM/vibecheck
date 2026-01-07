@@ -4,7 +4,7 @@
  * Maps tool-specific outputs to normalized severity and confidence scores.
  */
 
-import type { Confidence, Severity } from "../types.js";
+import type { Confidence, Severity } from "../core/types.js";
 
 // ============================================================================
 // ESLint Mappings

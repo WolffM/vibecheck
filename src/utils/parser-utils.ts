@@ -6,7 +6,7 @@
  */
 
 import { fingerprintFinding } from "./fingerprints.js";
-import { classifyLayer } from "./scoring.js";
+import { classifyLayer } from "../scoring.js";
 import type {
   AutofixLevel,
   Confidence,
@@ -16,7 +16,7 @@ import type {
   Location,
   Severity,
   ToolName,
-} from "./types.js";
+} from "../core/types.js";
 
 // ============================================================================
 // Path Normalization

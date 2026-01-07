@@ -26,7 +26,7 @@ import {
   determineAutofixLevel,
   meetsThresholds,
   compareFindingsForSort,
-} from './scoring.js';
+} from '../src/scoring.js';
 
 describe('severity ordering', () => {
   it('should have correct order', () => {

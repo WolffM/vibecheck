@@ -10,18 +10,18 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { detectRepo } from "./repo-detect.js";
-import { buildSarifLog, writeSarifFile } from "./build-sarif.js";
+import { buildSarifLog, writeSarifFile } from "../output/build-sarif.js";
 import {
   buildLlmJson,
   writeLlmJsonFile,
   type FindingStats,
-} from "./build-llm-json.js";
-import { processFindings } from "./sarif-to-issues.js";
+} from "../output/build-llm-json.js";
+import { processFindings } from "../github/sarif-to-issues.js";
 import {
   deduplicateFindings,
   mergeIssues,
   type MergeStrategy,
-} from "./fingerprints.js";
+} from "../utils/fingerprints.js";
 import {
   loadVibeCopConfig,
   isValidSeverityThreshold,
@@ -29,7 +29,7 @@ import {
   parseSeverityThreshold,
   parseConfidenceThreshold,
 } from "./config-loader.js";
-import { getToolsToRun, executeTools } from "./tool-registry.js";
+import { getToolsToRun, executeTools } from "../tools/tool-registry.js";
 import type {
   Cadence,
   Confidence,

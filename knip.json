@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["scripts/run-analyze.ts"],
-  "project": ["scripts/**/*.ts"],
-  "ignore": ["**/*.test.ts", "test-fixtures/**/*.ts"],
+  "entry": ["src/core/run-analyze.ts"],
+  "project": ["src/**/*.ts"],
+  "ignore": ["tests/**/*.ts", "test-fixtures/**/*.ts"],
   "ignoreDependencies": ["jscpd"]
 }

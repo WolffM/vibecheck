@@ -4,7 +4,7 @@
  * Classifies findings into layers: security, code, architecture, system.
  */
 
-import type { Layer, ToolName } from "../types.js";
+import type { Layer, ToolName } from "../core/types.js";
 
 /** Patterns that indicate security-related issues */
 const SECURITY_PATTERNS = [

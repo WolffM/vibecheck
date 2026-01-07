@@ -8,9 +8,9 @@
  */
 
 import { writeFileSync } from "node:fs";
-import { loadFindingsAndContext } from "./cli-utils.js";
-import { getSuggestedFix } from "./fix-templates.js";
-import { compareFindingsForSort, meetsThresholds } from "./scoring.js";
+import { loadFindingsAndContext } from "../utils/cli-utils.js";
+import { getSuggestedFix } from "../utils/fix-templates.js";
+import { compareFindingsForSort, meetsThresholds } from "../scoring.js";
 import type {
   Confidence,
   Finding,
@@ -18,7 +18,7 @@ import type {
   LlmJsonSummary,
   RunContext,
   Severity,
-} from "./types.js";
+} from "../core/types.js";
 
 // ============================================================================
 // Summary Generation

@@ -4,7 +4,7 @@
  * Defines ordering and comparison functions for severity and confidence levels.
  */
 
-import type { Confidence, Severity } from "../types.js";
+import type { Confidence, Severity } from "../core/types.js";
 
 // ============================================================================
 // Severity Ordering

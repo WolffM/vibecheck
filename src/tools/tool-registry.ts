@@ -11,8 +11,8 @@ import type {
   RepoProfile,
   ToolName,
   VibeCopConfig,
-} from "./types.js";
-import { shouldRunTool } from "./config-loader.js";
+} from "../core/types.js";
+import { shouldRunTool } from "../core/config-loader.js";
 import { shouldExcludePath } from "./tool-utils.js";
 import {
   runTrunk,

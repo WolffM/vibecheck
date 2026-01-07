@@ -20,8 +20,8 @@ import {
   groupByFingerprint,
   deduplicateFindings,
   LINE_BUCKET_SIZE,
-} from "./fingerprints.js";
-import type { Finding } from "./types.js";
+} from "../src/utils/fingerprints.js";
+import type { Finding } from "../src/core/types.js";
 
 /** Create a test finding with optional overrides */
 function createTestFinding(

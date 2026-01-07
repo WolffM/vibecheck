@@ -8,7 +8,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
-import { deduplicateFindings, extractSublinter } from "./fingerprints.js";
+import { deduplicateFindings, extractSublinter } from "../utils/fingerprints.js";
 import {
   buildFingerprintMap,
   closeIssue,
@@ -25,9 +25,9 @@ import {
   generateIssueBody,
   generateIssueTitle,
   getLabelsForFinding,
-} from "./issue-formatter.js";
-import { compareFindingsForSort, meetsThresholds } from "./scoring.js";
-import type { ExistingIssue, Finding, RunContext } from "./types.js";
+} from "../output/issue-formatter.js";
+import { compareFindingsForSort, meetsThresholds } from "../scoring.js";
+import type { ExistingIssue, Finding, RunContext } from "../core/types.js";
 
 // ============================================================================
 // Issue Orchestration

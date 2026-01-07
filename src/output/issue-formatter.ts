@@ -8,10 +8,10 @@ import {
   generateFingerprintMarker,
   generateRunMetadataMarker,
   shortFingerprint,
-} from "./fingerprints.js";
-import { getSuggestedFix } from "./fix-templates.js";
-import { getRuleDocUrl } from "./rule-docs.js";
-import type { Finding, RunContext } from "./types.js";
+} from "../utils/fingerprints.js";
+import { getSuggestedFix } from "../utils/fix-templates.js";
+import { getRuleDocUrl } from "../utils/rule-docs.js";
+import type { Finding, RunContext } from "../core/types.js";
 
 // ============================================================================
 // Severity Display

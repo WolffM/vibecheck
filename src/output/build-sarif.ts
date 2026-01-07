@@ -7,7 +7,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { loadFindingsAndContext } from "./cli-utils.js";
+import { loadFindingsAndContext } from "../utils/cli-utils.js";
 import type {
   Finding,
   RunContext,
@@ -16,7 +16,7 @@ import type {
   SarifRule,
   SarifRun,
   Severity,
-} from "./types.js";
+} from "../core/types.js";
 
 const SARIF_SCHEMA =
   "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json";

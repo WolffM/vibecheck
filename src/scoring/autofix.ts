@@ -4,7 +4,7 @@
  * Determines autofix level based on tool and rule characteristics.
  */
 
-import type { AutofixLevel, ToolName } from "../types.js";
+import type { AutofixLevel, ToolName } from "../core/types.js";
 
 /** ESLint rules with safe autofixes */
 const ESLINT_SAFE_AUTOFIX_RULES = [

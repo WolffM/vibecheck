@@ -5,7 +5,7 @@
  * Maps tool+ruleId patterns to actionable fix suggestions.
  */
 
-import type { Finding, SuggestedFix, ToolName } from "./types.js";
+import type { Finding, SuggestedFix, ToolName } from "../core/types.js";
 
 // ============================================================================
 // Message Extraction Helpers

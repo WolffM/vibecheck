@@ -11,11 +11,11 @@ import type {
   ExistingIssue,
   IssueCreateParams,
   IssueUpdateParams,
-} from "./types.js";
+} from "../core/types.js";
 import {
   extractFingerprintFromBody,
   extractRunMetadata,
-} from "./fingerprints.js";
+} from "../utils/fingerprints.js";
 
 // ============================================================================
 // Client Initialization

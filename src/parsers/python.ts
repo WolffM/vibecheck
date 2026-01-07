@@ -12,7 +12,7 @@ import {
   buildLocationFromRowCol,
   createFinding,
   parseResults,
-} from "../parser-utils.js";
+} from "../utils/parser-utils.js";
 import {
   determineAutofixLevel,
   mapBanditConfidence,
@@ -22,7 +22,7 @@ import {
   mapRuffConfidence,
   mapRuffSeverity,
 } from "../scoring.js";
-import type { Finding } from "../types.js";
+import type { Finding } from "../core/types.js";
 
 // ============================================================================
 // Ruff Parser (Python Linter)

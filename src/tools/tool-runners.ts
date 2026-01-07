@@ -9,7 +9,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Finding } from "./types.js";
+import type { Finding } from "../core/types.js";
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -42,7 +42,7 @@ import {
   type BanditOutput,
   type PmdOutput,
   type SpotBugsSarifOutput,
-} from "./parsers.js";
+} from "../parsers.js";
 
 // ============================================================================
 // TypeScript / JavaScript Tools
@@ -216,8 +216,8 @@ export function runTsc(rootPath: string): Finding[] {
     const testFixturesConfig = join(testFixturesDir, "tsconfig.json");
     if (existsSync(testFixturesConfig)) {
       console.log("  Also checking test-fixtures...");
-      // Run from vibeCheck action's directory (parent of scripts/) to use its TypeScript
-      const vibeCheckRoot = join(__dirname, "..");
+      // Run from vibeCheck action's directory (parent of src/tools/) to use its TypeScript
+      const vibeCheckRoot = join(__dirname, "../..");
       const fixturesResult = spawnSync(
         "npx",
         ["tsc", "--project", testFixturesConfig, "--noEmit", "--pretty", "false"],

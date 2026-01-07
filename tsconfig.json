@@ -19,6 +19,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["scripts/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "test-fixtures"]
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test-fixtures"]
 }

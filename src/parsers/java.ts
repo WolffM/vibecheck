@@ -6,14 +6,14 @@
  * - SpotBugs (bytecode analyzer)
  */
 
-import { buildLocation, createFinding, parseResults } from "../parser-utils.js";
+import { buildLocation, createFinding, parseResults } from "../utils/parser-utils.js";
 import {
   mapPmdConfidence,
   mapPmdSeverity,
   mapSpotBugsConfidence,
   mapSpotBugsSeverity,
 } from "../scoring.js";
-import type { Finding } from "../types.js";
+import type { Finding } from "../core/types.js";
 
 // ============================================================================
 // PMD Parser (Static Analyzer)

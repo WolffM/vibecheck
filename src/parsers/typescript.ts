@@ -9,13 +9,13 @@
  * - trunk (meta-linter wrapping ESLint, etc.)
  */
 
-import { fingerprintFinding } from "../fingerprints.js";
+import { fingerprintFinding } from "../utils/fingerprints.js";
 import {
   buildLocation,
   createFinding,
   normalizePath,
   parseResults,
-} from "../parser-utils.js";
+} from "../utils/parser-utils.js";
 import {
   mapDepcruiseConfidence,
   mapDepcruiseSeverity,
@@ -26,7 +26,7 @@ import {
   mapTscConfidence,
   mapTscSeverity,
 } from "../scoring.js";
-import type { Finding, JscpdOutput, Location, TscDiagnostic } from "../types.js";
+import type { Finding, JscpdOutput, Location, TscDiagnostic } from "../core/types.js";
 
 // ============================================================================
 // TypeScript Compiler Parser

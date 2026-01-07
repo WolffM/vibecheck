@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
  * CLI runner for analyze.ts
- * Use: npx tsx scripts/run-analyze.ts [options]
+ * Use: npx tsx src/core/run-analyze.ts [options]
  */
 
 import { analyze, type AnalyzeOptions } from './analyze.js';
@@ -31,7 +31,7 @@ for (let i = 0; i < args.length; i++) {
     console.log(`
 vibeCheck Runner
 
-Usage: npx tsx scripts/run-analyze.ts [options]
+Usage: npx tsx src/core/run-analyze.ts [options]
 
 Options:
   --root <path>      Root path to analyze (default: cwd)

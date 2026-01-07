@@ -5,7 +5,7 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
-import type { Finding, RunContext } from "./types.js";
+import type { Finding, RunContext } from "../core/types.js";
 
 /**
  * Load findings from a JSON file.

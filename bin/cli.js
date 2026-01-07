@@ -18,7 +18,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const scriptsDir = join(__dirname, "..", "scripts");
+const srcDir = join(__dirname, "..", "src");
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -66,10 +66,10 @@ Documentation: https://github.com/WolffM/vibecheck
 `);
 }
 
-function runScript(scriptName, scriptArgs = []) {
-  const scriptPath = join(scriptsDir, scriptName);
+function runScript(scriptPath, scriptArgs = []) {
+  const fullPath = join(srcDir, scriptPath);
 
-  const child = spawn("node", ["--import", "tsx", scriptPath, ...scriptArgs], {
+  const child = spawn("node", ["--import", "tsx", fullPath, ...scriptArgs], {
     stdio: "inherit",
     env: process.env,
   });
@@ -79,7 +79,7 @@ function runScript(scriptName, scriptArgs = []) {
   });
 
   child.on("error", (err) => {
-    console.error(`Failed to run ${scriptName}:`, err.message);
+    console.error(`Failed to run ${scriptPath}:`, err.message);
     process.exit(1);
   });
 }
@@ -87,11 +87,11 @@ function runScript(scriptName, scriptArgs = []) {
 // Route commands
 switch (command) {
   case "analyze":
-    runScript("analyze.ts", args.slice(1));
+    runScript("core/analyze.ts", args.slice(1));
     break;
 
   case "detect":
-    runScript("repo-detect.ts", args.slice(1));
+    runScript("core/repo-detect.ts", args.slice(1));
     break;
 
   case "help":

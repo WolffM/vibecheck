@@ -8,7 +8,7 @@
  */
 
 import { createHash } from "node:crypto";
-import type { Finding } from "./types.js";
+import type { Finding } from "../core/types.js";
 
 /**
  * Line bucket size for fingerprinting.

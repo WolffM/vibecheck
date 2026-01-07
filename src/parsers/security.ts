@@ -5,9 +5,9 @@
  * - Semgrep (security vulnerability detection)
  */
 
-import { buildLocation, createFinding, parseResults } from "../parser-utils.js";
+import { buildLocation, createFinding, parseResults } from "../utils/parser-utils.js";
 import { mapSemgrepConfidence, mapSemgrepSeverity } from "../scoring.js";
-import type { Finding } from "../types.js";
+import type { Finding } from "../core/types.js";
 
 // ============================================================================
 // Helpers

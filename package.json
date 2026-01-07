@@ -8,7 +8,7 @@
   },
   "files": [
     "bin/",
-    "scripts/",
+    "src/",
     "action.yml",
     "README.md",
     "LICENSE"
@@ -21,12 +21,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint scripts/",
-    "build-sarif": "tsx scripts/build-sarif.ts",
-    "build-llm-json": "tsx scripts/build-llm-json.ts",
-    "create-issues": "tsx scripts/sarif-to-issues.ts",
-    "repo-detect": "tsx scripts/repo-detect.ts",
-    "analyze": "tsx scripts/analyze.ts"
+    "lint": "eslint src/",
+    "build-sarif": "tsx src/output/build-sarif.ts",
+    "build-llm-json": "tsx src/output/build-llm-json.ts",
+    "create-issues": "tsx src/github/sarif-to-issues.ts",
+    "repo-detect": "tsx src/core/repo-detect.ts",
+    "analyze": "tsx src/core/analyze.ts"
   },
   "dependencies": {
     "@octokit/rest": "^21.0.0",

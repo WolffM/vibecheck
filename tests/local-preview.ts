@@ -4,19 +4,18 @@
  * This script runs the vibeCheck analysis pipeline locally and outputs
  * the issue bodies that WOULD be created, without touching GitHub.
  * 
- * Usage: npx tsx scripts/test-issue-output.ts
+ * Usage: npx tsx tests/local-preview.ts
  */
 
 import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { analyze } from "./analyze.js";
+import { analyze } from "../src/core/analyze.js";
 import {
   generateIssueBody,
   generateIssueTitle,
   getLabelsForFinding,
   detectLanguagesInFindings,
-} from "./issue-formatter.js";
-import type { Finding, RunContext } from "./types.js";
+} from "../src/output/issue-formatter.js";
 
 interface IssuePreview {
   number: number;
