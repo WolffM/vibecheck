@@ -1,4 +1,4 @@
-name: "vibeCheck"
+name: vibeCheck
 description: "Unified static analysis with intelligent issue creation for AI-driven development"
 author: "WolffM"
 
@@ -18,7 +18,7 @@ inputs:
   confidence_threshold:
     description: "Minimum confidence for issues: high, medium, low"
     required: false
-    default: "low"
+    default: low
   merge_strategy:
     description: "How to merge findings: none, same-file, same-rule, same-linter, same-tool"
     required: false
@@ -41,7 +41,7 @@ inputs:
 
 outputs:
   total_findings:
-    description: "Total number of findings"
+    description: Total number of findings
     value: ${{ steps.analyze.outputs.total_findings }}
   issues_created:
     description: "Number of issues created"
@@ -60,7 +60,7 @@ outputs:
     value: ${{ steps.analyze.outputs.llm_json_path }}
 
 runs:
-  using: "composite"
+  using: composite
   steps:
     - name: Setup Node.js
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -143,7 +143,7 @@ runs:
       if: steps.detect-java.outputs.has_java == 'true'
       uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
       with:
-        distribution: "temurin"
+        distribution: temurin
         java-version: "17"
 
     - name: Install PMD (if Java detected)
