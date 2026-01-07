@@ -10,7 +10,7 @@ name: vibeCheck
 on:
   # Run weekly on Monday at 3am UTC
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: 0 3 * * 1
 
   # Run on push to main (daily cadence)
   push:
@@ -20,16 +20,16 @@ on:
   workflow_dispatch:
     inputs:
       cadence:
-        description: "Analysis cadence"
+        description: Analysis cadence
         required: false
-        default: "weekly"
+        default: weekly
         type: choice
         options:
           - daily
           - weekly
           - monthly
       skip_issues:
-        description: "Skip issue creation (dry run)"
+        description: Skip issue creation (dry run)
         required: false
         default: false
         type: boolean
@@ -55,9 +55,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cadence: ${{ github.event.inputs.cadence || 'weekly' }}
-          severity_threshold: "low"
-          confidence_threshold: "medium"
-          merge_strategy: "same-linter"
+          severity_threshold: low
+          confidence_threshold: medium
+          merge_strategy: same-linter
           skip_issues: ${{ github.event.inputs.skip_issues || 'false' }}
 
       - name: Upload artifacts
