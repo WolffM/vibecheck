@@ -52,6 +52,20 @@ export interface ToolDefinition {
 // ============================================================================
 
 /**
+ * Linters that Trunk can run natively.
+ * When Trunk is enabled, we skip these standalone tools to avoid duplicates.
+ */
+const TRUNK_MANAGED_LINTERS: Record<string, ToolName[]> = {
+  // Python linters that Trunk manages
+  python: ["ruff", "bandit", "mypy"],
+  // JS/TS linters that Trunk manages (via eslint, etc.)
+  javascript: [],
+  typescript: [],
+  // Java linters
+  java: [],
+};
+
+/**
  * Registry of all available analysis tools.
  * Order matters - tools run in this order.
  */
@@ -186,15 +200,37 @@ function getToolConfig(
 
 /**
  * Get tools that should run for a given profile and cadence.
+ * Skips standalone tools when Trunk is enabled and covers them.
  */
 export function getToolsToRun(
   profile: RepoProfile,
   cadence: Cadence,
   config: VibeCopConfig,
 ): ToolDefinition[] {
+  // First, determine if Trunk is enabled
+  const trunkConfig = getToolConfig(config, "trunk");
+  const trunkEnabled = trunkConfig?.enabled !== false; // Trunk enabled by default
+
+  // Get tools that Trunk would manage for this profile's languages
+  const trunkManagedTools = new Set<string>();
+  if (trunkEnabled) {
+    for (const lang of profile.languages) {
+      const managed = TRUNK_MANAGED_LINTERS[lang] || [];
+      for (const tool of managed) {
+        trunkManagedTools.add(tool);
+      }
+    }
+  }
+
   return TOOL_REGISTRY.filter((tool) => {
     const toolConfig = getToolConfig(config, tool.configKey);
     const enabled = toolConfig?.enabled ?? tool.defaultCadence;
+
+    // Skip tools that Trunk already covers (unless explicitly enabled)
+    if (trunkEnabled && trunkManagedTools.has(tool.name) && toolConfig?.enabled === undefined) {
+      console.log(`  Skipping ${tool.name} (covered by Trunk)`);
+      return false;
+    }
 
     return shouldRunTool(enabled, profile, cadence, () =>
       tool.detector(profile),

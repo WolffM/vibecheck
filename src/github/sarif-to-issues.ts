@@ -71,7 +71,7 @@ export async function processFindings(
     max_new_per_run: 25,
     severity_threshold: "info" as const,
     confidence_threshold: "low" as const,
-    close_resolved: false,
+    close_resolved: true, // Auto-close issues when findings are no longer detected
     ...context.config.issues,
   };
 
@@ -150,6 +150,7 @@ export async function processFindings(
 
   // Build lookup maps from open issues for deduplication
   const toolRuleMap = new Map<string, ExistingIssue[]>(); // tool|ruleId -> issues
+  const ruleOnlyMap = new Map<string, ExistingIssue[]>(); // ruleId only -> issues (for cross-tool matching)
   const normalizedTitleMap = new Map<string, ExistingIssue[]>(); // normalized title -> issues
 
   // Helper to add issue to a map (stores array to handle duplicates)
@@ -193,6 +194,8 @@ export async function processFindings(
       if (ruleId) {
         const key = `${toolOrSublinter}|${ruleId}`;
         addToMap(toolRuleMap, key, issue);
+        // Also add to rule-only map for cross-tool matching (trunk vs standalone)
+        addToMap(ruleOnlyMap, ruleId, issue);
       }
     }
   }
@@ -208,7 +211,13 @@ export async function processFindings(
     const toolRuleMatch = getBestIssue(toolRuleMap, toolRuleKey);
     if (toolRuleMatch) return { issue: toolRuleMatch, matchedBy: `tool+rule(${toolRuleKey})` };
 
-    // Strategy 3: Normalized title (for legacy issues without fingerprints)
+    // Strategy 3: Rule only (catches trunk vs standalone tool mismatches)
+    // e.g., finding from "bandit" matches existing issue from "trunk" with same rule
+    const ruleOnlyKey = finding.ruleId.toLowerCase();
+    const ruleOnlyMatch = getBestIssue(ruleOnlyMap, ruleOnlyKey);
+    if (ruleOnlyMatch) return { issue: ruleOnlyMatch, matchedBy: `rule-only(${ruleOnlyKey})` };
+
+    // Strategy 4: Normalized title (for legacy issues without fingerprints)
     const newTitle = generateIssueTitle(finding);
     const normalizedNewTitle = normalizeIssueTitle(newTitle);
     const titleMatch = getBestIssue(normalizedTitleMap, normalizedNewTitle);
@@ -225,6 +234,9 @@ export async function processFindings(
     // Add to tool+rule map
     const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
     addToMap(toolRuleMap, toolRuleKey, issue);
+
+    // Add to rule-only map
+    addToMap(ruleOnlyMap, finding.ruleId.toLowerCase(), issue);
 
     // Add to normalized title map
     const normalizedTitle = normalizeIssueTitle(issue.title);

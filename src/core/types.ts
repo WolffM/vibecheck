@@ -219,21 +219,41 @@ export interface SuggestedFix {
   acceptance: string[];
 }
 
-export type ToolName =
+/** Known tool names with autocomplete support */
+export type KnownToolName =
+  // JavaScript/TypeScript
   | "eslint"
   | "tsc"
   | "prettier"
   | "jscpd"
   | "dependency-cruiser"
   | "knip"
-  | "semgrep"
-  | "trunk"
+  // Python
   | "ruff"
   | "mypy"
   | "bandit"
+  // Java
   | "pmd"
   | "spotbugs"
+  // Security
+  | "semgrep"
+  // Trunk meta-linter (and common sub-linters)
+  | "trunk"
+  | "markdownlint"
+  | "yamllint"
+  | "shellcheck"
+  | "checkov"
+  | "osv-scanner"
+  | "trivy"
+  | "actionlint"
+  | "gitleaks"
+  | "hadolint"
+  | "sqlfluff"
+  // Catch-all for unknown linters
   | "custom";
+
+/** Tool name - can be any known tool or a custom string */
+export type ToolName = KnownToolName | string;
 
 export interface Finding {
   fingerprint: string;

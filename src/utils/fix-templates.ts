@@ -5,7 +5,7 @@
  * Maps tool+ruleId patterns to actionable fix suggestions.
  */
 
-import type { Finding, SuggestedFix, ToolName } from "../core/types.js";
+import type { Finding, SuggestedFix } from "../core/types.js";
 
 // ============================================================================
 // Message Extraction Helpers
@@ -390,8 +390,9 @@ function createUnusedVarsTemplate(): () => SuggestedFix {
 
 /**
  * Generic fix suggestions by tool type.
+ * Only covers known tools - unknown tools will get a generic suggestion.
  */
-const GENERIC_TOOL_HINTS: Record<ToolName, (finding: Finding) => SuggestedFix> =
+const GENERIC_TOOL_HINTS: Partial<Record<string, (finding: Finding) => SuggestedFix>> =
   {
     eslint: (finding) => ({
       goal: `Fix ESLint rule: ${finding.ruleId}`,
@@ -600,6 +601,6 @@ export function getSuggestedFix(finding: Finding): SuggestedFix {
  */
 function getGenericFix(finding: Finding): SuggestedFix {
   const generator =
-    GENERIC_TOOL_HINTS[finding.tool] || GENERIC_TOOL_HINTS.custom;
-  return generator(finding);
+    GENERIC_TOOL_HINTS[finding.tool] ?? GENERIC_TOOL_HINTS.custom;
+  return generator!(finding);
 }

@@ -397,20 +397,25 @@ function mapTrunkConfidence(linter: string): Finding["confidence"] {
 
 /**
  * Parse Trunk check JSON output into Findings.
+ * Uses the underlying linter name (bandit, eslint, etc.) as the tool
+ * for proper fingerprinting and deduplication.
  */
 export function parseTrunkOutput(output: TrunkOutput): Finding[] {
   return parseResults(output.issues, (issue) => {
     const ruleId = issue.code || `${issue.linter}/unknown`;
+    // Use the underlying linter as the tool name for proper fingerprinting
+    // This ensures trunk-run bandit findings match standalone bandit findings
+    const toolName = issue.linter || "trunk";
     return createFinding({
       result: issue,
-      tool: "trunk",
+      tool: toolName,
       ruleId,
       title: `${issue.linter}: ${issue.code || "issue"}`,
       message: issue.message,
       severity: mapTrunkSeverity(issue.level, issue.linter),
       confidence: mapTrunkConfidence(issue.linter),
       location: buildLocation(issue.file, issue.line, issue.column),
-      extraLabels: [`linter:${issue.linter}`],
+      extraLabels: ["via:trunk"],
     });
   });
 }
