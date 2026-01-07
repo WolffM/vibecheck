@@ -109,15 +109,6 @@ function getLanguageFromPath(path: string, forLabeling = false): string | null {
 }
 
 /**
- * Infer programming language from file path for syntax highlighting.
- * @deprecated Use getLanguageFromPath(path, false) instead
- */
-function inferLanguageFromPath(path?: string): string {
-  if (!path) return "";
-  return getLanguageFromPath(path, false) || "";
-}
-
-/**
  * Format a URL into a readable link title.
  */
 function formatLinkTitle(url: string): string {
@@ -380,7 +371,7 @@ function buildEvidenceSection(finding: Finding): string {
 
   // Get language for syntax highlighting from first location
   const primaryLoc = finding.locations[0];
-  const language = inferLanguageFromPath(primaryLoc?.path);
+  const language = primaryLoc?.path ? (getLanguageFromPath(primaryLoc.path, false) || "") : "";
 
   const formattedSnippets = limitedSnippets.map((s, index) => {
     const trimmedSnippet = s.trim();

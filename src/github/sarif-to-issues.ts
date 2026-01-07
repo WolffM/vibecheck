@@ -212,10 +212,16 @@ export async function processFindings(
     if (toolRuleMatch) return { issue: toolRuleMatch, matchedBy: `tool+rule(${toolRuleKey})` };
 
     // Strategy 3: Rule only (catches trunk vs standalone tool mismatches)
-    // e.g., finding from "bandit" matches existing issue from "trunk" with same rule
+    // Only use this for rule IDs that are clearly unique (e.g., B105 for bandit, MD001 for markdownlint)
+    // Skip generic rule IDs that could appear in multiple tools
     const ruleOnlyKey = finding.ruleId.toLowerCase();
-    const ruleOnlyMatch = getBestIssue(ruleOnlyMap, ruleOnlyKey);
-    if (ruleOnlyMatch) return { issue: ruleOnlyMatch, matchedBy: `rule-only(${ruleOnlyKey})` };
+    const isDistinctiveRuleId = /^[a-z]+\d+$/.test(ruleOnlyKey) || // e.g., b105, md001, e501
+                                ruleOnlyKey.includes("/") ||        // e.g., @typescript-eslint/no-unused-vars
+                                ruleOnlyKey.includes("-");          // e.g., no-unused-vars, quoted-strings
+    if (isDistinctiveRuleId) {
+      const ruleOnlyMatch = getBestIssue(ruleOnlyMap, ruleOnlyKey);
+      if (ruleOnlyMatch) return { issue: ruleOnlyMatch, matchedBy: `rule-only(${ruleOnlyKey})` };
+    }
 
     // Strategy 4: Normalized title (for legacy issues without fingerprints)
     const newTitle = generateIssueTitle(finding);

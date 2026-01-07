@@ -44,8 +44,9 @@ export function normalizePathForFingerprint(path: string): string {
   return path.replace(/\\/g, "/").replace(/^\.\//g, "").toLowerCase();
 }
 
-// Re-export for backwards compatibility and tests
-export { normalizePathForFingerprint as normalizePath };
+// Alias for tests - this lowercases paths for comparison/fingerprinting
+// NOT the same as parser-utils.normalizePath which preserves case for display
+export { normalizePathForFingerprint as normalizePathForComparison };
 
 /**
  * Normalize a message for fingerprinting:

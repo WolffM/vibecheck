@@ -45,6 +45,16 @@ import {
 } from "../parsers.js";
 
 // ============================================================================
+// Constants
+// ============================================================================
+
+/** Timeout for tool initialization (e.g., trunk init) */
+const TOOL_INIT_TIMEOUT_MS = 120_000; // 2 minutes
+
+/** Max buffer size for tool output to prevent memory issues */
+const MAX_OUTPUT_BUFFER = 50 * 1024 * 1024; // 50MB
+
+// ============================================================================
 // TypeScript / JavaScript Tools
 // ============================================================================
 
@@ -118,7 +128,7 @@ export function runTrunk(
           cwd: rootPath,
           encoding: "utf-8",
           shell: true,
-          timeout: 120000, // 2 minute timeout for init
+          timeout: TOOL_INIT_TIMEOUT_MS, // 2 minute timeout for init
         },
       );
       if (initResult.status !== 0) {
@@ -142,7 +152,7 @@ export function runTrunk(
         cwd: rootPath,
         encoding: "utf-8",
         shell: true,
-        maxBuffer: 50 * 1024 * 1024, // 50MB
+        maxBuffer: MAX_OUTPUT_BUFFER,
       },
     );
 
@@ -472,7 +482,7 @@ export function runSemgrep(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
       env: {
         ...process.env,
         PYTHONIOENCODING: "utf-8",
@@ -532,7 +542,7 @@ export function runRuff(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
     });
 
     // Ruff outputs JSON array to stdout
@@ -576,7 +586,7 @@ export function runMypy(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
     });
 
     // Mypy JSON output is one JSON object per line
@@ -634,7 +644,7 @@ export function runBandit(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
     });
 
     // Bandit outputs JSON to stdout
@@ -686,7 +696,7 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
     });
 
     // PMD outputs JSON to stdout
@@ -751,7 +761,7 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
       cwd: rootPath,
       encoding: "utf-8",
       shell: true,
-      maxBuffer: 50 * 1024 * 1024,
+      maxBuffer: MAX_OUTPUT_BUFFER,
     });
 
     // SpotBugs outputs SARIF to stdout when using -sarif

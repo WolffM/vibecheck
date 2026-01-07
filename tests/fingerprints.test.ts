@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import {
   bucketLine,
-  normalizePath,
+  normalizePathForComparison as normalizePath,
   normalizeMessage,
   normalizeRuleId,
   buildFingerprintKey,
