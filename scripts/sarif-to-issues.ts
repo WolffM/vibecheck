@@ -96,17 +96,12 @@ export async function processFindings(
     labelsToSearch.push("vibeCop");
   }
 
-  // Fetch issues with each label separately (GitHub API requires exact label match)
-  // Include both open AND recently closed issues to prevent duplicate creation
-  // when an issue was closed but the same finding is detected again
+  // Fetch open issues only - we never reopen closed issues
+  // If a finding was previously closed and reappears, we create a new issue
   const allExistingIssues: ExistingIssue[] = [];
   for (const label of labelsToSearch) {
-    // Fetch open issues
     const openIssues = await searchIssuesByLabel(owner, repo, [label], "open");
     allExistingIssues.push(...openIssues);
-    // Also fetch closed issues to check for duplicates and potential reopening
-    const closedIssues = await searchIssuesByLabel(owner, repo, [label], "closed");
-    allExistingIssues.push(...closedIssues);
   }
 
   // Deduplicate by issue number (in case an issue has both labels)
@@ -149,9 +144,8 @@ export async function processFindings(
   // Track which fingerprints we've seen in this run
   const seenFingerprints = new Set<string>();
 
-  // Build ALL lookup maps from ALL issues (open AND closed)
-  // This prevents creating duplicates when a closed issue exists with same fingerprint/title
-  const toolRuleMap = new Map<string, ExistingIssue[]>(); // tool|ruleId -> issues (prefer open)
+  // Build lookup maps from open issues for deduplication
+  const toolRuleMap = new Map<string, ExistingIssue[]>(); // tool|ruleId -> issues
   const sublinterMap = new Map<string, ExistingIssue[]>(); // trunk|sublinter -> issues
   const normalizedTitleMap = new Map<string, ExistingIssue[]>(); // normalized title -> issues
 
@@ -277,39 +271,19 @@ export async function processFindings(
       const body = generateIssueBody(finding, context);
       const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
 
-      if (existingIssue.state === "open") {
-        console.log(`Updating issue #${existingIssue.number} for ${finding.ruleId}`);
+      // Update existing open issue
+      console.log(`Updating issue #${existingIssue.number} for ${finding.ruleId}`);
 
-        await withRateLimit(() =>
-          updateIssue(owner, repo, {
-            number: existingIssue.number,
-            title,
-            body,
-            labels,
-          }),
-        );
+      await withRateLimit(() =>
+        updateIssue(owner, repo, {
+          number: existingIssue.number,
+          title,
+          body,
+          labels,
+        }),
+      );
 
-        stats.updated++;
-      } else {
-        // Issue was closed but finding reappeared - reopen it
-        console.log(`Reopening issue #${existingIssue.number} for ${finding.ruleId} (finding redetected)`);
-
-        await withRateLimit(() =>
-          updateIssue(owner, repo, {
-            number: existingIssue.number,
-            title,
-            body,
-            labels,
-            state: "open",
-          }),
-        );
-
-        // Update state in our tracking
-        existingIssue.state = "open";
-        existingIssue.title = title;
-
-        stats.updated++;
-      }
+      stats.updated++;
 
       // Register in all maps so subsequent findings can find it
       registerIssueInMaps(existingIssue, finding);
@@ -525,15 +499,12 @@ async function closePreExistingDuplicates(
   // Track which issues we've already decided to close
   const issuesToClose = new Set<number>();
 
-  // For each normalized title, find duplicates
+  // For each normalized title, find duplicates (all issues are open since we only fetch open)
   for (const [normalizedTitle, issues] of normalizedTitleMap.entries()) {
-    // Filter to only open issues
-    const openIssues = issues.filter((i) => i.state === "open");
-
-    if (openIssues.length <= 1) continue; // No duplicates
+    if (issues.length <= 1) continue; // No duplicates
 
     // Sort by issue number descending (newest first)
-    const sorted = [...openIssues].sort((a, b) => b.number - a.number);
+    const sorted = [...issues].sort((a, b) => b.number - a.number);
 
     // Keep the newest, mark the rest for closing
     const [keeper, ...duplicates] = sorted;
@@ -550,7 +521,6 @@ async function closePreExistingDuplicates(
   // Close the duplicates
   for (const issue of existingIssues) {
     if (!issuesToClose.has(issue.number)) continue;
-    if (issue.state !== "open") continue; // Double-check
 
     console.log(`Closing duplicate issue #${issue.number} ("${issue.title}")`);
 
