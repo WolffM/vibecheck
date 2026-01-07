@@ -320,11 +320,6 @@
       }
     }
 
-    /* Submit button after advanced options */
-    #installForm button[type="submit"] {
-      margin-top: 20px;
-    }
-
     /* Summary indicator for customization */
     .custom-indicator {
       display: inline-block;
@@ -393,6 +388,44 @@
     }
     .info-icon:hover .tooltip {
       display: block;
+    }
+
+    /* Button group */
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .button-group button {
+      flex: 1;
+    }
+    .button-group button.secondary {
+      background: #21262d;
+      border: 1px solid #30363d;
+    }
+    .button-group button.secondary:hover {
+      background: #30363d;
+    }
+
+    /* Copy notice */
+    .copy-notice {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #238636;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      z-index: 1000;
+    }
+    .copy-notice.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
   </style>
 </head>
@@ -587,8 +620,15 @@
       </div>
     </details>
 
-    <button type="submit" id="submitBtn">Create workflow PR</button>
+    <div class="button-group">
+      <button type="submit" id="submitBtn">Add to repository</button>
+      <button type="button" id="updateBtn" class="secondary">Update existing workflow</button>
+    </div>
   </form>
+
+  <div id="copyNotice" class="copy-notice">
+    Workflow YAML copied! Paste it in the editor that just opened.
+  </div>
 
   <div class="help">
     <h3>What happens next?</h3>
@@ -739,6 +779,8 @@ jobs:
     const repoInput = document.getElementById('repo');
     const errorEl = document.getElementById('error');
     const submitBtn = document.getElementById('submitBtn');
+    const updateBtn = document.getElementById('updateBtn');
+    const copyNotice = document.getElementById('copyNotice');
 
     // Extract owner/repo from various input formats
     function parseRepo(input) {
@@ -765,6 +807,7 @@ jobs:
       const valid = repo !== null;
       errorEl.classList.toggle('show', repoInput.value && !valid);
       submitBtn.disabled = repoInput.value && !valid;
+      updateBtn.disabled = repoInput.value && !valid;
     });
 
     // Check if any options are customized
@@ -785,6 +828,13 @@ jobs:
       el.addEventListener('change', updateCustomIndicator);
     });
 
+    // Show copy notification
+    function showCopyNotice() {
+      copyNotice.classList.add('show');
+      setTimeout(() => copyNotice.classList.remove('show'), 3000);
+    }
+
+    // Add new workflow file
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
@@ -800,6 +850,37 @@ jobs:
       const url = `https://github.com/${repo}/new/main?filename=.github/workflows/vibecheck.yml&value=${encoded}`;
 
       window.location.href = url;
+    });
+
+    // Update existing workflow - copy YAML and open edit page
+    updateBtn.addEventListener('click', async () => {
+      const repo = parseRepo(repoInput.value);
+      if (!repo) {
+        errorEl.classList.add('show');
+        return;
+      }
+
+      const options = getOptions();
+      const workflowContent = generateWorkflow(options);
+
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(workflowContent);
+        showCopyNotice();
+      } catch (err) {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = workflowContent;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showCopyNotice();
+      }
+
+      // Open the edit page for the existing file
+      const editUrl = `https://github.com/${repo}/edit/main/.github/workflows/vibecheck.yml`;
+      window.open(editUrl, '_blank');
     });
 
   </script>
