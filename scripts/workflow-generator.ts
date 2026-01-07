@@ -6,18 +6,18 @@
  */
 
 export interface WorkflowOptions {
-  cadence: 'daily' | 'weekly' | 'monthly';
+  cadence: 'manual' | 'daily' | 'weekly' | 'monthly';
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
   confidence: 'low' | 'medium' | 'high';
-  mergeStrategy: 'none' | 'same-file' | 'same-rule' | 'same-linter' | 'same-tool';
+  mergeStrategy: 'none' | 'same-file' | 'same-rule';
   disabledTools: string[];
 }
 
 export const DEFAULTS: WorkflowOptions = {
-  cadence: 'weekly',
+  cadence: 'manual',
   severity: 'low',
   confidence: 'medium',
-  mergeStrategy: 'same-linter',
+  mergeStrategy: 'same-rule',
   disabledTools: [],
 };
 
@@ -37,8 +37,9 @@ export const DEFAULT_TOOLS = [
 
 /**
  * Get cron expression for the given cadence
+ * Returns null for 'manual' (no schedule)
  */
-export function getCronForCadence(cadence: WorkflowOptions['cadence']): string {
+export function getCronForCadence(cadence: WorkflowOptions['cadence']): string | null {
   switch (cadence) {
     case 'daily':
       return '0 3 * * *'; // Every day at 3am UTC
@@ -46,8 +47,9 @@ export function getCronForCadence(cadence: WorkflowOptions['cadence']): string {
       return '0 3 * * 1'; // Monday at 3am UTC
     case 'monthly':
       return '0 3 1 * *'; // 1st of month at 3am UTC
+    case 'manual':
     default:
-      return '0 3 * * 1';
+      return null; // Manual - no schedule
   }
 }
 
@@ -58,6 +60,23 @@ export function generateWorkflow(options: WorkflowOptions): string {
   const { cadence, severity, confidence, mergeStrategy, disabledTools } = options;
   const cron = getCronForCadence(cadence);
 
+  // Build the on: section based on cadence
+  let onSection: string;
+  if (cron) {
+    const cadenceComment = cadence === 'weekly' ? 'on Monday ' : cadence === 'monthly' ? 'on the 1st ' : '';
+    onSection = `on:
+  # Run ${cadence} ${cadenceComment}at 3am UTC
+  schedule:
+    - cron: "${cron}"
+
+  # Allow manual trigger
+  workflow_dispatch:`;
+  } else {
+    onSection = `on:
+  # Manual trigger only - run via Actions tab
+  workflow_dispatch:`;
+  }
+
   // Build the workflow
   let yaml = `# vibeCheck Analysis Workflow
 #
@@ -66,23 +85,7 @@ export function generateWorkflow(options: WorkflowOptions): string {
 
 name: vibeCheck Analysis
 
-on:
-  # Run ${cadence} ${cadence === 'weekly' ? 'on Monday ' : cadence === 'monthly' ? 'on the 1st ' : ''}at 3am UTC
-  schedule:
-    - cron: "${cron}"
-
-  # Allow manual trigger
-  workflow_dispatch:
-    inputs:
-      cadence:
-        description: "Analysis cadence"
-        required: false
-        default: "${cadence}"
-        type: choice
-        options:
-          - daily
-          - weekly
-          - monthly
+${onSection}
 
 permissions:
   contents: read
@@ -103,8 +106,7 @@ jobs:
       - name: Run vibeCheck
         uses: WolffM/vibecheck@main
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          cadence: \${{ github.event.inputs.cadence || '${cadence}' }}`;
+          github_token: \${{ secrets.GITHUB_TOKEN }}`;
 
   // Add custom options only if they differ from defaults
   if (severity !== 'info') {
@@ -113,7 +115,7 @@ jobs:
   if (confidence !== 'low') {
     yaml += `\n          confidence_threshold: "${confidence}"`;
   }
-  if (mergeStrategy !== 'same-linter') {
+  if (mergeStrategy !== 'same-rule') {
     yaml += `\n          merge_strategy: "${mergeStrategy}"`;
   }
 

@@ -4,46 +4,19 @@
 
 vibeCheck is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents.
 
-**[📋 See Example Issues](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck)** - Live demo of what vibeCheck creates
-
-## Features
-
-- 🔍 **Multi-language analysis**: JavaScript/TypeScript, Python, and Java
-- 🛠️ **JS/TS tools**: Trunk, TypeScript, ESLint, jscpd, dependency-cruiser, knip, Semgrep
-- 🐍 **Python tools**: Ruff (linting), Mypy (types), Bandit (security)
-- ☕ **Java tools**: PMD (code analysis), SpotBugs (bytecode bugs)
-- 📊 **SARIF output**: Results appear in GitHub Code Scanning
-- 🤖 **AI-friendly issues**: Structured with suggested fixes and acceptance criteria
-- 🔁 **Deduplication**: Stable fingerprints prevent duplicate issues across runs
-- 🔄 **Auto-cleanup**: Closes resolved and duplicate issues automatically
-- ⚙️ **Configurable**: Per-repo overrides via `vibecheck.yml`
-- 📅 **Cadence-aware**: Schedule heavy tools for weekly/monthly runs only
+| Example Issues |
+|:---:|
+| [![All](https://img.shields.io/badge/All-vibeCheck-7c3aed)](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck) [![JS/TS](https://img.shields.io/badge/JS%2FTS-f7df1e?logo=javascript&logoColor=black)](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck+label%3A%22lang%3A+js%2Fts%22) [![Python](https://img.shields.io/badge/Python-3776ab?logo=python&logoColor=white)](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck+label%3A%22lang%3A+python%22) [![Java](https://img.shields.io/badge/Java-e76f00?logo=openjdk&logoColor=white)](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck+label%3A%22lang%3A+java%22) |
 
 ## Quick Start
 
-Choose your preferred installation method:
+### One-Click Install (Recommended)
 
-### Option 1: One-Click Install (Recommended)
+**[Add vibeCheck to your repo](https://wolffm.github.io/vibecheck/install)** - Enter your repo name and create a PR with the workflow file.
 
-**[Add vibeCheck to your repo](https://wolffm.github.io/vibecheck/install)** - Enter your repo name and click to create the workflow file.
+### Manual Setup
 
-### Option 2: Direct URL
-
-Replace `OWNER/REPO` with your repository and open this URL:
-
-```
-https://github.com/OWNER/REPO/new/main?filename=.github/workflows/vibecheck.yml&value=name%3A%20vibeCheck%20Analysis%0A%0Aon%3A%0A%20%20schedule%3A%0A%20%20%20%20-%20cron%3A%20%220%203%20*%20*%201%22%0A%20%20workflow_dispatch%3A%0A%20%20%20%20inputs%3A%0A%20%20%20%20%20%20cadence%3A%0A%20%20%20%20%20%20%20%20description%3A%20%22Analysis%20cadence%22%0A%20%20%20%20%20%20%20%20default%3A%20%22weekly%22%0A%20%20%20%20%20%20%20%20type%3A%20choice%0A%20%20%20%20%20%20%20%20options%3A%20%5Bdaily%2C%20weekly%2C%20monthly%5D%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%20%20issues%3A%20write%0A%20%20security-events%3A%20write%0A%0Ajobs%3A%0A%20%20analyze%3A%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20fetch-depth%3A%200%0A%20%20%20%20%20%20-%20uses%3A%20WolffM%2Fvibecheck%40main%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20github_token%3A%20%24%7B%7B%20secrets.GITHUB_TOKEN%20%7D%7D%0A%20%20%20%20%20%20%20%20%20%20cadence%3A%20%24%7B%7B%20inputs.cadence%20%7C%7C%20%27weekly%27%20%7D%7D
-```
-
-This opens GitHub's file editor with the workflow pre-filled. Just click **"Commit changes"**.
-
-### Option 3: Copy the Template
-
-1. Copy [`.github/workflows/vibecheck.yml`](.github/workflows/vibecheck.yml) from this repo
-2. Add it to your repo at the same path
-3. Commit and push
-
-Or create `.github/workflows/vibecheck.yml` manually:
+Create `.github/workflows/vibecheck.yml` in your repo:
 
 ```yaml
 name: vibeCheck Analysis
@@ -87,7 +60,7 @@ jobs:
 
 ---
 
-## Configuration Options
+## Configuration
 
 ### Workflow Inputs
 
@@ -97,21 +70,19 @@ Customize the action in your workflow file:
 - uses: WolffM/vibecheck@main
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    cadence: "weekly" # daily | weekly | monthly
-    severity_threshold: "low" # critical | high | medium | low | info
-    confidence_threshold: "medium" # high | medium | low
-    merge_strategy: "same-linter" # none | same-file | same-rule | same-linter | same-tool
-    skip_issues: "false" # true to do a dry run
+    severity_threshold: "medium"    # info | low | medium | high | critical
+    confidence_threshold: "medium"  # low | medium | high
+    merge_strategy: "same-rule"     # none | same-file | same-rule
+    skip_issues: "false"            # true for dry run
 ```
 
-| Input                  | Description                       | Default       |
-| ---------------------- | --------------------------------- | ------------- |
-| `github_token`         | GitHub token (auto-provided)      | **Required**  |
-| `cadence`              | How often heavy tools run         | `weekly`      |
-| `severity_threshold`   | Min severity for issues           | `info`        |
-| `confidence_threshold` | Min confidence for issues         | `low`         |
-| `merge_strategy`       | How to group findings into issues | `same-linter` |
-| `skip_issues`          | Skip issue creation (dry run)     | `false`       |
+| Input                  | Description                       | Default     |
+| ---------------------- | --------------------------------- | ----------- |
+| `github_token`         | GitHub token for issue management | *Required*  |
+| `severity_threshold`   | Min severity for issues           | `low`       |
+| `confidence_threshold` | Min confidence for issues         | `medium`    |
+| `merge_strategy`       | How to group findings into issues | `same-rule` |
+| `skip_issues`          | Skip issue creation (dry run)     | `false`     |
 
 ### Per-Repo Configuration (Optional)
 
@@ -173,104 +144,33 @@ Findings are fingerprinted using:
 
 This allows vibeCheck to track issues across minor code changes.
 
-## Configuration Reference
+## Tools
 
-### Workflow Inputs
+### JavaScript/TypeScript
 
-| Input             | Default       | Description                                      |
-| ----------------- | ------------- | ------------------------------------------------ |
-| `cadence`         | `weekly`      | Analysis frequency: `daily`, `weekly`, `monthly` |
-| `trunk_arguments` | `check`       | Arguments for Trunk                              |
-| `issue_label`     | `vibeCheck`     | Primary label for issues                         |
-| `config_path`     | `vibecheck.yml` | Path to config file                              |
-| `skip_issues`     | `false`       | Skip issue creation                              |
+| Tool               | Purpose                    |
+| ------------------ | -------------------------- |
+| Trunk              | Meta-linter (ESLint, etc.) |
+| TypeScript (tsc)   | Type checking              |
+| jscpd              | Duplicate code detection   |
+| dependency-cruiser | Circular dependencies      |
+| knip               | Unused exports/files       |
+| Semgrep            | Security scanning          |
 
-### vibecheck.yml Schema
+### Python
 
-```yaml
-version: 1
+| Tool   | Purpose           |
+| ------ | ----------------- |
+| Ruff   | Fast linting      |
+| Mypy   | Type checking     |
+| Bandit | Security scanning |
 
-schedule:
-  cadence: weekly # Caller workflow controls actual schedule
-  deep_scan: false # Enable all tools regardless of cadence
+### Java
 
-trunk:
-  enabled: true
-  arguments: "check"
-
-tools:
-  tsc:
-    enabled: auto # auto | true | false | daily | weekly | monthly
-  eslint:
-    enabled: auto
-  prettier:
-    enabled: auto
-  jscpd:
-    enabled: weekly
-    min_tokens: 70
-    threshold: 1
-  dependency_cruiser:
-    enabled: weekly
-  knip:
-    enabled: monthly
-  semgrep:
-    enabled: monthly
-    config: "p/default"
-
-issues:
-  enabled: true
-  label: "vibeCheck"
-  max_new_per_run: 25
-  severity_threshold: "medium" # Minimum severity
-  confidence_threshold: "high" # Minimum confidence
-  close_resolved: false # Auto-close when finding disappears
-  assignees: []
-
-output:
-  sarif: true
-  llm_json: true
-  artifact_retention_days: 14
-
-llm:
-  agent_hint: "codex"
-  pr_branch_prefix: "vibecheck/"
-```
-
-## Tool Enablement
-
-Tools can be enabled with:
-
-- `true` / `false`: Always on/off
-- `auto`: Run if config file detected (e.g., `eslintrc`, `tsconfig.json`)
-- `daily` / `weekly` / `monthly`: Run only on that cadence or slower
-
-### JavaScript/TypeScript Tools
-
-| Tool               | Default | Detects                  |
-| ------------------ | ------- | ------------------------ |
-| Trunk              | enabled | Always                   |
-| TypeScript         | auto    | `tsconfig.json`          |
-| ESLint             | auto    | ESLint config files      |
-| Prettier           | auto    | Prettier config files    |
-| jscpd              | weekly  | Always (on weekly+)      |
-| dependency-cruiser | weekly  | `.dependency-cruiser.js` |
-| knip               | monthly | `knip.json`              |
-| semgrep            | weekly  | Always (security scan)   |
-
-### Python Tools
-
-| Tool   | Default | Detects                              | Purpose           |
-| ------ | ------- | ------------------------------------ | ----------------- |
-| ruff   | daily   | `pyproject.toml`, `requirements.txt` | Fast linting      |
-| mypy   | daily   | Python project files                 | Type checking     |
-| bandit | weekly  | Python project files                 | Security scanning |
-
-### Java Tools
-
-| Tool     | Default | Detects                   | Purpose           |
-| -------- | ------- | ------------------------- | ----------------- |
-| PMD      | weekly  | `pom.xml`, `build.gradle` | Code analysis     |
-| SpotBugs | monthly | Compiled `.class` files   | Bytecode analysis |
+| Tool     | Purpose                |
+| -------- | ---------------------- |
+| PMD      | Code analysis          |
+| SpotBugs | Bytecode bug detection |
 
 ## Severity & Confidence
 
@@ -293,125 +193,23 @@ Tools can be enabled with:
 
 ### Default Thresholds
 
-Issues are created when:
-
-- `severity >= medium` AND `confidence >= high`
-
-Adjust with `issues.severity_threshold` and `issues.confidence_threshold`.
+The install page defaults to `severity >= low` and `confidence >= medium` to reduce noise. Adjust as needed.
 
 ## Issue Format
 
-Issues created by vibeCheck include:
-
-- **Summary**: Tool, rule, severity, confidence
-- **Location**: File path and line numbers
-- **Evidence**: Code snippets when available
-- **Suggested Fix**: Goal, steps, acceptance criteria
-- **Agent Instructions**: Branch naming, workflow hints
-- **Fingerprint**: Hidden marker for deduplication
-
-Example issue body:
-
-```markdown
-## Summary
-
-**Tool:** `eslint`
-**Rule:** `no-unused-vars`
-**Severity:** medium
-**Confidence:** high
-**Effort:** S
-
-Variable 'x' is declared but never used.
-
-## Location
-
-`src/utils/helper.ts` (line 42)
-
-## Suggested Fix
-
-**Goal:** Remove unused variable declarations
-
-**Steps:**
-
-1. Identify the unused variable from the error message
-2. Determine if it should be removed or if it reveals missing functionality
-3. Remove the variable declaration if unused
-
-**Acceptance Criteria:**
-
-- [ ] No unused variable warnings in affected file
-- [ ] Tests continue to pass
-```
+Each issue includes:
+- Summary with tool, rule, severity, and confidence
+- File location with clickable GitHub links
+- Code snippets as evidence
+- Suggested fix with acceptance criteria
+- Hidden fingerprint for deduplication
 
 ## Output Artifacts
-
-Each run produces:
 
 | File               | Description                          |
 | ------------------ | ------------------------------------ |
 | `results.sarif`    | SARIF 2.1.0 for GitHub Code Scanning |
 | `results.llm.json` | Structured findings for AI agents    |
-| `findings.json`    | Raw findings array                   |
-| `context.json`     | Run context and repo profile         |
-
-### LLM JSON Schema
-
-```json
-{
-  "version": 1,
-  "repo": { "owner": "...", "name": "...", "commit": "..." },
-  "summary": {
-    "totalFindings": 42,
-    "highConfidence": 10,
-    "actionable": 8
-  },
-  "findings": [
-    {
-      "fingerprint": "sha256:...",
-      "tool": "eslint",
-      "ruleId": "no-unused-vars",
-      "severity": "medium",
-      "confidence": "high",
-      "effort": "S",
-      "locations": [{ "path": "...", "startLine": 42 }],
-      "suggestedFix": {
-        "goal": "...",
-        "steps": ["..."],
-        "acceptance": ["..."]
-      }
-    }
-  ]
-}
-```
-
-## AI Agent Integration
-
-### Issue-Driven Workflow
-
-1. Agent picks highest-priority issue (severity × confidence × effort)
-2. Creates branch: `vibecheck/<fingerprint>/<rule-slug>`
-3. Implements suggested fix
-4. Runs `trunk check` and tests
-5. Opens PR: "Fixes #123"
-
-### Using LLM JSON
-
-Download the artifact and process programmatically:
-
-```typescript
-const results = await fetchArtifact("vibecheck-results");
-const llmJson = JSON.parse(results["results.llm.json"]);
-
-// Pick actionable findings sorted by priority
-const actionable = llmJson.findings
-  .filter((f) => f.confidence === "high")
-  .sort((a, b) => severityOrder[b.severity] - severityOrder[a.severity]);
-
-// Work through issues
-for (const finding of actionable) {
-  await agent.fix(finding);
-}
-```
 
 ## FAQ
 
@@ -463,39 +261,12 @@ vibeCheck respects GitHub API limits:
 
 ## Development
 
-### Local Setup
-
 ```bash
-# Clone the repo
-git clone https://github.com/<OWNER>/vibeCheck.git
-cd vibeCheck
-
-# Install dependencies
+git clone https://github.com/WolffM/vibecheck.git
+cd vibecheck
 pnpm install
-
-# Run tests
 pnpm test
-
-# Type check
-pnpm typecheck
 ```
-
-### Running Locally
-
-```bash
-# Analyze a target repo
-npx tsx scripts/analyze.ts --root /path/to/repo --cadence weekly --skip-issues
-```
-
-### Scripts
-
-| Script               | Description                 |
-| -------------------- | --------------------------- |
-| `analyze.ts`         | Main orchestrator           |
-| `repo-detect.ts`     | Detect repo profile         |
-| `build-sarif.ts`     | Generate SARIF output       |
-| `build-llm-json.ts`  | Generate LLM JSON output    |
-| `sarif-to-issues.ts` | Create/update GitHub issues |
 
 ## License
 

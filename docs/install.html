@@ -128,7 +128,6 @@
       border: 1px solid #30363d;
       border-radius: 8px;
       background: #161b22;
-      overflow: hidden;
     }
     summary {
       padding: 14px 16px;
@@ -236,7 +235,7 @@
       min-width: 220px;
       background: #0d1117;
       border-radius: 8px;
-      padding: 12px;
+      padding: 10px;
       border: 1px solid #21262d;
     }
     .tool-grid {
@@ -247,9 +246,10 @@
     .tool-category-header {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
-      margin-bottom: 12px;
-      padding-bottom: 10px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
       border-bottom: 1px solid #30363d;
     }
     .tool-category-header .lang-badge {
@@ -277,8 +277,8 @@
     .tool-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
       border: 1px solid transparent;
@@ -376,10 +376,10 @@
       color: #c9d1d9;
       white-space: normal;
       width: max-content;
-      max-width: 250px;
+      max-width: 220px;
       text-align: center;
       line-height: 1.4;
-      z-index: 100;
+      z-index: 1000;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
     .info-icon .tooltip::after {
@@ -420,10 +420,11 @@
           <h4>Analysis Settings</h4>
           <div class="option-row">
             <div class="option-field">
-              <label for="cadence">Schedule <span class="info-icon">i<span class="tooltip">How often to run analysis</span></span></label>
+              <label for="cadence">Schedule <span class="info-icon">i<span class="tooltip">How often to run analysis automatically</span></span></label>
               <select id="cadence">
+                <option value="manual" selected>Manual (default)</option>
                 <option value="daily">Daily</option>
-                <option value="weekly" selected>Weekly</option>
+                <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
             </div>
@@ -431,7 +432,7 @@
               <label for="severity">Min Severity <span class="info-icon">i<span class="tooltip">Only report issues at or above this level</span></span></label>
               <select id="severity">
                 <option value="info">Info</option>
-                <option value="low" selected>Low</option>
+                <option value="low" selected>Low (default)</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
@@ -441,7 +442,7 @@
               <label for="confidence">Min Confidence <span class="info-icon">i<span class="tooltip">Higher = fewer false positives, lower = more findings</span></span></label>
               <select id="confidence">
                 <option value="low">Low</option>
-                <option value="medium" selected>Medium</option>
+                <option value="medium" selected>Medium (default)</option>
                 <option value="high">High</option>
               </select>
             </div>
@@ -453,13 +454,11 @@
           <h4>Issue Management</h4>
           <div class="option-row">
             <div class="option-field">
-              <label for="mergeStrategy">Merge Strategy <span class="info-icon">i<span class="tooltip">Group similar findings into single issues</span></span></label>
+              <label for="mergeStrategy">Merge Strategy <span class="info-icon">i<span class="tooltip">How to group related findings into issues. "Same rule" creates one issue per rule across all files.</span></span></label>
               <select id="mergeStrategy">
-                <option value="none">None</option>
-                <option value="same-file">Same file</option>
-                <option value="same-rule">Same rule</option>
-                <option value="same-linter" selected>Same linter</option>
-                <option value="same-tool">Same tool</option>
+                <option value="none">None - one issue per finding</option>
+                <option value="same-file">Same file + rule</option>
+                <option value="same-rule" selected>Same rule (default)</option>
               </select>
             </div>
           </div>
@@ -611,10 +610,10 @@
   <script>
     // Default values
     const DEFAULTS = {
-      cadence: 'weekly',
+      cadence: 'manual',
       severity: 'low',
       confidence: 'medium',
-      mergeStrategy: 'same-linter'
+      mergeStrategy: 'same-rule'
     };
 
     // All tools that are enabled by default
@@ -626,7 +625,7 @@
         case 'daily': return '0 3 * * *';      // Every day at 3am UTC
         case 'weekly': return '0 3 * * 1';     // Monday at 3am UTC
         case 'monthly': return '0 3 1 * *';    // 1st of month at 3am UTC
-        default: return '0 3 * * 1';
+        default: return null;  // manual - no schedule
       }
     }
 
@@ -643,6 +642,23 @@
         mergeStrategy !== DEFAULTS.mergeStrategy ||
         disabledTools.length > 0;
 
+      // Build the on: section based on cadence
+      let onSection;
+      if (cron) {
+        const cadenceComment = cadence === 'weekly' ? 'on Monday ' : cadence === 'monthly' ? 'on the 1st ' : '';
+        onSection = `on:
+  # Run ${cadence} ${cadenceComment}at 3am UTC
+  schedule:
+    - cron: "${cron}"
+
+  # Allow manual trigger
+  workflow_dispatch:`;
+      } else {
+        onSection = `on:
+  # Manual trigger only - run via Actions tab
+  workflow_dispatch:`;
+      }
+
       // Build the workflow
       let yaml = `# vibeCheck Analysis Workflow
 #
@@ -651,23 +667,7 @@
 
 name: vibeCheck Analysis
 
-on:
-  # Run ${cadence} ${cadence === 'weekly' ? 'on Monday ' : cadence === 'monthly' ? 'on the 1st ' : ''}at 3am UTC
-  schedule:
-    - cron: "${cron}"
-
-  # Allow manual trigger
-  workflow_dispatch:
-    inputs:
-      cadence:
-        description: "Analysis cadence"
-        required: false
-        default: "${cadence}"
-        type: choice
-        options:
-          - daily
-          - weekly
-          - monthly
+${onSection}
 
 permissions:
   contents: read
@@ -688,8 +688,7 @@ jobs:
       - name: Run vibeCheck
         uses: WolffM/vibecheck@main
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}
-          cadence: \${{ github.event.inputs.cadence || '${cadence}' }}`;
+          github_token: \${{ secrets.GITHUB_TOKEN }}`;
 
       // Add custom options only if they differ from defaults
       if (severity !== 'info') {
@@ -698,7 +697,7 @@ jobs:
       if (confidence !== 'low') {
         yaml += `\n          confidence_threshold: "${confidence}"`;
       }
-      if (mergeStrategy !== 'same-linter') {
+      if (mergeStrategy !== 'same-rule') {
         yaml += `\n          merge_strategy: "${mergeStrategy}"`;
       }
 
@@ -802,6 +801,7 @@ jobs:
 
       window.location.href = url;
     });
+
   </script>
 </body>
 </html>

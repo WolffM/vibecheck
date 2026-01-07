@@ -24,6 +24,10 @@ function createTestOptions(overrides: Partial<WorkflowOptions> = {}): WorkflowOp
 }
 
 describe('getCronForCadence', () => {
+  it('should return null for manual (default)', () => {
+    expect(getCronForCadence('manual')).toBeNull();
+  });
+
   it('should return daily cron expression', () => {
     expect(getCronForCadence('daily')).toBe('0 3 * * *');
   });
@@ -39,14 +43,17 @@ describe('getCronForCadence', () => {
 
 describe('generateWorkflow', () => {
   describe('default options', () => {
-    it('should generate valid YAML with default options', () => {
+    it('should generate valid YAML with default options (manual)', () => {
       const options = createTestOptions();
       const yaml = generateWorkflow(options);
 
       // Check basic structure
       expect(yaml).toContain('name: vibeCheck Analysis');
       expect(yaml).toContain('uses: WolffM/vibecheck@main');
-      expect(yaml).toContain('cron: "0 3 * * 1"'); // weekly
+      expect(yaml).toContain('workflow_dispatch:');
+      // Manual mode should NOT have schedule
+      expect(yaml).not.toContain('schedule:');
+      expect(yaml).not.toContain('cron:');
     });
 
     it('should include severity_threshold for default low (not info)', () => {
@@ -69,7 +76,7 @@ describe('generateWorkflow', () => {
       const options = createTestOptions();
       const yaml = generateWorkflow(options);
 
-      // Default merge strategy is 'same-linter', should not appear
+      // Default merge strategy is 'same-rule', should not appear
       expect(yaml).not.toContain('merge_strategy:');
     });
   });
@@ -162,8 +169,8 @@ describe('generateWorkflow', () => {
   });
 
   describe('merge strategy options', () => {
-    it('should omit merge_strategy for same-linter (default)', () => {
-      const options = createTestOptions({ mergeStrategy: 'same-linter' });
+    it('should omit merge_strategy for same-rule (default)', () => {
+      const options = createTestOptions({ mergeStrategy: 'same-rule' });
       const yaml = generateWorkflow(options);
 
       expect(yaml).not.toContain('merge_strategy:');
@@ -181,13 +188,6 @@ describe('generateWorkflow', () => {
       const yaml = generateWorkflow(options);
 
       expect(yaml).toContain('merge_strategy: "same-file"');
-    });
-
-    it('should include merge_strategy for same-tool', () => {
-      const options = createTestOptions({ mergeStrategy: 'same-tool' });
-      const yaml = generateWorkflow(options);
-
-      expect(yaml).toContain('merge_strategy: "same-tool"');
     });
   });
 
@@ -240,10 +240,10 @@ describe('generateWorkflow', () => {
 
 describe('DEFAULTS', () => {
   it('should have expected default values', () => {
-    expect(DEFAULTS.cadence).toBe('weekly');
+    expect(DEFAULTS.cadence).toBe('manual');
     expect(DEFAULTS.severity).toBe('low');
     expect(DEFAULTS.confidence).toBe('medium');
-    expect(DEFAULTS.mergeStrategy).toBe('same-linter');
+    expect(DEFAULTS.mergeStrategy).toBe('same-rule');
   });
 });
 
