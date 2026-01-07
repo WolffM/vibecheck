@@ -1,6 +1,7 @@
 # vibeCheck Output
 .vibecheck-output/
 .vibecheck-verbose-output/
+.vibecheck-test-output/
 
 # Dependencies
 node_modules/

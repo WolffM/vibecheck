@@ -536,8 +536,11 @@ function buildAIMetadataMarkers(finding: Finding): string {
  * Check if the message already contains location information (from merged findings).
  */
 function messageContainsLocations(message: string): boolean {
-  // Merged findings have messages like "Found X occurrences in Y files:" followed by bullet points
-  return /Found \d+ occurrences? in \d+ files?:/i.test(message);
+  // Merged findings have messages like:
+  // - "Found X occurrences across Y files:" (multiple files)
+  // - "Found X occurrences in filename:" (single file)
+  // Both are followed by bullet points with locations
+  return /Found \d+ occurrences? (across \d+ files|in [^:]+):/i.test(message);
 }
 
 /**
