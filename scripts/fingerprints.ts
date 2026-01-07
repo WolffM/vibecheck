@@ -326,6 +326,45 @@ function extractSublinter(finding: Finding): string {
 }
 
 /**
+ * Format locations grouped by file for cleaner display.
+ * Instead of listing each location on a separate line, groups by file:
+ * - `file1.ts`: lines 5, 10, 15 (3 total)
+ * - `file2.ts`: line 8
+ */
+function formatLocationsGroupedByFile(
+  locations: { path: string; startLine: number }[],
+  maxLinesPerFile: number = 8,
+): string {
+  // Group locations by file
+  const byFile = new Map<string, number[]>();
+  for (const loc of locations) {
+    const lines = byFile.get(loc.path) || [];
+    lines.push(loc.startLine);
+    byFile.set(loc.path, lines);
+  }
+
+  // Format each file group
+  const lines: string[] = [];
+  for (const [path, lineNumbers] of byFile) {
+    // Sort line numbers
+    lineNumbers.sort((a, b) => a - b);
+    
+    if (lineNumbers.length === 1) {
+      lines.push(`- \`${path}\` line ${lineNumbers[0]}`);
+    } else if (lineNumbers.length <= maxLinesPerFile) {
+      // Show all lines: "lines 5, 10, 15"
+      lines.push(`- \`${path}\` lines ${lineNumbers.join(", ")}`);
+    } else {
+      // Truncate: "lines 5, 10, 15, ... (42 total)"
+      const shown = lineNumbers.slice(0, maxLinesPerFile);
+      lines.push(`- \`${path}\` lines ${shown.join(", ")}, ... (${lineNumbers.length} total)`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
+/**
  * Merge multiple findings into a single combined finding.
  * Combines all locations, evidence, and creates a summary message.
  * Returns finding without fingerprint - caller sets it based on merge key.
@@ -337,6 +376,7 @@ function mergeFindings(
   if (findings.length === 0) {
     throw new Error("Cannot merge empty findings array");
   }
+
 
   if (findings.length === 1) {
     return findings[0];
@@ -437,7 +477,9 @@ function mergeFindings(
     baseMessage = base.message;
   }
 
-  const message = `${baseMessage}\n\n**Found ${locationSummary}:**\n${allLocations.map((l) => `- \`${l.path}\` line ${l.startLine}`).join("\n")}`;
+  // Format locations grouped by file for cleaner display
+  const formattedLocations = formatLocationsGroupedByFile(allLocations);
+  const message = `${baseMessage}\n\n**Found ${locationSummary}:**\n${formattedLocations}`;
 
   // Build title based on strategy
   let title: string;
