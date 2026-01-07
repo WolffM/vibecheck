@@ -35,7 +35,6 @@ function createTestFinding(
     message: "Variable x is declared but never used",
     severity: "medium",
     confidence: "high",
-    effort: "S",
     autofix: "safe",
     locations: [{ path: "src/file.ts", startLine: 10 }],
     labels: ["vibeCheck"],

@@ -23,7 +23,6 @@ import {
   mapSemgrepSeverity,
   mapSemgrepConfidence,
   classifyLayer,
-  estimateEffort,
   determineAutofixLevel,
   meetsThresholds,
   compareFindingsForSort,
@@ -162,24 +161,6 @@ describe('classifyLayer', () => {
   it('should default to code layer', () => {
     expect(classifyLayer('eslint', 'no-unused-vars')).toBe('code');
     expect(classifyLayer('tsc', 'TS2304')).toBe('code');
-  });
-});
-
-describe('estimateEffort', () => {
-  it('should return S for autofix available', () => {
-    expect(estimateEffort('eslint', 'semi', 1, true)).toBe('S');
-  });
-
-  it('should return L for many locations', () => {
-    expect(estimateEffort('eslint', 'no-unused-vars', 5, false)).toBe('L');
-  });
-
-  it('should return M for medium complexity', () => {
-    expect(estimateEffort('jscpd', 'duplicate', 2, false)).toBe('M');
-  });
-
-  it('should return L for dependency cycles', () => {
-    expect(estimateEffort('dependency-cruiser', 'cycle-detected', 1, false)).toBe('L');
   });
 });
 

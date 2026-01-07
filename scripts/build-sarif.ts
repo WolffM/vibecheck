@@ -108,7 +108,6 @@ function findingToSarifResult(finding: Finding): SarifResult {
     },
     properties: {
       confidence: finding.confidence,
-      effort: finding.effort,
       autofix: finding.autofix,
       layer: finding.layer,
       labels: finding.labels,

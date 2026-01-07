@@ -27,15 +27,20 @@ function extractVersionFromMessage(message: string): {
   current: string | null;
   fixed: string | null;
 } {
+  // Match patterns like:
+  // - "Current version is vulnerable: 4.1.0"
+  // - "Current version: 4.1.0"
+  // - "version: 4.1.0"
+  // - "vulnerable version: 4.1.0"
   const currentMatch = message.match(
-    /Current version[:\s]+(\S+)|version[:\s]+(\S+)/i,
+    /(?:Current version|vulnerable version)[^:]*:\s*(\d+\.\d+[.\d]*)|version:\s*(\d+\.\d+[.\d]*)/i,
   );
   const fixedMatch = message.match(
-    /fixed in[:\s]+(\S+)|upgrade to[:\s]+(\S+)/i,
+    /fixed in[:\s]+(\d+\.\d+[.\d]*)|upgrade to[:\s]+(\d+\.\d+[.\d]*)|patched in[:\s]+(\d+\.\d+[.\d]*)/i,
   );
   return {
     current: currentMatch ? currentMatch[1] || currentMatch[2] : null,
-    fixed: fixedMatch ? fixedMatch[1] || fixedMatch[2] : null,
+    fixed: fixedMatch ? fixedMatch[1] || fixedMatch[2] || fixedMatch[3] : null,
   };
 }
 

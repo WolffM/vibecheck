@@ -17,7 +17,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks || true",
+    "prepare": "git rev-parse --git-dir > /dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -36,7 +36,7 @@
     "@eslint/js": "^9.0.0",
     "@types/node": "^20.10.0",
     "@vitest/coverage-v8": "^2.0.0",
-    "dependency-cruiser": "^16.0.0",
+    "dependency-cruiser": "^17.0.0",
     "eslint": "^9.0.0",
     "globals": "^17.0.0",
     "jscpd": "^4.0.0",

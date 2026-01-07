@@ -47,8 +47,5 @@ export {
 // Classification
 export { classifyLayer } from "./classification.js";
 
-// Effort estimation
-export { estimateEffort } from "./effort.js";
-
 // Autofix detection
 export { determineAutofixLevel } from "./autofix.js";

@@ -16,7 +16,6 @@ import {
 } from "./parser-utils.js";
 import {
   determineAutofixLevel,
-  estimateEffort,
   mapBanditConfidence,
   mapBanditSeverity,
   mapDepcruiseConfidence,
@@ -125,7 +124,6 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
 
     const severity = mapJscpdSeverity(clone.lines, clone.tokens);
     const confidence = mapJscpdConfidence(clone.tokens);
-    const effort = estimateEffort("jscpd", "duplicate-code", 2, false);
 
     const finding: Omit<Finding, "fingerprint"> = {
       layer: "code",
@@ -135,7 +133,6 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
       message: `Found ${clone.lines} duplicate lines (${clone.tokens} tokens) between ${file1Path} and ${file2Path}`,
       severity,
       confidence,
-      effort,
       autofix: "none",
       locations: [location1, location2],
       evidence: clone.fragment ? { snippet: clone.fragment } : undefined,
@@ -312,7 +309,6 @@ function createKnipFinding(
 
   const severity = mapKnipSeverity(type);
   const confidence = mapKnipConfidence(type);
-  const effort = estimateEffort("knip", type, 1, false);
 
   let message: string;
   let title: string;
@@ -358,7 +354,6 @@ function createKnipFinding(
     message,
     severity,
     confidence,
-    effort,
     autofix: "none",
     locations: [location],
     labels: ["vibeCheck", "tool:knip", `severity:${severity}`],

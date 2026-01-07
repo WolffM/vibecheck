@@ -341,9 +341,6 @@ export const DEFAULT_LABELS = [
     color: "d4c5f9",
     description: "Low confidence finding",
   },
-  { name: "effort:S", color: "c2e0c6", description: "Small effort to fix" },
-  { name: "effort:M", color: "fef2c0", description: "Medium effort to fix" },
-  { name: "effort:L", color: "f9d0c4", description: "Large effort to fix" },
   { name: "autofix:safe", color: "0e8a16", description: "Safe to auto-fix" },
   { name: "layer:code", color: "bfdadc", description: "Code-level finding" },
   {

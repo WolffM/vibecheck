@@ -285,7 +285,6 @@ export function getLabelsForFinding(
   const labels = [
     baseLabel,
     `severity:${finding.severity}`,
-    `effort:${finding.effort}`,
     `layer:${finding.layer}`,
     `tool:${finding.tool}`,
   ];
@@ -583,7 +582,6 @@ export function generateIssueBody(
 |----------|-------|
 | Severity | ${severityEmoji} ${finding.severity.toUpperCase()} |
 | Confidence | ${finding.confidence} |
-| Effort | ${finding.effort} |
 | Tool | \`${finding.tool}\` |
 | Rule | ${ruleLink} |
 | Layer | ${finding.layer} |

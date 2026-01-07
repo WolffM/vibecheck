@@ -13,7 +13,6 @@ export type Cadence = "daily" | "weekly" | "monthly";
 type ToolEnablement = "auto" | boolean | Cadence;
 export type Severity = "low" | "medium" | "high" | "critical";
 export type Confidence = "low" | "medium" | "high";
-export type Effort = "S" | "M" | "L";
 export type AutofixLevel = "none" | "safe" | "requires_review";
 export type Layer = "code" | "architecture" | "system" | "security";
 
@@ -245,7 +244,6 @@ export interface Finding {
   message: string;
   severity: Severity;
   confidence: Confidence;
-  effort: Effort;
   autofix: AutofixLevel;
   locations: Location[];
   evidence?: Evidence;
@@ -326,7 +324,6 @@ export interface SarifResult {
   fingerprints?: Record<string, string>;
   properties?: {
     confidence?: Confidence;
-    effort?: Effort;
     autofix?: AutofixLevel;
     layer?: Layer;
     [key: string]: unknown;

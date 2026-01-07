@@ -6,7 +6,7 @@
  */
 
 import { fingerprintFinding } from "./fingerprints.js";
-import { classifyLayer, estimateEffort } from "./scoring.js";
+import { classifyLayer } from "./scoring.js";
 import type {
   AutofixLevel,
   Confidence,
@@ -143,7 +143,7 @@ export function buildLocationFromRowCol(
 
 /**
  * Create a Finding from configuration.
- * Handles layer classification, effort estimation, labels, and fingerprinting.
+ * Handles layer classification, labels, and fingerprinting.
  */
 export function createFinding<T>(config: FindingConfig<T>): Finding {
   const {
@@ -165,9 +165,6 @@ export function createFinding<T>(config: FindingConfig<T>): Finding {
 
   // Determine layer from classification if not provided
   const effectiveLayer = layer ?? classifyLayer(tool, ruleId);
-
-  // Determine effort
-  const effort = estimateEffort(tool, ruleId, 1, hasAutofix);
 
   // Determine autofix level
   const effectiveAutofix = autofix ?? (hasAutofix ? "requires_review" : "none");
@@ -192,7 +189,6 @@ export function createFinding<T>(config: FindingConfig<T>): Finding {
     message,
     severity,
     confidence,
-    effort,
     autofix: effectiveAutofix,
     locations,
     labels,
