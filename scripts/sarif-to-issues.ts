@@ -276,6 +276,19 @@ export async function processFindings(
           }),
         );
 
+        // Update the issue's state in our tracking so closeDuplicateIssues sees it as open
+        existingIssue.state = "open";
+        existingIssue.title = title;
+
+        // Add to normalizedTitleMap so duplicate detection works
+        const normalizedTitle = normalizeIssueTitle(title);
+        const existingForTitle = normalizedTitleMap.get(normalizedTitle);
+        if (existingForTitle) {
+          existingForTitle.push(existingIssue);
+        } else {
+          normalizedTitleMap.set(normalizedTitle, [existingIssue]);
+        }
+
         stats.updated++;
       }
     } else {
