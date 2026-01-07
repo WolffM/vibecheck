@@ -1,12 +1,12 @@
 /**
- * vibeCop Core Types
+ * vibeCheck Core Types
  *
  * Central type definitions for the static analysis pipeline.
- * Reference: vibeCop_spec.md sections 5, 6, 7
+ * Reference: vibeCheck_spec.md sections 5, 6, 7
  */
 
 // ============================================================================
-// Configuration Types (vibecop.yml schema)
+// Configuration Types (vibecheck.yml schema)
 // ============================================================================
 
 export type Cadence = "daily" | "weekly" | "monthly";
@@ -149,7 +149,7 @@ export const DEFAULT_CONFIG: VibeCopConfig = {
   version: 1,
   issues: {
     enabled: true,
-    label: "vibeCop",
+    label: "vibeCheck",
     max_new_per_run: 25,
     severity_threshold: "info",
     confidence_threshold: "low",
@@ -158,7 +158,7 @@ export const DEFAULT_CONFIG: VibeCopConfig = {
   },
   llm: {
     agent_hint: "codex",
-    pr_branch_prefix: "vibecop/fix-",
+    pr_branch_prefix: "vibecheck/fix-",
   },
 };
 

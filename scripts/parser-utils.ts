@@ -128,7 +128,7 @@ export function createFinding<T>(config: FindingConfig<T>): Finding {
 
   // Build standard labels
   const labels = [
-    "vibeCop",
+    "vibeCheck",
     `tool:${tool}`,
     `severity:${severity}`,
     ...extraLabels,

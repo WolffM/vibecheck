@@ -3,7 +3,7 @@
  *
  * Re-exports all scoring-related functions from submodules.
  *
- * Reference: vibeCop_spec.md section 7
+ * Reference: vibeCheck_spec.md section 7
  */
 
 // Hierarchy and thresholds

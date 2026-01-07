@@ -1,11 +1,11 @@
-# vibeCop Analysis Workflow
+# vibeCheck Analysis Workflow
 #
-# This workflow runs vibeCop static analysis on your repository.
-# Copy this file to .github/workflows/vibecop.yml in your repository.
+# This workflow runs vibeCheck static analysis on your repository.
+# Copy this file to .github/workflows/vibecheck.yml in your repository.
 #
-# For more info: https://github.com/WolffM/vibecop
+# For more info: https://github.com/WolffM/vibecheck
 
-name: vibeCop Analysis
+name: vibeCheck Analysis
 
 on:
   # Run weekly on Monday at 3am UTC
@@ -50,8 +50,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run vibeCop
-        uses: WolffM/vibecop@main
+      - name: Run vibeCheck
+        uses: WolffM/vibecheck@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cadence: ${{ github.event.inputs.cadence || 'weekly' }}
@@ -63,6 +63,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: vibecop-results
-          path: .vibecop-output/
+          name: vibecheck-results
+          path: .vibecheck-output/
           retention-days: 14

@@ -1,5 +1,5 @@
 /**
- * Shared CLI utilities for vibeCop scripts.
+ * Shared CLI utilities for vibeCheck scripts.
  *
  * Common functionality extracted from CLI entry points to reduce duplication.
  */

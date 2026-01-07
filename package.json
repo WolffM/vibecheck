@@ -1,10 +1,10 @@
 {
-  "name": "vibecop",
+  "name": "vibecheck",
   "version": "1.0.0",
   "description": "Cross-repo static analysis + actionable GitHub issue generator for AI agents",
   "type": "module",
   "bin": {
-    "vibecop": "./bin/cli.js"
+    "vibecheck": "./bin/cli.js"
   },
   "files": [
     "bin/",
@@ -49,11 +49,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/WolffM/vibecop.git"
+    "url": "https://github.com/WolffM/vibecheck.git"
   },
-  "homepage": "https://github.com/WolffM/vibecop#readme",
+  "homepage": "https://github.com/WolffM/vibecheck#readme",
   "bugs": {
-    "url": "https://github.com/WolffM/vibecop/issues"
+    "url": "https://github.com/WolffM/vibecheck/issues"
   },
   "author": "WolffM",
   "keywords": [

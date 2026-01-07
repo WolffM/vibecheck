@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Install vibeCop</title>
+  <title>Install vibeCheck</title>
   <style>
     * {
       box-sizing: border-box;
@@ -115,7 +115,7 @@
 </head>
 <body>
   <div class="logo">🛡️</div>
-  <h1>Install vibeCop</h1>
+  <h1>Install vibeCheck</h1>
   <p class="subtitle">Add automated code analysis to your repository in one click</p>
 
   <form id="installForm">
@@ -129,33 +129,33 @@
     >
     <p class="error" id="error">Please enter a valid repository (owner/repo or GitHub URL)</p>
 
-    <button type="submit" id="submitBtn">Add vibeCop workflow</button>
+    <button type="submit" id="submitBtn">Add vibeCheck workflow</button>
   </form>
 
   <div class="help">
     <h3>What happens next?</h3>
     <p>
       You'll be taken to GitHub to create a new file in your repository.
-      The workflow file will be pre-filled - just click <strong>"Commit changes"</strong> to add vibeCop.
+      The workflow file will be pre-filled - just click <strong>"Commit changes"</strong> to add vibeCheck.
     </p>
   </div>
 
   <div class="help" style="margin-top: 16px;">
-    <h3>What does vibeCop do?</h3>
+    <h3>What does vibeCheck do?</h3>
     <p>
       Runs static analysis tools (ESLint, TypeScript, Semgrep, etc.) and creates GitHub issues
       that AI coding agents can automatically fix.
-      <a href="https://github.com/WolffM/vibecop" target="_blank">Learn more →</a>
+      <a href="https://github.com/WolffM/vibecheck" target="_blank">Learn more →</a>
     </p>
   </div>
 
   <script>
-    const workflowContent = `# vibeCop Analysis Workflow
+    const workflowContent = `# vibeCheck Analysis Workflow
 #
-# This workflow runs vibeCop static analysis on your repository.
-# For more info: https://github.com/WolffM/vibecop
+# This workflow runs vibeCheck static analysis on your repository.
+# For more info: https://github.com/WolffM/vibecheck
 
-name: vibeCop Analysis
+name: vibeCheck Analysis
 
 on:
   # Run weekly on Monday at 3am UTC
@@ -191,8 +191,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run vibeCop
-        uses: WolffM/vibecop@main
+      - name: Run vibeCheck
+        uses: WolffM/vibecheck@main
         with:
           github_token: \${{ secrets.GITHUB_TOKEN }}
           cadence: \${{ github.event.inputs.cadence || 'weekly' }}
@@ -243,7 +243,7 @@ jobs:
       }
 
       const encoded = encodeURIComponent(workflowContent);
-      const url = `https://github.com/${repo}/new/main?filename=.github/workflows/vibecop.yml&value=${encoded}`;
+      const url = `https://github.com/${repo}/new/main?filename=.github/workflows/vibecheck.yml&value=${encoded}`;
 
       window.location.href = url;
     });

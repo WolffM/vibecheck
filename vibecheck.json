@@ -16,7 +16,7 @@
   },
   "issues": {
     "enabled": true,
-    "label": "vibeCop",
+    "label": "vibeCheck",
     "max_new_per_run": 20,
     "severity_threshold": "medium",
     "confidence_threshold": "medium"

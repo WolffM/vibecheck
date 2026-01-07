@@ -1,13 +1,13 @@
-# vibeCop Self-Test Workflow
+# vibeCheck Self-Test Workflow
 #
-# This workflow runs vibeCop on itself (dogfooding) to:
+# This workflow runs vibeCheck on itself (dogfooding) to:
 # 1. Test that the action works correctly
-# 2. Catch issues in the vibeCop codebase itself
+# 2. Catch issues in the vibeCheck codebase itself
 # 3. Validate changes before release
 #
 # Uses the local action (uses: ./) to test the actual composite action.
 
-name: vibeCop Self-Test
+name: vibeCheck Self-Test
 
 on:
   # Weekly schedule
@@ -53,7 +53,7 @@ jobs:
           fetch-depth: 0
 
       # Use the local action (dogfooding)
-      - name: Run vibeCop
+      - name: Run vibeCheck
         uses: ./
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -66,6 +66,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vibecop-self-test-results
-          path: .vibecop-output/
+          name: vibecheck-self-test-results
+          path: .vibecheck-output/
           retention-days: 14

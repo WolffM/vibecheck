@@ -3,7 +3,7 @@
  *
  * Parses raw output from various tools into the unified Finding model.
  *
- * Reference: vibeCop_spec.md sections 6, 7
+ * Reference: vibeCheck_spec.md sections 6, 7
  */
 
 import { fingerprintFinding } from "./fingerprints.js";
@@ -134,7 +134,7 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
       autofix: "none",
       locations: [location1, location2],
       evidence: clone.fragment ? { snippet: clone.fragment } : undefined,
-      labels: ["vibeCop", "tool:jscpd", `severity:${severity}`, "duplicates"],
+      labels: ["vibeCheck", "tool:jscpd", `severity:${severity}`, "duplicates"],
       rawOutput: clone,
     };
 
@@ -353,7 +353,7 @@ function createKnipFinding(
     effort,
     autofix: "none",
     locations: [location],
-    labels: ["vibeCop", "tool:knip", `severity:${severity}`],
+    labels: ["vibeCheck", "tool:knip", `severity:${severity}`],
     rawOutput: { type, filePath, symbol, line },
   };
 

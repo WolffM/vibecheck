@@ -1,4 +1,4 @@
-# vibeCop Trunk Baseline Configuration
+# vibeCheck Trunk Baseline Configuration
 #
 # This provides sensible defaults for Trunk-based linting.
 # Repos can override with their own .trunk/trunk.yaml

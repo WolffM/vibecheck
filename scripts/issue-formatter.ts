@@ -174,7 +174,7 @@ export function generateIssueTitle(finding: Finding): string {
     // For many files, omit location hint (title already says "X files")
   }
 
-  const title = `[vibeCop] ${finding.title}${locationHint}`;
+  const title = `[vibeCheck] ${finding.title}${locationHint}`;
   return truncateAtWordBoundary(title, maxLen);
 }
 
@@ -228,7 +228,7 @@ export function detectLanguagesInFindings(findings: Finding[]): Set<string> {
 /**
  * Get labels for a finding.
  * @param finding - The finding to label
- * @param baseLabel - The base label (e.g., "vibeCop")
+ * @param baseLabel - The base label (e.g., "vibeCheck")
  * @param languagesInRun - Set of languages detected in this run (for conditional lang: labels)
  */
 export function getLabelsForFinding(
@@ -437,18 +437,18 @@ ${steps}
  */
 function buildAIMetadataMarkers(finding: Finding): string {
   const markers = [
-    `<!-- vibecop:ai:tool=${finding.tool} -->`,
-    `<!-- vibecop:ai:rule=${finding.ruleId} -->`,
-    `<!-- vibecop:ai:severity=${finding.severity} -->`,
-    `<!-- vibecop:ai:layer=${finding.layer} -->`,
-    `<!-- vibecop:ai:files=${finding.locations.map((l) => l.path).join(",")} -->`,
+    `<!-- vibecheck:ai:tool=${finding.tool} -->`,
+    `<!-- vibecheck:ai:rule=${finding.ruleId} -->`,
+    `<!-- vibecheck:ai:severity=${finding.severity} -->`,
+    `<!-- vibecheck:ai:layer=${finding.layer} -->`,
+    `<!-- vibecheck:ai:files=${finding.locations.map((l) => l.path).join(",")} -->`,
   ];
 
   // Add CWE for security findings
   const cweLabel = finding.labels.find((l) => l.startsWith("cwe:"));
   if (cweLabel) {
     markers.push(
-      `<!-- vibecop:ai:cwe=CWE-${cweLabel.replace("cwe:", "")} -->`,
+      `<!-- vibecheck:ai:cwe=CWE-${cweLabel.replace("cwe:", "")} -->`,
     );
   }
 
@@ -514,7 +514,7 @@ ${referencesSection}
 - **Commit:** [\`${repo.commit.substring(0, 7)}\`](https://github.com/${repo.owner}/${repo.name}/commit/${repo.commit})
 - **Run:** #${runNumber}
 - **Generated:** ${timestamp}
-- **Branch suggestion:** \`vibecop/fix-${shortFingerprint(finding.fingerprint)}\`
+- **Branch suggestion:** \`vibecheck/fix-${shortFingerprint(finding.fingerprint)}\`
 
 </details>
 

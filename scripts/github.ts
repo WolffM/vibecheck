@@ -3,7 +3,7 @@
  *
  * Provides GitHub API interactions for issue management.
  *
- * Reference: vibeCop_spec.md sections 8, 12
+ * Reference: vibeCheck_spec.md sections 8, 12
  */
 
 import { Octokit } from "@octokit/rest";
@@ -298,13 +298,13 @@ export async function ensureLabels(
 }
 
 /**
- * Default vibeCop labels to create.
+ * Default vibeCheck labels to create.
  */
 export const DEFAULT_LABELS = [
   {
-    name: "vibeCop",
+    name: "vibeCheck",
     color: "5319e7",
-    description: "Created by vibeCop static analysis",
+    description: "Created by vibeCheck static analysis",
   },
   {
     name: "severity:critical",

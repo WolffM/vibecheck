@@ -4,7 +4,7 @@
  * Inspects the target repository to build a RepoProfile used for
  * automatic tool enablement decisions.
  *
- * Reference: vibeCop_spec.md section 5.3
+ * Reference: vibeCheck_spec.md section 5.3
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";

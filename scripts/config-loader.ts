@@ -1,7 +1,7 @@
 /**
  * Configuration Loader
  *
- * Loads and validates vibecop configuration files.
+ * Loads and validates vibecheck configuration files.
  */
 
 import { existsSync, readFileSync } from "node:fs";
@@ -39,7 +39,7 @@ export function isValidConfidenceThreshold(value: string): value is Confidence {
 // ============================================================================
 
 /**
- * Very basic YAML parser for vibecop.yml structure.
+ * Very basic YAML parser for vibecheck.yml structure.
  * For production, use the 'yaml' npm package.
  */
 function parseSimpleYaml(content: string): VibeCopConfig {
@@ -66,11 +66,11 @@ function parseSimpleYaml(content: string): VibeCopConfig {
 // ============================================================================
 
 /**
- * Load vibecop.yml config from repo root.
+ * Load vibecheck.yml config from repo root.
  */
 export function loadVibeCopConfig(
   rootPath: string,
-  configPath: string = "vibecop",
+  configPath: string = "vibecheck",
 ): VibeCopConfig {
   // Try JSON first, then YAML
   const baseName = configPath.replace(/\.(json|yml|yaml)$/, "");

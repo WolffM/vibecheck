@@ -243,7 +243,7 @@ export function runJscpd(rootPath: string, minTokens: number = 70): Finding[] {
   console.log(`Running jscpd (min-tokens: ${minTokens})...`);
 
   try {
-    const outputDir = join(rootPath, ".vibecop-output");
+    const outputDir = join(rootPath, ".vibecheck-output");
     const outputPath = join(outputDir, "jscpd-report.json");
 
     // Files/patterns that commonly have legitimate duplicate content
@@ -252,7 +252,7 @@ export function runJscpd(rootPath: string, minTokens: number = 70): Finding[] {
       "**/dist/**",
       "**/build/**",
       "**/.git/**",
-      "**/.vibecop-output/**",
+      "**/.vibecheck-output/**",
       "**/.trunk/**",
       // Lock files - always have duplicate structure
       "**/package-lock.json",

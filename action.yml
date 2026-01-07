@@ -1,4 +1,4 @@
-name: "vibeCop"
+name: "vibeCheck"
 description: "Unified static analysis with intelligent issue creation for AI-driven development"
 author: "WolffM"
 
@@ -28,9 +28,9 @@ inputs:
     required: false
     default: "false"
   config_path:
-    description: "Path to vibecop.yml config file"
+    description: "Path to vibecheck.yml config file"
     required: false
-    default: "vibecop.yml"
+    default: "vibecheck.yml"
   github_token:
     description: "GitHub token for issue management"
     required: true
@@ -68,7 +68,7 @@ runs:
       with:
         version: 9
 
-    - name: Install vibeCop dependencies
+    - name: Install vibeCheck dependencies
       shell: bash
       run: |
         cd ${{ github.action_path }}
@@ -169,7 +169,7 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
       run: |
-        OUTPUT_DIR="${{ github.workspace }}/.vibecop-output"
+        OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
 
         # Run the analysis
         npx tsx ${{ github.action_path }}/scripts/analyze.ts \
@@ -199,19 +199,19 @@ runs:
         echo "llm_json_path=$OUTPUT_DIR/results.llm.json" >> $GITHUB_OUTPUT
 
     - name: Upload SARIF to Code Scanning
-      if: hashFiles('.vibecop-output/results.sarif') != ''
+      if: hashFiles('.vibecheck-output/results.sarif') != ''
       uses: github/codeql-action/upload-sarif@45c373516f557556c15d420e3f5e0aa3d64366bc # v3.31.9
       with:
-        sarif_file: .vibecop-output/results.sarif
-        category: vibeCop
+        sarif_file: .vibecheck-output/results.sarif
+        category: vibeCheck
 
     - name: Generate Summary
       shell: bash
       run: |
-        OUTPUT_DIR="${{ github.workspace }}/.vibecop-output"
+        OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
 
         if [ -f "$OUTPUT_DIR/results.llm.json" ]; then
-          echo "## 🛡️ vibeCop Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "## 🛡️ vibeCheck Analysis Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           TOTAL=$(jq '.summary.totalFindings // 0' $OUTPUT_DIR/results.llm.json)

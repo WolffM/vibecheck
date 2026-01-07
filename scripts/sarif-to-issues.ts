@@ -4,7 +4,7 @@
  * Creates and updates GitHub issues from findings with deduplication
  * and rate limiting.
  *
- * Reference: vibeCop_spec.md section 8
+ * Reference: vibeCheck_spec.md section 8
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -67,7 +67,7 @@ export async function processFindings(
   const { owner, repo } = repoInfo;
   const issuesConfig = {
     enabled: true,
-    label: "vibeCop",
+    label: "vibeCheck",
     max_new_per_run: 25,
     severity_threshold: "info" as const,
     confidence_threshold: "low" as const,
@@ -89,7 +89,7 @@ export async function processFindings(
   await ensureLabels(owner, repo, DEFAULT_LABELS);
 
   // Fetch existing issues
-  console.log("Fetching existing vibeCop issues...");
+  console.log("Fetching existing vibeCheck issues...");
   const existingIssues = await searchIssuesByLabel(owner, repo, [
     issuesConfig.label,
   ]);
@@ -130,17 +130,17 @@ export async function processFindings(
   const sublinterMap = new Map<string, ExistingIssue>(); // For trunk sublinters
 
   for (const issue of existingIssues) {
-    // Extract tool and rule from issue title like "[vibeCop] knip: files in ..."
-    // Also handles "[vibeCop] yamllint: quoted-strings" and "[vibeCop] markdownlint (12 issues..."
+    // Extract tool and rule from issue title like "[vibeCheck] knip: files in ..."
+    // Also handles "[vibeCheck] yamllint: quoted-strings" and "[vibeCheck] markdownlint (12 issues..."
     const titleMatch = issue.title.match(
-      /\[vibeCop\]\s+(\w+)(?::\s+(\S+)|[\s(])/i,
+      /\[vibeCheck\]\s+(\w+)(?::\s+(\S+)|[\s(])/i,
     );
     if (titleMatch) {
       const toolOrSublinter = titleMatch[1].toLowerCase();
       const ruleId = titleMatch[2]?.toLowerCase();
 
       if (ruleId) {
-        // Standard format: "[vibeCop] tool: ruleId ..."
+        // Standard format: "[vibeCheck] tool: ruleId ..."
         const key = `${toolOrSublinter}|${ruleId}`;
         if (!toolRuleMap.has(key)) {
           toolRuleMap.set(key, issue);
@@ -291,12 +291,12 @@ export async function processFindings(
 
 /**
  * Extract sublinter name from an issue title.
- * e.g., "[vibeCop] yamllint: quoted-strings" -> "yamllint"
- * e.g., "[vibeCop] markdownlint (12 issues..." -> "markdownlint"
+ * e.g., "[vibeCheck] yamllint: quoted-strings" -> "yamllint"
+ * e.g., "[vibeCheck] markdownlint (12 issues..." -> "markdownlint"
  */
 function extractSublinterFromTitle(title: string): string | null {
-  // Match patterns like "[vibeCop] yamllint: ..." or "[vibeCop] yamllint (..."
-  const match = title.match(/\[vibeCop\]\s+(\w+)[\s:(\-]/i);
+  // Match patterns like "[vibeCheck] yamllint: ..." or "[vibeCheck] yamllint (..."
+  const match = title.match(/\[vibeCheck\]\s+(\w+)[\s:(\-]/i);
   return match ? match[1].toLowerCase() : null;
 }
 
@@ -326,7 +326,7 @@ function isSupersededByMergedFinding(
   }
 
   // Check if this is an old-style single-rule issue (has a colon in the title)
-  const isSingleRuleIssue = /\[vibeCop\]\s+\w+:\s+\S+/.test(issue.title);
+  const isSingleRuleIssue = /\[vibeCheck\]\s+\w+:\s+\S+/.test(issue.title);
   if (!isSingleRuleIssue) {
     return { superseded: false };
   }
@@ -383,7 +383,7 @@ async function closeSupersededIssues(
           owner,
           repo,
           issue.number,
-          `🔄 This issue has been superseded by a consolidated issue that groups all related findings together.\n\nThe individual findings are now tracked in a single merged issue for better organization.\n\nClosed automatically by vibeCop.`,
+          `🔄 This issue has been superseded by a consolidated issue that groups all related findings together.\n\nThe individual findings are now tracked in a single merged issue for better organization.\n\nClosed automatically by vibeCheck.`,
         ),
       );
 
@@ -395,12 +395,12 @@ async function closeSupersededIssues(
 /**
  * Normalize an issue title for duplicate detection.
  * Removes occurrence counts and normalizes whitespace.
- * e.g., "[vibeCop] Duplicate Code: 22 lines (126 occurrences)" -> "duplicate code: 22 lines"
+ * e.g., "[vibeCheck] Duplicate Code: 22 lines (126 occurrences)" -> "duplicate code: 22 lines"
  */
 function normalizeIssueTitle(title: string): string {
   return title
     .toLowerCase()
-    .replace(/\[vibecop\]\s*/i, "") // Remove [vibeCop] prefix
+    .replace(/\[vibecheck\]\s*/i, "") // Remove [vibeCheck] prefix
     .replace(/\s*\(\d+\s*occurrences?\)/gi, "") // Remove occurrence counts
     .replace(/\s+in\s+\S+$/, "") // Remove "in filename" suffix
     .replace(/\s+/g, " ") // Normalize whitespace
@@ -454,7 +454,7 @@ async function closeDuplicateIssues(
           owner,
           repo,
           dup.number,
-          `🔄 This is a duplicate issue. The same finding is tracked in #${keepIssue.number}.\n\nClosed automatically by vibeCop.`,
+          `🔄 This is a duplicate issue. The same finding is tracked in #${keepIssue.number}.\n\nClosed automatically by vibeCheck.`,
         ),
       );
 
@@ -492,7 +492,7 @@ async function closeResolvedIssues(
         owner,
         repo,
         issue.number,
-        `This issue appears to be resolved. The finding was not detected in the latest analysis.\n\nClosed automatically by vibeCop.`,
+        `This issue appears to be resolved. The finding was not detected in the latest analysis.\n\nClosed automatically by vibeCheck.`,
       ),
     );
 

@@ -1,6 +1,6 @@
-# vibeCop Output
-.vibecop-output/
-.vibecop-verbose-output/
+# vibeCheck Output
+.vibecheck-output/
+.vibecheck-verbose-output/
 
 # Dependencies
 node_modules/

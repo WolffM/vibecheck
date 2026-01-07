@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/<OWNER>/vibeCop/config/vibeCop.schema.json",
-  "title": "vibeCop Configuration",
-  "description": "Configuration schema for vibeCop static analysis pipeline",
+  "$id": "https://github.com/<OWNER>/vibeCheck/config/vibeCheck.schema.json",
+  "title": "vibeCheck Configuration",
+  "description": "Configuration schema for vibeCheck static analysis pipeline",
   "type": "object",
   "properties": {
     "version": {
@@ -118,7 +118,7 @@
         },
         "label": {
           "type": "string",
-          "default": "vibeCop",
+          "default": "vibeCheck",
           "description": "Primary label for issues"
         },
         "max_new_per_run": {
@@ -192,7 +192,7 @@
         },
         "pr_branch_prefix": {
           "type": "string",
-          "default": "vibecop/",
+          "default": "vibecheck/",
           "description": "Branch prefix for agent-created PRs"
         }
       }

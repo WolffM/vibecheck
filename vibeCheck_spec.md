@@ -1,6 +1,6 @@
-# vibeCop — Cross‑Repo Static Analysis + Actionable Issue Generator (Spec)
+# vibeCheck — Cross‑Repo Static Analysis + Actionable Issue Generator (Spec)
 
-**Project name:** `vibeCop`  
+**Project name:** `vibeCheck`  
 **Primary goal:** a **generic**, **repo-agnostic** static analysis pipeline that runs asynchronously (scheduled) and turns results into **actionable GitHub Issues** intended to be resolved by an AI agent (e.g., Codex) via PRs.
 
 This spec is written so another agent can build the full system end‑to‑end.
@@ -9,7 +9,7 @@ This spec is written so another agent can build the full system end‑to‑end.
 
 ## 0) Executive summary
 
-`vibeCop` is a central GitHub repository that provides:
+`vibeCheck` is a central GitHub repository that provides:
 
 1. A **reusable GitHub Actions workflow** that any repo can call (2–10 lines per repo).
 2. A **static analysis runner** based on **Trunk** (plus optional add‑on tools).
@@ -41,7 +41,7 @@ This spec is written so another agent can build the full system end‑to‑end.
 
 ## 2) High-level architecture
 
-### Central repo (`vibeCop`)
+### Central repo (`vibeCheck`)
 - Owns:
   - Reusable workflow (`workflow_call`)
   - Default Trunk config policy (baseline)
@@ -62,10 +62,10 @@ This spec is written so another agent can build the full system end‑to‑end.
 
 ---
 
-## 3) Repo structure (central `vibeCop` repo)
+## 3) Repo structure (central `vibeCheck` repo)
 
 ```
-vibeCop/
+vibeCheck/
   .github/
     workflows/
       reusable-analyze.yml
@@ -73,7 +73,7 @@ vibeCop/
       bootstrap-install.yml           (optional, manual trigger)
   config/
     trunk.yaml                        (baseline policy)
-    vibeCop.schema.json               (schema for per-repo config)
+    vibeCheck.schema.json               (schema for per-repo config)
     default-issue-templates/          (optional)
   scripts/
     build-sarif.ts                    (or .js)
@@ -85,7 +85,7 @@ vibeCop/
     repo-detect.ts                    (repo fingerprinting)
   templates/
     caller-workflow.yml
-    vibecop.yml                       (optional starter per-repo config)
+    vibecheck.yml                       (optional starter per-repo config)
   package.json
   tsconfig.json
   README.md
@@ -125,8 +125,8 @@ Minimum set to run in scheduled scans:
   - avoid overly opinionated rules
 - Keep it minimal to avoid breaking unknown repos.
 
-### 5.2 Per-repo override config (`vibecop.yml`)
-Each runner repo may optionally commit a `vibecop.yml` file at repo root:
+### 5.2 Per-repo override config (`vibecheck.yml`)
+Each runner repo may optionally commit a `vibecheck.yml` file at repo root:
 
 ```yaml
 version: 1
@@ -166,7 +166,7 @@ tools:
 
 issues:
   enabled: true
-  label: "vibeCop"
+  label: "vibeCheck"
   max_new_per_run: 25
   severity_threshold: "medium"        # low|medium|high|critical
   confidence_threshold: "high"        # low|medium|high
@@ -182,7 +182,7 @@ output:
 llm:
   # embed guidance into issue body + llm json
   agent_hint: "codex"
-  pr_branch_prefix: "vibecop/"
+  pr_branch_prefix: "vibecheck/"
 ```
 
 **Rules:**
@@ -249,7 +249,7 @@ A compact, deterministic schema designed for agents:
         "steps": ["...", "..."],
         "acceptance": ["...", "..."]
       },
-      "labels": ["vibeCop", "refactor", "duplicates"]
+      "labels": ["vibeCheck", "refactor", "duplicates"]
     }
   ]
 }
@@ -305,7 +305,7 @@ Scheduled runs produce Issues for findings meeting thresholds:
 ### 8.2 Issue format (body template)
 Every issue should include:
 
-- **Title:** `[vibeCop] <short title>` (include rule + location)
+- **Title:** `[vibeCheck] <short title>` (include rule + location)
 - **Summary:** 2–5 lines describing why it matters
 - **Evidence:** file paths + code region(s) + SARIF link if available
 - **Suggested fix:** high-level steps and acceptance criteria
@@ -314,7 +314,7 @@ Every issue should include:
 
 Example hidden marker:
 ```
-<!-- vibecop:fingerprint=sha256:abc123... -->
+<!-- vibecheck:fingerprint=sha256:abc123... -->
 ```
 
 ### 8.3 Deduping algorithm
@@ -332,7 +332,7 @@ fingerprint = sha256(key)
 
 ### 8.4 Updating existing issues
 On each run:
-1. Search open issues with label `vibeCop` (and/or by marker).
+1. Search open issues with label `vibeCheck` (and/or by marker).
 2. Build map fingerprint -> issueId.
 3. For each finding:
    - if exists: update issue body (refresh evidence/commit/link), add comment if significant change
@@ -342,7 +342,7 @@ On each run:
 
 ### 8.5 Labels
 Default labels:
-- `vibeCop`
+- `vibeCheck`
 - `severity:high|medium|low|critical`
 - `confidence:high|medium|low`
 - `layer:code|architecture|system|security`
@@ -359,7 +359,7 @@ File: `.github/workflows/reusable-analyze.yml`
 **Inputs**
 - `trunk_arguments` (string)
 - `issue_label` (string)
-- `config_path` (string, optional; default `vibecop.yml`)
+- `config_path` (string, optional; default `vibecheck.yml`)
 - `cadence` (string, provided by caller: daily/weekly/monthly)
 - `deep_scan` (bool; override)
 
@@ -375,7 +375,7 @@ File: `.github/workflows/reusable-analyze.yml`
 **Steps**
 1. Checkout
 2. Setup Node
-3. Load repo config (`vibecop.yml` if present)
+3. Load repo config (`vibecheck.yml` if present)
 4. Repo detect
 5. Run Trunk
 6. Run optional extra tools (based on cadence + config)
@@ -395,7 +395,7 @@ File: `.github/workflows/reusable-pr-review.yml`
 Located in central repo: `templates/caller-workflow.yml` (copy/paste)
 
 ```yaml
-name: vibeCop (Scheduled)
+name: vibeCheck (Scheduled)
 
 on:
   schedule:
@@ -404,13 +404,13 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  vibeCop:
-    uses: <OWNER>/vibeCop/.github/workflows/reusable-analyze.yml@main
+  vibeCheck:
+    uses: <OWNER>/vibeCheck/.github/workflows/reusable-analyze.yml@main
     with:
       cadence: "weekly"           # daily|weekly|monthly
       trunk_arguments: "check"
-      issue_label: "vibeCop"
-      config_path: "vibecop.yml"  # optional; omit if not using
+      issue_label: "vibeCheck"
+      config_path: "vibecheck.yml"  # optional; omit if not using
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -485,11 +485,11 @@ Behavior:
 
 ### 11.2 Agent loop
 1. Pick issue (highest severity/high confidence first; then S effort)
-2. Create branch `vibecop/<fingerprint-short>/<slug>`
+2. Create branch `vibecheck/<fingerprint-short>/<slug>`
 3. Implement fix + add/adjust tests
 4. Run local checks (`trunk check`, `pnpm test` etc.)
 5. Open PR referencing issue “Fixes #123”
-6. Ensure the next scheduled vibeCop run no longer finds it
+6. Ensure the next scheduled vibeCheck run no longer finds it
 
 ### 11.3 Optional automation (future)
 - A separate “agent runner” workflow that:
@@ -540,7 +540,7 @@ Behavior:
 
 ### MVP 3 (multi-repo bootstrap)
 - Script/workflow to install caller workflow into many repos
-- Optionally add repo-local `vibecop.yml` templates
+- Optionally add repo-local `vibecheck.yml` templates
 
 ---
 
@@ -550,18 +550,18 @@ Behavior:
 - ✅ Results appear in GitHub Code Scanning (SARIF upload).
 - ✅ Issues are created for high-confidence findings, deduped and updated across runs.
 - ✅ A machine-readable `results.llm.json` is produced and downloadable as an artifact.
-- ✅ Repo-specific overrides via `vibecop.yml` work.
+- ✅ Repo-specific overrides via `vibecheck.yml` work.
 - ✅ Noise is controlled (caps, diff-only PR comments, confidence thresholds).
 
 ---
 
 ## 16) Deliverables checklist (for the implementing agent)
 
-- [ ] `vibeCop` central repo created
+- [ ] `vibeCheck` central repo created
 - [ ] `reusable-analyze.yml` implemented with `workflow_call`
 - [ ] `templates/caller-workflow.yml` + docs
 - [ ] `config/trunk.yaml` baseline
-- [ ] `templates/vibecop.yml` starter
+- [ ] `templates/vibecheck.yml` starter
 - [ ] `scripts/repo-detect.ts`
 - [ ] `scripts/build-sarif.ts`
 - [ ] `scripts/build-llm-json.ts`
@@ -574,10 +574,10 @@ Behavior:
 
 ## 17) README outline (central repo)
 
-- What is vibeCop?
+- What is vibeCheck?
 - Quick start:
   - Copy workflow into target repo
-  - Optional add `vibecop.yml`
+  - Optional add `vibecheck.yml`
 - How scheduling works
 - How issues are created/updated
 - How to tune thresholds

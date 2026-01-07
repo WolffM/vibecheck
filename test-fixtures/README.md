@@ -1,6 +1,6 @@
 # Test Fixtures
 
-This directory contains intentionally "dirty" code to demonstrate all vibeCop analysis tools.
+This directory contains intentionally "dirty" code to demonstrate all vibeCheck analysis tools.
 These files trigger at least one issue per tool, which remain open as demo issues in this repo.
 
 All findings from test-fixtures are labeled with `demo` and merged separately from real repository issues.
@@ -61,14 +61,14 @@ npx tsx scripts/verbose-analyze.ts --merge-strategy=same-file
 
 ## Demo Issues
 
-When vibeCop runs on this repo, it creates GitHub issues for each finding.
+When vibeCheck runs on this repo, it creates GitHub issues for each finding.
 These issues serve as:
 
-1. **Demos** - Show what vibeCop-created issues look like
+1. **Demos** - Show what vibeCheck-created issues look like
 2. **Test targets** - AI agents can practice fixing them
 3. **Documentation** - Each issue explains the problem and fix
 
-Issues are labeled with `vibeCop` and include:
+Issues are labeled with `vibeCheck` and include:
 
 - Severity and confidence ratings
 - All affected file locations (merged)

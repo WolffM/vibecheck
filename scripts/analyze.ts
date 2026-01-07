@@ -4,7 +4,7 @@
  * Coordinates the full analysis pipeline: tool execution, parsing,
  * SARIF/LLM JSON generation, and issue creation.
  *
- * Reference: vibeCop_spec.md section 9
+ * Reference: vibeCheck_spec.md section 9
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -79,12 +79,12 @@ export async function analyze(
   options: AnalyzeOptions = {},
 ): Promise<AnalyzeResult> {
   const rootPath = options.rootPath || process.cwd();
-  const configPath = options.configPath || "vibecop.yml";
+  const configPath = options.configPath || "vibecheck.yml";
   const cadence = options.cadence || "weekly";
   const severityThreshold = options.severityThreshold || "info";
   const confidenceThreshold = options.confidenceThreshold || "low";
   const mergeStrategy = options.mergeStrategy || "same-rule";
-  const outputDir = options.outputDir || join(rootPath, ".vibecop-output");
+  const outputDir = options.outputDir || join(rootPath, ".vibecheck-output");
 
   // Validate threshold values
   if (!isValidSeverityThreshold(severityThreshold)) {
@@ -103,7 +103,7 @@ export async function analyze(
     mkdirSync(outputDir, { recursive: true });
   }
 
-  console.log("=== vibeCop Analysis ===");
+  console.log("=== vibeCheck Analysis ===");
   console.log(`Root: ${rootPath}`);
   console.log(`Cadence: ${cadence}`);
   console.log("");
@@ -312,8 +312,8 @@ Usage: analyze [options]
 Options:
   --root <path>        Root directory to analyze (default: cwd)
   --cadence <cadence>  Analysis cadence: daily, weekly, monthly (default: weekly)
-  --config <path>      Path to vibecop config file (default: vibecop.yml)
-  --output <path>      Output directory (default: .vibecop-output)
+  --config <path>      Path to vibecheck config file (default: vibecheck.yml)
+  --output <path>      Output directory (default: .vibecheck-output)
   --skip-issues        Skip GitHub issue creation
   --severity <level>   Severity threshold: info, low, medium, high, critical
   --confidence <level> Confidence threshold: low, medium, high

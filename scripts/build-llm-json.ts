@@ -4,7 +4,7 @@
  * Converts internal Finding[] model to LLM-friendly JSON format.
  * Includes suggested fixes, acceptance criteria, and deterministic ordering.
  *
- * Reference: vibeCop_spec.md section 6.2
+ * Reference: vibeCheck_spec.md section 6.2
  */
 
 import { writeFileSync } from "node:fs";

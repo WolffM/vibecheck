@@ -29,15 +29,15 @@ for (let i = 0; i < args.length; i++) {
     options.skipIssues = true;
   } else if (arg === '--help' || arg === '-h') {
     console.log(`
-vibeCop Analysis Runner
+vibeCheck Analysis Runner
 
 Usage: npx tsx scripts/run-analyze.ts [options]
 
 Options:
   --root <path>      Root path to analyze (default: cwd)
   --cadence <type>   daily | weekly | monthly (default: weekly)
-  --config <path>    Path to vibecop.yml (default: vibecop.yml)
-  --output <path>    Output directory (default: .vibecop-output)
+  --config <path>    Path to vibecheck.yml (default: vibecheck.yml)
+  --output <path>    Output directory (default: .vibecheck-output)
   --skip-issues      Skip GitHub issue creation
   --help, -h         Show this help
 `);
@@ -45,7 +45,7 @@ Options:
   }
 }
 
-console.log('Starting vibeCop analysis...');
+console.log('Starting vibeCheck analysis...');
 console.log('Options:', JSON.stringify(options, null, 2));
 console.log('');
 

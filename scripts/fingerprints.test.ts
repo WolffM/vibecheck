@@ -38,7 +38,7 @@ function createTestFinding(
     effort: "S",
     autofix: "safe",
     locations: [{ path: "src/file.ts", startLine: 10 }],
-    labels: ["vibeCop"],
+    labels: ["vibeCheck"],
     ...overrides,
   };
 }
@@ -191,7 +191,7 @@ describe("fingerprint markers", () => {
   it("should generate and extract fingerprint marker", () => {
     const fp = "sha256:abc123def456";
     const marker = generateFingerprintMarker(fp);
-    expect(marker).toBe("<!-- vibecop:fingerprint=sha256:abc123def456 -->");
+    expect(marker).toBe("<!-- vibecheck:fingerprint=sha256:abc123def456 -->");
 
     const extracted = extractFingerprintFromBody(
       `Some text\n${marker}\nMore text`,
@@ -206,7 +206,7 @@ describe("fingerprint markers", () => {
   it("should generate and extract run metadata", () => {
     const marker = generateRunMetadataMarker(42, "2026-01-05T00:00:00Z");
     expect(marker).toBe(
-      "<!-- vibecop:run=42:lastSeen=2026-01-05T00:00:00Z -->",
+      "<!-- vibecheck:run=42:lastSeen=2026-01-05T00:00:00Z -->",
     );
 
     const extracted = extractRunMetadata(`Some text\n${marker}\nMore text`);

@@ -1,10 +1,10 @@
-# vibeCop
+# vibeCheck
 
 > Cross-repo static analysis + actionable GitHub issue generator for AI agents
 
-vibeCop is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents.
+vibeCheck is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents.
 
-**[📋 See Example Issues](https://github.com/WolffM/vibecop/issues?q=is%3Aissue+label%3AvibeCop)** - Live demo of what vibeCop creates
+**[📋 See Example Issues](https://github.com/WolffM/vibecheck/issues?q=is%3Aissue+label%3AvibeCheck)** - Live demo of what vibeCheck creates
 
 ## Features
 
@@ -16,7 +16,7 @@ vibeCop is a **GitHub Action** that runs static analysis on any repository and t
 - 🤖 **AI-friendly issues**: Structured with suggested fixes and acceptance criteria
 - 🔁 **Deduplication**: Stable fingerprints prevent duplicate issues across runs
 - 🔄 **Auto-cleanup**: Closes resolved and duplicate issues automatically
-- ⚙️ **Configurable**: Per-repo overrides via `vibecop.yml`
+- ⚙️ **Configurable**: Per-repo overrides via `vibecheck.yml`
 - 📅 **Cadence-aware**: Schedule heavy tools for weekly/monthly runs only
 
 ## Quick Start
@@ -25,28 +25,28 @@ Choose your preferred installation method:
 
 ### Option 1: One-Click Install (Recommended)
 
-**[Add vibeCop to your repo](https://wolffm.github.io/vibecop/install)** - Enter your repo name and click to create the workflow file.
+**[Add vibeCheck to your repo](https://wolffm.github.io/vibecheck/install)** - Enter your repo name and click to create the workflow file.
 
 ### Option 2: Direct URL
 
 Replace `OWNER/REPO` with your repository and open this URL:
 
 ```
-https://github.com/OWNER/REPO/new/main?filename=.github/workflows/vibecop.yml&value=name%3A%20vibeCop%20Analysis%0A%0Aon%3A%0A%20%20schedule%3A%0A%20%20%20%20-%20cron%3A%20%220%203%20*%20*%201%22%0A%20%20workflow_dispatch%3A%0A%20%20%20%20inputs%3A%0A%20%20%20%20%20%20cadence%3A%0A%20%20%20%20%20%20%20%20description%3A%20%22Analysis%20cadence%22%0A%20%20%20%20%20%20%20%20default%3A%20%22weekly%22%0A%20%20%20%20%20%20%20%20type%3A%20choice%0A%20%20%20%20%20%20%20%20options%3A%20%5Bdaily%2C%20weekly%2C%20monthly%5D%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%20%20issues%3A%20write%0A%20%20security-events%3A%20write%0A%0Ajobs%3A%0A%20%20analyze%3A%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20fetch-depth%3A%200%0A%20%20%20%20%20%20-%20uses%3A%20WolffM%2Fvibecop%40main%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20github_token%3A%20%24%7B%7B%20secrets.GITHUB_TOKEN%20%7D%7D%0A%20%20%20%20%20%20%20%20%20%20cadence%3A%20%24%7B%7B%20inputs.cadence%20%7C%7C%20%27weekly%27%20%7D%7D
+https://github.com/OWNER/REPO/new/main?filename=.github/workflows/vibecheck.yml&value=name%3A%20vibeCheck%20Analysis%0A%0Aon%3A%0A%20%20schedule%3A%0A%20%20%20%20-%20cron%3A%20%220%203%20*%20*%201%22%0A%20%20workflow_dispatch%3A%0A%20%20%20%20inputs%3A%0A%20%20%20%20%20%20cadence%3A%0A%20%20%20%20%20%20%20%20description%3A%20%22Analysis%20cadence%22%0A%20%20%20%20%20%20%20%20default%3A%20%22weekly%22%0A%20%20%20%20%20%20%20%20type%3A%20choice%0A%20%20%20%20%20%20%20%20options%3A%20%5Bdaily%2C%20weekly%2C%20monthly%5D%0A%0Apermissions%3A%0A%20%20contents%3A%20read%0A%20%20issues%3A%20write%0A%20%20security-events%3A%20write%0A%0Ajobs%3A%0A%20%20analyze%3A%0A%20%20%20%20runs-on%3A%20ubuntu-latest%0A%20%20%20%20steps%3A%0A%20%20%20%20%20%20-%20uses%3A%20actions%2Fcheckout%40v4%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20fetch-depth%3A%200%0A%20%20%20%20%20%20-%20uses%3A%20WolffM%2Fvibecheck%40main%0A%20%20%20%20%20%20%20%20with%3A%0A%20%20%20%20%20%20%20%20%20%20github_token%3A%20%24%7B%7B%20secrets.GITHUB_TOKEN%20%7D%7D%0A%20%20%20%20%20%20%20%20%20%20cadence%3A%20%24%7B%7B%20inputs.cadence%20%7C%7C%20%27weekly%27%20%7D%7D
 ```
 
 This opens GitHub's file editor with the workflow pre-filled. Just click **"Commit changes"**.
 
 ### Option 3: Copy the Template
 
-1. Copy [`.github/workflows/vibecop.yml`](.github/workflows/vibecop.yml) from this repo
+1. Copy [`.github/workflows/vibecheck.yml`](.github/workflows/vibecheck.yml) from this repo
 2. Add it to your repo at the same path
 3. Commit and push
 
-Or create `.github/workflows/vibecop.yml` manually:
+Or create `.github/workflows/vibecheck.yml` manually:
 
 ```yaml
-name: vibeCop Analysis
+name: vibeCheck Analysis
 
 on:
   schedule:
@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: WolffM/vibecop@main
+      - uses: WolffM/vibecheck@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -82,7 +82,7 @@ jobs:
 ### Trigger it manually (optional)
 
 1. Go to your repo's **Actions** tab
-2. Click **vibeCop Analysis** in the sidebar
+2. Click **vibeCheck Analysis** in the sidebar
 3. Click **Run workflow**
 
 ---
@@ -94,7 +94,7 @@ jobs:
 Customize the action in your workflow file:
 
 ```yaml
-- uses: WolffM/vibecop@main
+- uses: WolffM/vibecheck@main
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     cadence: "weekly" # daily | weekly | monthly
@@ -115,7 +115,7 @@ Customize the action in your workflow file:
 
 ### Per-Repo Configuration (Optional)
 
-For fine-tuned control, create `vibecop.yml` at your repository root:
+For fine-tuned control, create `vibecheck.yml` at your repository root:
 
 ```yaml
 version: 1
@@ -171,7 +171,7 @@ Findings are fingerprinted using:
 - Line number (bucketed to ±20 lines)
 - Normalized message
 
-This allows vibeCop to track issues across minor code changes.
+This allows vibeCheck to track issues across minor code changes.
 
 ## Configuration Reference
 
@@ -181,11 +181,11 @@ This allows vibeCop to track issues across minor code changes.
 | ----------------- | ------------- | ------------------------------------------------ |
 | `cadence`         | `weekly`      | Analysis frequency: `daily`, `weekly`, `monthly` |
 | `trunk_arguments` | `check`       | Arguments for Trunk                              |
-| `issue_label`     | `vibeCop`     | Primary label for issues                         |
-| `config_path`     | `vibecop.yml` | Path to config file                              |
+| `issue_label`     | `vibeCheck`     | Primary label for issues                         |
+| `config_path`     | `vibecheck.yml` | Path to config file                              |
 | `skip_issues`     | `false`       | Skip issue creation                              |
 
-### vibecop.yml Schema
+### vibecheck.yml Schema
 
 ```yaml
 version: 1
@@ -219,7 +219,7 @@ tools:
 
 issues:
   enabled: true
-  label: "vibeCop"
+  label: "vibeCheck"
   max_new_per_run: 25
   severity_threshold: "medium" # Minimum severity
   confidence_threshold: "high" # Minimum confidence
@@ -233,7 +233,7 @@ output:
 
 llm:
   agent_hint: "codex"
-  pr_branch_prefix: "vibecop/"
+  pr_branch_prefix: "vibecheck/"
 ```
 
 ## Tool Enablement
@@ -301,7 +301,7 @@ Adjust with `issues.severity_threshold` and `issues.confidence_threshold`.
 
 ## Issue Format
 
-Issues created by vibeCop include:
+Issues created by vibeCheck include:
 
 - **Summary**: Tool, rule, severity, confidence
 - **Location**: File path and line numbers
@@ -389,7 +389,7 @@ Each run produces:
 ### Issue-Driven Workflow
 
 1. Agent picks highest-priority issue (severity × confidence × effort)
-2. Creates branch: `vibecop/<fingerprint>/<rule-slug>`
+2. Creates branch: `vibecheck/<fingerprint>/<rule-slug>`
 3. Implements suggested fix
 4. Runs `trunk check` and tests
 5. Opens PR: "Fixes #123"
@@ -399,7 +399,7 @@ Each run produces:
 Download the artifact and process programmatically:
 
 ```typescript
-const results = await fetchArtifact("vibecop-results");
+const results = await fetchArtifact("vibecheck-results");
 const llmJson = JSON.parse(results["results.llm.json"]);
 
 // Pick actionable findings sorted by priority
@@ -445,7 +445,7 @@ Options:
 
 ### Monorepo behavior
 
-vibeCop detects monorepos via:
+vibeCheck detects monorepos via:
 
 - `pnpm-workspace.yaml`
 - `package.json` workspaces
@@ -455,7 +455,7 @@ Analysis runs at the repo root and covers all packages.
 
 ### Rate limiting
 
-vibeCop respects GitHub API limits:
+vibeCheck respects GitHub API limits:
 
 - Issues are capped at `max_new_per_run` per execution
 - API calls include small delays
@@ -467,8 +467,8 @@ vibeCop respects GitHub API limits:
 
 ```bash
 # Clone the repo
-git clone https://github.com/<OWNER>/vibeCop.git
-cd vibeCop
+git clone https://github.com/<OWNER>/vibeCheck.git
+cd vibeCheck
 
 # Install dependencies
 pnpm install

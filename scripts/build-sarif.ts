@@ -3,7 +3,7 @@
  *
  * Converts internal Finding[] model to SARIF 2.1.0 format.
  *
- * Reference: vibeCop_spec.md section 6.1
+ * Reference: vibeCheck_spec.md section 6.1
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -104,7 +104,7 @@ function findingToSarifResult(finding: Finding): SarifResult {
       },
     })),
     fingerprints: {
-      vibeCopFingerprint: finding.fingerprint,
+      vibeCheckFingerprint: finding.fingerprint,
     },
     properties: {
       confidence: finding.confidence,
@@ -130,9 +130,9 @@ function buildSarifRun(
   return {
     tool: {
       driver: {
-        name: `vibeCop/${toolName}`,
+        name: `vibeCheck/${toolName}`,
         version: "0.1.0",
-        informationUri: "https://github.com/<OWNER>/vibeCop",
+        informationUri: "https://github.com/<OWNER>/vibeCheck",
         rules,
       },
     },
@@ -163,14 +163,14 @@ export function buildSarifLog(
     runs.push(buildSarifRun(toolName, toolFindings, context));
   }
 
-  // If no findings, create an empty run for vibeCop
+  // If no findings, create an empty run for vibeCheck
   if (runs.length === 0) {
     runs.push({
       tool: {
         driver: {
-          name: "vibeCop",
+          name: "vibeCheck",
           version: "0.1.0",
-          informationUri: "https://github.com/<OWNER>/vibeCop",
+          informationUri: "https://github.com/<OWNER>/vibeCheck",
         },
       },
       results: [],

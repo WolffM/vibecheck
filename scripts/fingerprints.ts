@@ -4,7 +4,7 @@
  * Generates stable fingerprints for findings to enable deduplication
  * across runs.
  *
- * Reference: vibeCop_spec.md section 8.3
+ * Reference: vibeCheck_spec.md section 8.3
  */
 
 import { createHash } from "node:crypto";
@@ -133,11 +133,11 @@ export function shortFingerprint(fingerprint: string): string {
 
 /**
  * Extract fingerprint from an issue body.
- * Looks for the hidden marker: <!-- vibecop:fingerprint=sha256:... -->
+ * Looks for the hidden marker: <!-- vibecheck:fingerprint=sha256:... -->
  */
 export function extractFingerprintFromBody(body: string): string | null {
   const match = body.match(
-    /<!--\s*vibecop:fingerprint=(sha256:[a-f0-9]+)\s*-->/i,
+    /<!--\s*vibecheck:fingerprint=(sha256:[a-f0-9]+)\s*-->/i,
   );
   return match ? match[1] : null;
 }
@@ -146,17 +146,17 @@ export function extractFingerprintFromBody(body: string): string | null {
  * Generate the hidden fingerprint marker for issue bodies.
  */
 export function generateFingerprintMarker(fingerprint: string): string {
-  return `<!-- vibecop:fingerprint=${fingerprint} -->`;
+  return `<!-- vibecheck:fingerprint=${fingerprint} -->`;
 }
 
 /**
  * Extract run metadata from an issue body.
- * Looks for: <!-- vibecop:run=N:lastSeen=TIMESTAMP -->
+ * Looks for: <!-- vibecheck:run=N:lastSeen=TIMESTAMP -->
  */
 export function extractRunMetadata(
   body: string,
 ): { run: number; lastSeen: string } | null {
-  const match = body.match(/<!--\s*vibecop:run=(\d+):lastSeen=([^\s]+)\s*-->/i);
+  const match = body.match(/<!--\s*vibecheck:run=(\d+):lastSeen=([^\s]+)\s*-->/i);
   if (match) {
     return {
       run: parseInt(match[1], 10),
@@ -173,7 +173,7 @@ export function generateRunMetadataMarker(
   runNumber: number,
   timestamp: string,
 ): string {
-  return `<!-- vibecop:run=${runNumber}:lastSeen=${timestamp} -->`;
+  return `<!-- vibecheck:run=${runNumber}:lastSeen=${timestamp} -->`;
 }
 
 /**

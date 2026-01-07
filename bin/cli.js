@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * vibeCop CLI
+ * vibeCheck CLI
  *
  * Usage:
- *   vibecop analyze [options]
- *   vibecop detect [path]
+ *   vibecheck analyze [options]
+ *   vibecheck detect [path]
  *
  * Examples:
- *   npx vibecop analyze
- *   npx vibecop analyze --root ./my-project --cadence weekly
- *   npx vibecop detect ./my-project
+ *   npx vibecheck analyze
+ *   npx vibecheck analyze --root ./my-project --cadence weekly
+ *   npx vibecheck detect ./my-project
  */
 
 import { spawn } from "node:child_process";
@@ -25,10 +25,10 @@ const command = args[0];
 
 function printHelp() {
   console.log(`
-vibeCop - Cross-repo static analysis + GitHub issue generator
+vibeCheck - Cross-repo static analysis + GitHub issue generator
 
 Usage:
-  vibecop <command> [options]
+  vibecheck <command> [options]
 
 Commands:
   analyze     Run static analysis on a repository
@@ -38,7 +38,7 @@ Commands:
 Options for 'analyze':
   --root <path>              Root path to analyze (default: current directory)
   --cadence <cadence>        Analysis cadence: daily, weekly, monthly (default: weekly)
-  --config <path>            Path to vibecop.yml config file
+  --config <path>            Path to vibecheck.yml config file
   --output <path>            Output directory for results
   --skip-issues              Skip GitHub issue creation
   --severity-threshold <s>   Min severity: critical, high, medium, low, info
@@ -51,18 +51,18 @@ Environment Variables:
 
 Examples:
   # Analyze current directory
-  vibecop analyze
+  vibecheck analyze
 
   # Analyze a specific project
-  vibecop analyze --root ./my-project --cadence weekly
+  vibecheck analyze --root ./my-project --cadence weekly
 
   # Dry run (no issues created)
-  vibecop analyze --skip-issues
+  vibecheck analyze --skip-issues
 
   # Detect repo profile only
-  vibecop detect ./my-project
+  vibecheck detect ./my-project
 
-Documentation: https://github.com/WolffM/vibecop
+Documentation: https://github.com/WolffM/vibecheck
 `);
 }
 
@@ -103,6 +103,6 @@ switch (command) {
 
   default:
     console.error(`Unknown command: ${command}`);
-    console.error('Run "vibecop help" for usage information.');
+    console.error('Run "vibecheck help" for usage information.');
     process.exit(1);
 }
