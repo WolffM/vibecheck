@@ -18,7 +18,8 @@
       "Bash(pnpm typecheck:*)",
       "Bash(gh issue view:*)",
       "Bash(pmd check:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

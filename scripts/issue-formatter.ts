@@ -9,6 +9,7 @@ import {
   generateRunMetadataMarker,
   shortFingerprint,
 } from "./fingerprints.js";
+import { getSuggestedFix } from "./fix-templates.js";
 import { getRuleDocUrl } from "./rule-docs.js";
 import type { Finding, RunContext } from "./types.js";
 
@@ -55,6 +56,77 @@ export function formatGitHubLink(
 // ============================================================================
 // Text Utilities
 // ============================================================================
+
+/**
+ * Infer programming language from file path for syntax highlighting.
+ */
+function inferLanguageFromPath(path?: string): string {
+  if (!path) return "";
+  const ext = path.split(".").pop()?.toLowerCase();
+  const langMap: Record<string, string> = {
+    ts: "typescript",
+    tsx: "typescript",
+    js: "javascript",
+    jsx: "javascript",
+    py: "python",
+    java: "java",
+    yml: "yaml",
+    yaml: "yaml",
+    json: "json",
+    sh: "bash",
+    bash: "bash",
+    md: "markdown",
+    go: "go",
+    rs: "rust",
+    rb: "ruby",
+    php: "php",
+    cs: "csharp",
+    cpp: "cpp",
+    c: "c",
+    sql: "sql",
+    xml: "xml",
+    html: "html",
+    css: "css",
+  };
+  return langMap[ext || ""] || "";
+}
+
+/**
+ * Format a URL into a readable link title.
+ */
+function formatLinkTitle(url: string): string {
+  // CWE links
+  const cweMatch = url.match(/cwe\.mitre\.org\/data\/definitions\/(\d+)/);
+  if (cweMatch) return `CWE-${cweMatch[1]}`;
+
+  // Bandit docs
+  if (url.includes("bandit.readthedocs.io")) {
+    const ruleMatch = url.match(/plugins\/([^/]+)/);
+    return ruleMatch
+      ? `Bandit ${ruleMatch[1].toUpperCase()}`
+      : "Bandit Documentation";
+  }
+
+  // GitHub advisories
+  if (url.includes("github.com/advisories/GHSA")) {
+    const ghsaMatch = url.match(/GHSA-[\w-]+/);
+    return ghsaMatch ? ghsaMatch[0] : "GitHub Advisory";
+  }
+
+  // Semgrep rules
+  if (url.includes("semgrep.dev")) return "Semgrep Rule";
+
+  // OWASP
+  if (url.includes("owasp.org")) return "OWASP Reference";
+
+  // Generic: use domain
+  try {
+    const domain = new URL(url).hostname.replace("www.", "");
+    return domain;
+  } catch {
+    return url.length > 40 ? url.substring(0, 40) + "..." : url;
+  }
+}
 
 /**
  * Truncate text to max length, avoiding cutting mid-word.
@@ -236,6 +308,7 @@ function buildLocationSection(
 
 /**
  * Build the evidence section with code samples.
+ * Includes file path context and syntax highlighting.
  */
 function buildEvidenceSection(finding: Finding): string {
   if (!finding.evidence?.snippet) {
@@ -244,20 +317,43 @@ function buildEvidenceSection(finding: Finding): string {
 
   const snippets = finding.evidence.snippet.split("\n---\n");
   const limitedSnippets = snippets.slice(0, 3);
-  const truncatedSnippets = limitedSnippets.map((s) => {
+
+  // Get language for syntax highlighting from first location
+  const primaryLoc = finding.locations[0];
+  const language = inferLanguageFromPath(primaryLoc?.path);
+
+  const formattedSnippets = limitedSnippets.map((s, index) => {
     const lines = s.split("\n");
-    if (lines.length > 50) {
-      return lines.slice(0, 50).join("\n") + "\n... (truncated)";
+    const content =
+      lines.length > 50
+        ? lines.slice(0, 50).join("\n") + "\n... (truncated)"
+        : s;
+
+    // Check if snippet already has embedded file context (from merged findings)
+    const hasEmbeddedContext = s.startsWith("📄 ");
+
+    // Get location for this snippet (fall back to first if not available)
+    const loc = finding.locations[index] || primaryLoc;
+
+    // Build file header if we have a location and no embedded context
+    let fileHeader = "";
+    if (loc && !hasEmbeddedContext) {
+      const lineRange =
+        loc.endLine && loc.endLine !== loc.startLine
+          ? `${loc.startLine}-${loc.endLine}`
+          : `${loc.startLine}`;
+      fileHeader = `**From \`${loc.path}\`** (line ${lineRange}):\n`;
     }
-    return s;
+
+    return `${fileHeader}\`\`\`${language}\n${content.trim()}\n\`\`\``;
   });
 
-  if (truncatedSnippets.length === 1) {
-    return `\n## Code Sample\n\n\`\`\`\n${truncatedSnippets[0].trim()}\n\`\`\``;
+  if (formattedSnippets.length === 1) {
+    return `\n## Code Sample\n\n${formattedSnippets[0]}`;
   }
 
-  const snippetContent = truncatedSnippets
-    .map((s, i) => `**Sample ${i + 1}:**\n\`\`\`\n${s.trim()}\n\`\`\``)
+  const snippetContent = formattedSnippets
+    .map((s, i) => `**Sample ${i + 1}:**\n${s}`)
     .join("\n\n");
   let section = `\n## Code Samples\n\n${snippetContent}`;
   if (snippets.length > 3) {
@@ -288,6 +384,7 @@ function buildRuleLink(finding: Finding): string {
 
 /**
  * Build the references section with evidence links.
+ * Formats URLs as readable markdown links.
  */
 function buildReferencesSection(finding: Finding): string {
   if (!finding.evidence?.links || finding.evidence.links.length === 0) {
@@ -296,10 +393,66 @@ function buildReferencesSection(finding: Finding): string {
 
   const linkList = finding.evidence.links
     .filter((l) => l && l.startsWith("http"))
-    .map((l) => `- ${l}`)
+    .map((url) => `- [${formatLinkTitle(url)}](${url})`)
     .join("\n");
 
   return linkList ? `\n## References\n\n${linkList}` : "";
+}
+
+/**
+ * Build CWE row for the details table (security layer only).
+ */
+function buildCweRow(finding: Finding): string {
+  if (finding.layer !== "security") return "";
+
+  const cweLabel = finding.labels.find((l) => l.startsWith("cwe:"));
+  if (!cweLabel) return "";
+
+  const cweId = cweLabel.replace("cwe:", "");
+  return `| CWE | [\`CWE-${cweId}\`](https://cwe.mitre.org/data/definitions/${cweId}.html) |\n`;
+}
+
+/**
+ * Build suggested fix section (security layer only).
+ * Leverages fix-templates.ts for tool-specific guidance.
+ */
+function buildSuggestedFixSection(finding: Finding): string {
+  if (finding.layer !== "security") return "";
+
+  const fix = getSuggestedFix(finding);
+  const steps = fix.steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
+
+  return `
+## Suggested Fix
+
+**Goal:** ${fix.goal}
+
+**Steps:**
+${steps}
+`;
+}
+
+/**
+ * Build machine-readable metadata markers for AI agents.
+ */
+function buildAIMetadataMarkers(finding: Finding): string {
+  const markers = [
+    `<!-- vibecop:ai:tool=${finding.tool} -->`,
+    `<!-- vibecop:ai:rule=${finding.ruleId} -->`,
+    `<!-- vibecop:ai:severity=${finding.severity} -->`,
+    `<!-- vibecop:ai:layer=${finding.layer} -->`,
+    `<!-- vibecop:ai:files=${finding.locations.map((l) => l.path).join(",")} -->`,
+  ];
+
+  // Add CWE for security findings
+  const cweLabel = finding.labels.find((l) => l.startsWith("cwe:"));
+  if (cweLabel) {
+    markers.push(
+      `<!-- vibecop:ai:cwe=CWE-${cweLabel.replace("cwe:", "")} -->`,
+    );
+  }
+
+  return markers.join("\n");
 }
 
 /**
@@ -319,6 +472,16 @@ export function generateIssueBody(
   const evidenceSection = buildEvidenceSection(finding);
   const ruleLink = buildRuleLink(finding);
   const referencesSection = buildReferencesSection(finding);
+  const cweRow = buildCweRow(finding);
+  const suggestedFixSection = buildSuggestedFixSection(finding);
+  const aiMarkers = buildAIMetadataMarkers(finding);
+
+  const autofixText =
+    finding.autofix === "safe"
+      ? "✅ Safe autofix available"
+      : finding.autofix === "requires_review"
+        ? "⚠️ Autofix requires review"
+        : "Manual fix required";
 
   const body = `## Details
 
@@ -330,14 +493,15 @@ export function generateIssueBody(
 | Tool | \`${finding.tool}\` |
 | Rule | ${ruleLink} |
 | Layer | ${finding.layer} |
-| Autofix | ${finding.autofix === "safe" ? "✅ Safe autofix available" : finding.autofix === "requires_review" ? "⚠️ Autofix requires review" : "Manual fix required"} |
-
+| Autofix | ${autofixText} |
+${cweRow}
 ${finding.message}
 
 ## Location
 
 ${mainLocation}${additionalLocations}
 ${evidenceSection}
+${suggestedFixSection}
 ${referencesSection}
 
 ---
@@ -356,6 +520,7 @@ ${referencesSection}
 
 ${generateFingerprintMarker(finding.fingerprint)}
 ${generateRunMetadataMarker(runNumber, timestamp)}
+${aiMarkers}
 `;
 
   return body;
