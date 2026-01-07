@@ -36,10 +36,16 @@ export function bucketLine(line: number): number {
  * - Convert backslashes to forward slashes
  * - Remove leading ./
  * - Lowercase (for case-insensitive comparison)
+ * 
+ * NOTE: This differs from parser-utils.normalizePath which handles CI paths
+ * but does NOT lowercase (for display). This version lowercases for comparison.
  */
-export function normalizePath(path: string): string {
-  return path.replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
+export function normalizePathForFingerprint(path: string): string {
+  return path.replace(/\\/g, "/").replace(/^\.\//g, "").toLowerCase();
 }
+
+// Re-export for backwards compatibility and tests
+export { normalizePathForFingerprint as normalizePath };
 
 /**
  * Normalize a message for fingerprinting:
@@ -76,7 +82,7 @@ export function buildFingerprintKey(
 ): string {
   const normalizedTool = tool.toLowerCase();
   const normalizedRuleId = normalizeRuleId(ruleId);
-  const normalizedPath = normalizePath(path);
+  const normalizedPath = normalizePathForFingerprint(path);
   const bucketedLine = bucketLine(startLine);
   const normalizedMsg = normalizeMessage(message);
 
@@ -241,7 +247,7 @@ export type MergeStrategy =
  */
 export function isTestFixtureFinding(finding: Finding): boolean {
   const file = finding.locations[0]?.path || "";
-  const normalizedFile = normalizePath(file);
+  const normalizedFile = normalizePathForFingerprint(file);
   return (
     normalizedFile.startsWith("test-fixtures/") ||
     normalizedFile.includes("/test-fixtures/")
@@ -264,7 +270,7 @@ function buildMergeKey(finding: Finding, strategy: MergeStrategy): string {
   const tool = finding.tool.toLowerCase();
   const ruleId = normalizeRuleId(finding.ruleId);
   const file = finding.locations[0]?.path
-    ? normalizePath(finding.locations[0].path)
+    ? normalizePathForFingerprint(finding.locations[0].path)
     : "__no_file__";
 
   // For test-fixtures, always merge by tool to minimize demo issues
@@ -301,28 +307,40 @@ function buildMergeKey(finding: Finding, strategy: MergeStrategy): string {
 }
 
 /**
- * Extract sublinter name from a trunk finding.
+ * Extract sublinter name from a trunk finding or title string.
  * Trunk findings have titles like "markdownlint: MD026" or "yamllint: syntax"
+ * 
+ * @param findingOrTitle - Either a Finding object or a title string
  */
-function extractSublinter(finding: Finding): string {
-  // Check if title has format "sublinter: rule"
-  const titleMatch = finding.title.match(/^(\w+):\s/);
+export function extractSublinter(findingOrTitle: Finding | string): string {
+  const title = typeof findingOrTitle === "string" 
+    ? findingOrTitle 
+    : findingOrTitle.title;
+  const ruleId = typeof findingOrTitle === "string" 
+    ? "" 
+    : findingOrTitle.ruleId;
+    
+  // Check if title has format "sublinter: rule" or "[vibeCheck] sublinter: rule"
+  const titleMatch = title.match(/(?:\[vibeCheck\]\s+)?(\w+)[\s:(\-]/i);
   if (titleMatch) {
     return titleMatch[1].toLowerCase();
   }
   // Check if ruleId has a prefix
-  const ruleMatch = finding.ruleId.match(/^([A-Z]+)\d/);
-  if (ruleMatch) {
-    // MD rules -> markdownlint, CKV -> checkov, etc.
-    const prefix = ruleMatch[1].toLowerCase();
-    const prefixMap: Record<string, string> = {
-      md: "markdownlint",
-      ckv: "checkov",
-      ghsa: "osv-scanner",
-    };
-    return prefixMap[prefix] || finding.ruleId;
+  if (ruleId) {
+    const ruleMatch = ruleId.match(/^([A-Z]+)\d/);
+    if (ruleMatch) {
+      // MD rules -> markdownlint, CKV -> checkov, etc.
+      const prefix = ruleMatch[1].toLowerCase();
+      const prefixMap: Record<string, string> = {
+        md: "markdownlint",
+        ckv: "checkov",
+        ghsa: "osv-scanner",
+      };
+      return prefixMap[prefix] || ruleId;
+    }
+    return ruleId;
   }
-  return finding.ruleId;
+  return title;
 }
 
 /**
@@ -390,7 +408,7 @@ function mergeFindings(
 
   for (const f of findings) {
     for (const loc of f.locations) {
-      const key = `${normalizePath(loc.path)}:${loc.startLine}`;
+      const key = `${normalizePathForFingerprint(loc.path)}:${loc.startLine}`;
       if (!seenLocations.has(key)) {
         seenLocations.add(key);
         allLocations.push(loc);
@@ -400,8 +418,8 @@ function mergeFindings(
 
   // Sort locations by file, then line
   allLocations.sort((a, b) => {
-    const pathCompare = normalizePath(a.path).localeCompare(
-      normalizePath(b.path),
+    const pathCompare = normalizePathForFingerprint(a.path).localeCompare(
+      normalizePathForFingerprint(b.path),
     );
     if (pathCompare !== 0) return pathCompare;
     return a.startLine - b.startLine;

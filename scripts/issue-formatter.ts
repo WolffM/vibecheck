@@ -57,38 +57,64 @@ export function formatGitHubLink(
 // Text Utilities
 // ============================================================================
 
+/** File extension to language mapping (comprehensive for syntax highlighting) */
+const EXT_TO_LANGUAGE: Record<string, string> = {
+  ts: "typescript",
+  tsx: "typescript",
+  js: "javascript",
+  jsx: "javascript",
+  py: "python",
+  java: "java",
+  yml: "yaml",
+  yaml: "yaml",
+  json: "json",
+  sh: "bash",
+  bash: "bash",
+  md: "markdown",
+  go: "go",
+  rs: "rust",
+  rb: "ruby",
+  php: "php",
+  cs: "csharp",
+  cpp: "cpp",
+  c: "c",
+  sql: "sql",
+  xml: "xml",
+  html: "html",
+  css: "css",
+};
+
+/** Languages that we track for labeling (subset of all languages) */
+const TRACKED_LANGUAGES = new Set(["typescript", "javascript", "python", "java"]);
+
+/**
+ * Get language from file extension.
+ * @param path - File path to analyze
+ * @param forLabeling - If true, only returns tracked languages (typescript/python/java)
+ *                      If false, returns syntax highlighting language
+ */
+function getLanguageFromPath(path: string, forLabeling = false): string | null {
+  const ext = path.split(".").pop()?.toLowerCase();
+  const lang = EXT_TO_LANGUAGE[ext || ""];
+  
+  if (!lang) return null;
+  
+  if (forLabeling) {
+    // For labeling, normalize js to typescript and only return tracked languages
+    const normalizedLang = lang === "javascript" ? "typescript" : lang;
+    return TRACKED_LANGUAGES.has(normalizedLang) ? normalizedLang : null;
+  }
+  
+  return lang;
+}
+
 /**
  * Infer programming language from file path for syntax highlighting.
+ * @deprecated Use getLanguageFromPath(path, false) instead
  */
 function inferLanguageFromPath(path?: string): string {
   if (!path) return "";
-  const ext = path.split(".").pop()?.toLowerCase();
-  const langMap: Record<string, string> = {
-    ts: "typescript",
-    tsx: "typescript",
-    js: "javascript",
-    jsx: "javascript",
-    py: "python",
-    java: "java",
-    yml: "yaml",
-    yaml: "yaml",
-    json: "json",
-    sh: "bash",
-    bash: "bash",
-    md: "markdown",
-    go: "go",
-    rs: "rust",
-    rb: "ruby",
-    php: "php",
-    cs: "csharp",
-    cpp: "cpp",
-    c: "c",
-    sql: "sql",
-    xml: "xml",
-    html: "html",
-    css: "css",
-  };
-  return langMap[ext || ""] || "";
+  return getLanguageFromPath(path, false) || "";
 }
 
 /**
@@ -209,22 +235,6 @@ export function getToolLanguage(tool: string): string | null {
 }
 
 /**
- * Detect language from file extension.
- */
-function getLanguageFromPath(path: string): string | null {
-  const ext = path.split(".").pop()?.toLowerCase();
-  const extToLang: Record<string, string> = {
-    ts: "typescript",
-    tsx: "typescript",
-    js: "typescript",
-    jsx: "typescript",
-    py: "python",
-    java: "java",
-  };
-  return extToLang[ext || ""] || null;
-}
-
-/**
  * Get the dominant language from a finding's locations.
  * Returns the language that appears most frequently, or null if mixed/unknown.
  */
@@ -234,7 +244,7 @@ function getDominantLanguageFromLocations(
   const langCounts: Record<string, number> = {};
 
   for (const loc of locations) {
-    const lang = getLanguageFromPath(loc.path);
+    const lang = getLanguageFromPath(loc.path, true); // Use labeling mode
     if (lang) {
       langCounts[lang] = (langCounts[lang] || 0) + 1;
     }

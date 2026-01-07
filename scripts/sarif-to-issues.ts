@@ -8,7 +8,7 @@
  */
 
 import { readFileSync, existsSync } from "node:fs";
-import { deduplicateFindings } from "./fingerprints.js";
+import { deduplicateFindings, extractSublinter } from "./fingerprints.js";
 import {
   buildFingerprintMap,
   closeIssue,
@@ -347,17 +347,6 @@ export async function processFindings(
 }
 
 /**
- * Extract sublinter name from an issue title.
- * e.g., "[vibeCheck] yamllint: quoted-strings" -> "yamllint"
- * e.g., "[vibeCheck] markdownlint (12 issues..." -> "markdownlint"
- */
-function extractSublinterFromTitle(title: string): string | null {
-  // Match patterns like "[vibeCheck] yamllint: ..." or "[vibeCheck] yamllint (..."
-  const match = title.match(/\[vibeCheck\]\s+(\w+)[\s:(\-]/i);
-  return match ? match[1].toLowerCase() : null;
-}
-
-/**
  * Check if an issue is superseded by a merged finding.
  * An issue is superseded if:
  * 1. It's a trunk issue for a specific rule (e.g., "yamllint: quoted-strings")
@@ -377,8 +366,8 @@ function isSupersededByMergedFinding(
     return { superseded: false };
   }
 
-  const issueSublinter = extractSublinterFromTitle(issue.title);
-  if (!issueSublinter) {
+  const issueSublinter = extractSublinter(issue.title);
+  if (!issueSublinter || issueSublinter === issue.title) {
     return { superseded: false };
   }
 
@@ -393,7 +382,7 @@ function isSupersededByMergedFinding(
     if (finding.tool !== "trunk") continue;
 
     // Check if this finding is a merged sublinter finding
-    const findingSublinter = extractSublinterFromTitle(finding.title);
+    const findingSublinter = extractSublinter(finding.title);
     if (findingSublinter !== issueSublinter) continue;
 
     // Check if the finding is a merged one (has multiple rules or "issues across")
