@@ -19,7 +19,11 @@
       "Bash(gh issue view:*)",
       "Bash(pmd check:*)",
       "Bash(ls:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(echo:*)",
+      "Bash(GITHUB_REPOSITORY=\"WolffM/vibecheck\" GITHUB_TOKEN=\"test\" npx tsx scripts/sarif-to-issues.ts .vibecheck-output/findings.json .vibecheck-output/context.json)",
+      "Bash(node -e:*)",
+      "Bash(MD040\"\\)\n3. Normalized title \\(for legacy issues\\)\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }

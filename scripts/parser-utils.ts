@@ -19,6 +19,51 @@ import type {
 } from "./types.js";
 
 // ============================================================================
+// Path Normalization
+// ============================================================================
+
+/**
+ * Normalize a file path for consistent display and linking.
+ * - Removes absolute path prefixes (e.g., /home/runner/work/repo/repo/)
+ * - Removes leading ./ prefixes
+ * - Converts backslashes to forward slashes
+ */
+export function normalizePath(path: string): string {
+  let normalized = path;
+
+  // Convert backslashes to forward slashes (Windows compatibility)
+  normalized = normalized.replace(/\\/g, "/");
+
+  // Remove common CI absolute path prefixes
+  // GitHub Actions: /home/runner/work/{repo}/{repo}/
+  const githubActionsMatch = normalized.match(
+    /^\/home\/runner\/work\/[^/]+\/[^/]+\/(.+)$/,
+  );
+  if (githubActionsMatch) {
+    normalized = githubActionsMatch[1];
+  }
+
+  // Generic: Remove any path that looks like an absolute path to a workspace
+  // Pattern: /anything/work/reponame/reponame/ or similar CI patterns
+  const ciPathMatch = normalized.match(/^\/[^/]+(?:\/[^/]+)*\/work\/[^/]+\/[^/]+\/(.+)$/);
+  if (ciPathMatch) {
+    normalized = ciPathMatch[1];
+  }
+
+  // Remove leading ./
+  if (normalized.startsWith("./")) {
+    normalized = normalized.substring(2);
+  }
+
+  // Remove leading /
+  if (normalized.startsWith("/")) {
+    normalized = normalized.substring(1);
+  }
+
+  return normalized;
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -60,6 +105,7 @@ export interface FindingConfig<T> {
 
 /**
  * Build a Location object with standard fields.
+ * Automatically normalizes the path to remove CI absolute paths and ./ prefixes.
  */
 export function buildLocation(
   path: string,
@@ -69,7 +115,7 @@ export function buildLocation(
   endColumn?: number,
 ): Location {
   const location: Location = {
-    path,
+    path: normalizePath(path),
     startLine,
   };
 

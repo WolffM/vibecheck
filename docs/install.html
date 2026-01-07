@@ -111,6 +111,168 @@
     .error.show {
       display: block;
     }
+
+    /* Advanced Options Styles */
+    details {
+      margin-top: 24px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #161b22;
+    }
+    summary {
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      color: #8b949e;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    summary:hover {
+      color: #c9d1d9;
+    }
+    summary::marker {
+      color: #58a6ff;
+    }
+    .options-content {
+      padding: 16px;
+      border-top: 1px solid #30363d;
+    }
+    .option-group {
+      margin-bottom: 20px;
+    }
+    .option-group:last-child {
+      margin-bottom: 0;
+    }
+    .option-group h4 {
+      margin: 0 0 12px 0;
+      color: #c9d1d9;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .option-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .option-field {
+      flex: 1;
+      min-width: 140px;
+    }
+    .option-field label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #8b949e;
+    }
+    .option-field select,
+    .option-field input[type="number"] {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+    .option-field select:focus,
+    .option-field input[type="number"]:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    /* Tool Selection */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    .tool-category {
+      margin-bottom: 16px;
+    }
+    .tool-category:last-child {
+      margin-bottom: 0;
+    }
+    .tool-category-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #21262d;
+    }
+    .tool-category-header span {
+      font-size: 13px;
+      font-weight: 500;
+      color: #8b949e;
+    }
+    .tool-category-header .lang-badge {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #21262d;
+      color: #8b949e;
+    }
+    .tool-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .tool-item:hover {
+      background: #21262d;
+    }
+    .tool-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #58a6ff;
+    }
+    .tool-item .tool-info {
+      flex: 1;
+    }
+    .tool-item .tool-name {
+      font-size: 13px;
+      color: #c9d1d9;
+    }
+    .tool-item .tool-desc {
+      font-size: 11px;
+      color: #6e7681;
+      margin-top: 2px;
+    }
+    .select-all-btn {
+      font-size: 11px;
+      color: #58a6ff;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      margin-left: auto;
+    }
+    .select-all-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* Submit button after advanced options */
+    #installForm button[type="submit"] {
+      margin-top: 20px;
+    }
+
+    /* Summary indicator for customization */
+    .custom-indicator {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #58a6ff;
+      margin-left: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .custom-indicator.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
@@ -128,6 +290,191 @@
       required
     >
     <p class="error" id="error">Please enter a valid repository (owner/repo or GitHub URL)</p>
+
+    <details id="advancedOptions">
+      <summary>Advanced Options <span class="custom-indicator" id="customIndicator" title="Custom settings applied"></span></summary>
+      <div class="options-content">
+        <!-- Analysis Settings -->
+        <div class="option-group">
+          <h4>Analysis Settings</h4>
+          <div class="option-row">
+            <div class="option-field">
+              <label for="cadence">Schedule</label>
+              <select id="cadence">
+                <option value="daily">Daily</option>
+                <option value="weekly" selected>Weekly (Recommended)</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div class="option-field">
+              <label for="severity">Min Severity</label>
+              <select id="severity">
+                <option value="info">Info (all issues)</option>
+                <option value="low" selected>Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical only</option>
+              </select>
+            </div>
+            <div class="option-field">
+              <label for="confidence">Min Confidence</label>
+              <select id="confidence">
+                <option value="low">Low (more findings)</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High (fewer false positives)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issue Management -->
+        <div class="option-group">
+          <h4>Issue Management</h4>
+          <div class="option-row">
+            <div class="option-field">
+              <label for="maxIssues">Max Issues per Run</label>
+              <input type="number" id="maxIssues" value="25" min="1" max="100">
+            </div>
+            <div class="option-field">
+              <label for="mergeStrategy">Merge Strategy</label>
+              <select id="mergeStrategy">
+                <option value="none">None (separate issues)</option>
+                <option value="same-file">Same file</option>
+                <option value="same-rule">Same rule</option>
+                <option value="same-linter" selected>Same linter</option>
+                <option value="same-tool">Same tool</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tool Selection -->
+        <div class="option-group">
+          <h4>Tools</h4>
+
+          <!-- Universal Tools -->
+          <div class="tool-category">
+            <div class="tool-category-header">
+              <span>Universal</span>
+              <span class="lang-badge">All Projects</span>
+              <button type="button" class="select-all-btn" data-category="universal">Toggle all</button>
+            </div>
+            <div class="tool-grid">
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="trunk" checked data-category="universal">
+                <div class="tool-info">
+                  <div class="tool-name">Trunk</div>
+                  <div class="tool-desc">ESLint, Prettier, and more</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="semgrep" checked data-category="universal">
+                <div class="tool-info">
+                  <div class="tool-name">Semgrep</div>
+                  <div class="tool-desc">Security scanning</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="jscpd" checked data-category="universal">
+                <div class="tool-info">
+                  <div class="tool-name">jscpd</div>
+                  <div class="tool-desc">Copy-paste detection</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- JavaScript/TypeScript Tools -->
+          <div class="tool-category">
+            <div class="tool-category-header">
+              <span>JavaScript / TypeScript</span>
+              <span class="lang-badge">JS/TS</span>
+              <button type="button" class="select-all-btn" data-category="js">Toggle all</button>
+            </div>
+            <div class="tool-grid">
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="tsc" checked data-category="js">
+                <div class="tool-info">
+                  <div class="tool-name">TypeScript</div>
+                  <div class="tool-desc">Type checking</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="dependency-cruiser" checked data-category="js">
+                <div class="tool-info">
+                  <div class="tool-name">dependency-cruiser</div>
+                  <div class="tool-desc">Circular dependencies</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="knip" checked data-category="js">
+                <div class="tool-info">
+                  <div class="tool-name">Knip</div>
+                  <div class="tool-desc">Dead code detection</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Python Tools -->
+          <div class="tool-category">
+            <div class="tool-category-header">
+              <span>Python</span>
+              <span class="lang-badge">PY</span>
+              <button type="button" class="select-all-btn" data-category="python">Toggle all</button>
+            </div>
+            <div class="tool-grid">
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="ruff" checked data-category="python">
+                <div class="tool-info">
+                  <div class="tool-name">Ruff</div>
+                  <div class="tool-desc">Fast Python linter</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="mypy" checked data-category="python">
+                <div class="tool-info">
+                  <div class="tool-name">Mypy</div>
+                  <div class="tool-desc">Type checking</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="bandit" checked data-category="python">
+                <div class="tool-info">
+                  <div class="tool-name">Bandit</div>
+                  <div class="tool-desc">Security scanning</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Java Tools -->
+          <div class="tool-category">
+            <div class="tool-category-header">
+              <span>Java</span>
+              <span class="lang-badge">JAVA</span>
+              <button type="button" class="select-all-btn" data-category="java">Toggle all</button>
+            </div>
+            <div class="tool-grid">
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="pmd" checked data-category="java">
+                <div class="tool-info">
+                  <div class="tool-name">PMD</div>
+                  <div class="tool-desc">Code analysis</div>
+                </div>
+              </label>
+              <label class="tool-item">
+                <input type="checkbox" name="tool" value="spotbugs" checked data-category="java">
+                <div class="tool-info">
+                  <div class="tool-name">SpotBugs</div>
+                  <div class="tool-desc">Bug detection</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </details>
 
     <button type="submit" id="submitBtn">Add vibeCheck workflow</button>
   </form>
@@ -150,7 +497,44 @@
   </div>
 
   <script>
-    const workflowContent = `# vibeCheck Analysis Workflow
+    // Default values
+    const DEFAULTS = {
+      cadence: 'weekly',
+      severity: 'low',
+      confidence: 'medium',
+      maxIssues: 25,
+      mergeStrategy: 'same-linter'
+    };
+
+    // All tools that are enabled by default
+    const DEFAULT_TOOLS = ['trunk', 'semgrep', 'jscpd', 'tsc', 'dependency-cruiser', 'knip', 'ruff', 'mypy', 'bandit', 'pmd', 'spotbugs'];
+
+    // Get cron expression for cadence
+    function getCronForCadence(cadence) {
+      switch (cadence) {
+        case 'daily': return '0 3 * * *';      // Every day at 3am UTC
+        case 'weekly': return '0 3 * * 1';     // Monday at 3am UTC
+        case 'monthly': return '0 3 1 * *';    // 1st of month at 3am UTC
+        default: return '0 3 * * 1';
+      }
+    }
+
+    // Generate workflow YAML based on options
+    function generateWorkflow(options) {
+      const { cadence, severity, confidence, maxIssues, mergeStrategy, disabledTools } = options;
+      const cron = getCronForCadence(cadence);
+
+      // Check if using non-default values
+      const isCustom =
+        cadence !== DEFAULTS.cadence ||
+        severity !== DEFAULTS.severity ||
+        confidence !== DEFAULTS.confidence ||
+        maxIssues !== DEFAULTS.maxIssues ||
+        mergeStrategy !== DEFAULTS.mergeStrategy ||
+        disabledTools.length > 0;
+
+      // Build the workflow
+      let yaml = `# vibeCheck Analysis Workflow
 #
 # This workflow runs vibeCheck static analysis on your repository.
 # For more info: https://github.com/WolffM/vibecheck
@@ -158,9 +542,9 @@
 name: vibeCheck Analysis
 
 on:
-  # Run weekly on Monday at 3am UTC
+  # Run ${cadence} ${cadence === 'weekly' ? 'on Monday ' : cadence === 'monthly' ? 'on the 1st ' : ''}at 3am UTC
   schedule:
-    - cron: "0 3 * * 1"
+    - cron: "${cron}"
 
   # Allow manual trigger
   workflow_dispatch:
@@ -168,7 +552,7 @@ on:
       cadence:
         description: "Analysis cadence"
         required: false
-        default: "weekly"
+        default: "${cadence}"
         type: choice
         options:
           - daily
@@ -195,8 +579,53 @@ jobs:
         uses: WolffM/vibecheck@main
         with:
           github_token: \${{ secrets.GITHUB_TOKEN }}
-          cadence: \${{ github.event.inputs.cadence || 'weekly' }}
-`;
+          cadence: \${{ github.event.inputs.cadence || '${cadence}' }}`;
+
+      // Add custom options only if they differ from defaults
+      if (severity !== 'info') {
+        yaml += `\n          severity_threshold: "${severity}"`;
+      }
+      if (confidence !== 'low') {
+        yaml += `\n          confidence_threshold: "${confidence}"`;
+      }
+      if (mergeStrategy !== 'same-linter') {
+        yaml += `\n          merge_strategy: "${mergeStrategy}"`;
+      }
+
+      // If tools are disabled, we need a config file
+      // For now, add a comment about it
+      if (disabledTools.length > 0) {
+        yaml += `\n          # Note: Some tools disabled. Create vibecheck.yml to customize:`;
+        yaml += `\n          # tools:`;
+        for (const tool of disabledTools) {
+          const configKey = tool === 'dependency-cruiser' ? 'dependency_cruiser' : tool;
+          yaml += `\n          #   ${configKey}: { enabled: false }`;
+        }
+      }
+
+      yaml += '\n';
+      return yaml;
+    }
+
+    // Get current form options
+    function getOptions() {
+      const cadence = document.getElementById('cadence').value;
+      const severity = document.getElementById('severity').value;
+      const confidence = document.getElementById('confidence').value;
+      const maxIssues = parseInt(document.getElementById('maxIssues').value, 10) || 25;
+      const mergeStrategy = document.getElementById('mergeStrategy').value;
+
+      // Get disabled tools (unchecked checkboxes)
+      const allTools = document.querySelectorAll('input[name="tool"]');
+      const disabledTools = [];
+      allTools.forEach(cb => {
+        if (!cb.checked) {
+          disabledTools.push(cb.value);
+        }
+      });
+
+      return { cadence, severity, confidence, maxIssues, mergeStrategy, disabledTools };
+    }
 
     const form = document.getElementById('installForm');
     const repoInput = document.getElementById('repo');
@@ -208,9 +637,6 @@ jobs:
       const trimmed = input.trim();
 
       // Try to match GitHub URL formats
-      // https://github.com/owner/repo
-      // https://github.com/owner/repo/anything
-      // github.com/owner/repo
       const urlMatch = trimmed.match(/(?:https?:\/\/)?github\.com\/([a-zA-Z0-9_.-]+)\/([a-zA-Z0-9_.-]+)/);
       if (urlMatch) {
         return `${urlMatch[1]}/${urlMatch[2]}`;
@@ -233,6 +659,36 @@ jobs:
       submitBtn.disabled = repoInput.value && !valid;
     });
 
+    // Check if any options are customized
+    function updateCustomIndicator() {
+      const options = getOptions();
+      const isCustom =
+        options.cadence !== DEFAULTS.cadence ||
+        options.severity !== DEFAULTS.severity ||
+        options.confidence !== DEFAULTS.confidence ||
+        options.maxIssues !== DEFAULTS.maxIssues ||
+        options.mergeStrategy !== DEFAULTS.mergeStrategy ||
+        options.disabledTools.length > 0;
+
+      document.getElementById('customIndicator').classList.toggle('show', isCustom);
+    }
+
+    // Toggle all buttons for tool categories
+    document.querySelectorAll('.select-all-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const category = btn.dataset.category;
+        const checkboxes = document.querySelectorAll(`input[data-category="${category}"]`);
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(cb => cb.checked = !allChecked);
+        updateCustomIndicator();
+      });
+    });
+
+    // Update indicator when any option changes
+    document.querySelectorAll('#advancedOptions select, #advancedOptions input').forEach(el => {
+      el.addEventListener('change', updateCustomIndicator);
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
 
@@ -242,6 +698,8 @@ jobs:
         return;
       }
 
+      const options = getOptions();
+      const workflowContent = generateWorkflow(options);
       const encoded = encodeURIComponent(workflowContent);
       const url = `https://github.com/${repo}/new/main?filename=.github/workflows/vibecheck.yml&value=${encoded}`;
 

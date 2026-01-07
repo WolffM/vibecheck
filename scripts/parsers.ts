@@ -11,6 +11,7 @@ import {
   buildLocation,
   buildLocationFromRowCol,
   createFinding,
+  normalizePath,
   parseResults,
 } from "./parser-utils.js";
 import {
@@ -102,8 +103,12 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
   const findings: Finding[] = [];
 
   for (const clone of output.duplicates) {
+    // Normalize paths for consistent display
+    const file1Path = normalizePath(clone.firstFile.name);
+    const file2Path = normalizePath(clone.secondFile.name);
+
     const location1: Location = {
-      path: clone.firstFile.name,
+      path: file1Path,
       startLine: clone.firstFile.startLoc.line,
       startColumn: clone.firstFile.startLoc.column,
       endLine: clone.firstFile.endLoc.line,
@@ -111,7 +116,7 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
     };
 
     const location2: Location = {
-      path: clone.secondFile.name,
+      path: file2Path,
       startLine: clone.secondFile.startLoc.line,
       startColumn: clone.secondFile.startLoc.column,
       endLine: clone.secondFile.endLoc.line,
@@ -127,7 +132,7 @@ export function parseJscpdOutput(output: JscpdOutput): Finding[] {
       tool: "jscpd",
       ruleId: "duplicate-code",
       title: `Duplicate Code: ${clone.lines} lines`,
-      message: `Found ${clone.lines} duplicate lines (${clone.tokens} tokens) between ${clone.firstFile.name} and ${clone.secondFile.name}`,
+      message: `Found ${clone.lines} duplicate lines (${clone.tokens} tokens) between ${file1Path} and ${file2Path}`,
       severity,
       confidence,
       effort,
@@ -297,8 +302,11 @@ function createKnipFinding(
   symbol: string,
   line: number,
 ): Finding {
+  // Normalize the path for consistent display
+  const normalizedPath = normalizePath(filePath);
+
   const location: Location = {
-    path: filePath,
+    path: normalizedPath,
     startLine: line,
   };
 
@@ -310,7 +318,7 @@ function createKnipFinding(
   let title: string;
   switch (type) {
     case "files":
-      message = `Unused file: ${filePath}`;
+      message = `Unused file: ${normalizedPath}`;
       title = "Unused File";
       break;
     case "dependencies":
@@ -322,15 +330,15 @@ function createKnipFinding(
       title = "Unused Dev Dependency";
       break;
     case "exports":
-      message = `Unused export: ${symbol} in ${filePath}`;
+      message = `Unused export: ${symbol} in ${normalizedPath}`;
       title = "Unused Export";
       break;
     case "types":
-      message = `Unused type: ${symbol} in ${filePath}`;
+      message = `Unused type: ${symbol} in ${normalizedPath}`;
       title = "Unused Type";
       break;
     case "unlisted":
-      message = `Unlisted dependency: ${symbol} used in ${filePath}`;
+      message = `Unlisted dependency: ${symbol} used in ${normalizedPath}`;
       title = "Unlisted Dependency";
       break;
     case "duplicates":
@@ -354,7 +362,7 @@ function createKnipFinding(
     autofix: "none",
     locations: [location],
     labels: ["vibeCheck", "tool:knip", `severity:${severity}`],
-    rawOutput: { type, filePath, symbol, line },
+    rawOutput: { type, filePath: normalizedPath, symbol, line },
   };
 
   return {

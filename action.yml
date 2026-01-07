@@ -162,6 +162,37 @@ runs:
         tar -xzf spotbugs.tgz -C /tmp
         echo "/tmp/spotbugs-${SPOTBUGS_VERSION}/bin" >> $GITHUB_PATH
 
+    - name: Compile Java files for SpotBugs (if Java detected)
+      if: steps.detect-java.outputs.has_java == 'true'
+      shell: bash
+      run: |
+        echo "Compiling Java files for SpotBugs analysis..."
+        WORKSPACE="${{ github.workspace }}"
+
+        # Try Maven build first
+        if [ -f "$WORKSPACE/pom.xml" ]; then
+          echo "Found Maven project, running mvn compile..."
+          cd "$WORKSPACE" && mvn compile -q -DskipTests 2>/dev/null || echo "Maven compile failed (non-fatal)"
+        # Try Gradle build
+        elif [ -f "$WORKSPACE/build.gradle" ] || [ -f "$WORKSPACE/build.gradle.kts" ]; then
+          echo "Found Gradle project, running gradle compileJava..."
+          cd "$WORKSPACE" && ./gradlew compileJava -q 2>/dev/null || gradle compileJava -q 2>/dev/null || echo "Gradle compile failed (non-fatal)"
+        else
+          # Fallback: compile standalone Java files to a target directory
+          echo "No build system found, compiling standalone Java files..."
+          JAVA_FILES=$(find "$WORKSPACE" -name "*.java" -type f -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null)
+          if [ -n "$JAVA_FILES" ]; then
+            # Find directories containing Java files and compile each
+            for dir in $(echo "$JAVA_FILES" | xargs -n1 dirname | sort -u); do
+              TARGET_DIR="$dir/target/classes"
+              mkdir -p "$TARGET_DIR"
+              echo "Compiling Java files in $dir..."
+              # Compile all Java files in this directory, ignoring errors
+              find "$dir" -maxdepth 1 -name "*.java" -exec javac -d "$TARGET_DIR" {} + 2>/dev/null || echo "Some files failed to compile (non-fatal)"
+            done
+          fi
+        fi
+
     - name: Run Analysis
       id: analyze
       shell: bash

@@ -439,6 +439,7 @@ function buildRuleLink(finding: Finding): string {
 /**
  * Build the references section with evidence links.
  * Formats URLs as readable markdown links and deduplicates them.
+ * Limits to 10 visible references with a collapsible section for more.
  */
 function buildReferencesSection(finding: Finding): string {
   if (!finding.evidence?.links || finding.evidence.links.length === 0) {
@@ -448,11 +449,32 @@ function buildReferencesSection(finding: Finding): string {
   // Deduplicate URLs while preserving order
   const uniqueUrls = [...new Set(finding.evidence.links.filter((l) => l && l.startsWith("http")))];
 
-  const linkList = uniqueUrls
+  if (uniqueUrls.length === 0) {
+    return "";
+  }
+
+  const MAX_VISIBLE_REFS = 10;
+
+  if (uniqueUrls.length <= MAX_VISIBLE_REFS) {
+    const linkList = uniqueUrls
+      .map((url) => `- [${formatLinkTitle(url)}](${url})`)
+      .join("\n");
+    return `\n## References\n\n${linkList}`;
+  }
+
+  // Show first 10, put rest in collapsible
+  const visibleLinks = uniqueUrls.slice(0, MAX_VISIBLE_REFS);
+  const hiddenLinks = uniqueUrls.slice(MAX_VISIBLE_REFS);
+
+  const visibleList = visibleLinks
     .map((url) => `- [${formatLinkTitle(url)}](${url})`)
     .join("\n");
 
-  return linkList ? `\n## References\n\n${linkList}` : "";
+  const hiddenList = hiddenLinks
+    .map((url) => `- [${formatLinkTitle(url)}](${url})`)
+    .join("\n");
+
+  return `\n## References\n\n${visibleList}\n\n<details>\n<summary>View ${hiddenLinks.length} more references</summary>\n\n${hiddenList}\n</details>`;
 }
 
 /**
