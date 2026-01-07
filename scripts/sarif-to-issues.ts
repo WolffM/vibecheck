@@ -153,7 +153,23 @@ export async function processFindings(
   const toolRuleMap = new Map<string, ExistingIssue>();
   const sublinterMap = new Map<string, ExistingIssue>(); // For trunk sublinters
 
+  // Build normalized title map for finding duplicates
+  // Maps normalized title -> array of issues (to handle existing duplicates)
+  const normalizedTitleMap = new Map<string, ExistingIssue[]>();
+
   for (const issue of existingIssues) {
+    // Only consider open issues for matching
+    if (issue.state !== "open") continue;
+
+    // Add to normalized title map
+    const normalizedTitle = normalizeIssueTitle(issue.title);
+    const existing = normalizedTitleMap.get(normalizedTitle);
+    if (existing) {
+      existing.push(issue);
+    } else {
+      normalizedTitleMap.set(normalizedTitle, [issue]);
+    }
+
     // Extract tool and rule from issue title like "[vibeCheck] knip: files in ..."
     // Also handles "[vibeCheck] yamllint: quoted-strings" and "[vibeCheck] markdownlint (12 issues..."
     const titleMatch = issue.title.match(
@@ -263,6 +279,41 @@ export async function processFindings(
         stats.updated++;
       }
     } else {
+      // Before creating, check if there's an existing open issue with similar title
+      // This catches duplicates that weren't matched by fingerprint (legacy issues)
+      const title = generateIssueTitle(finding);
+      const normalizedNewTitle = normalizeIssueTitle(title);
+      const matchingIssues = normalizedTitleMap.get(normalizedNewTitle);
+
+      if (matchingIssues && matchingIssues.length > 0) {
+        // Found existing issue(s) by title - update the newest one (highest issue number)
+        const issueToUpdate = matchingIssues.sort((a, b) => b.number - a.number)[0];
+        console.log(
+          `Found existing issue #${issueToUpdate.number} by title match for ${finding.ruleId}`,
+        );
+
+        const body = generateIssueBody(finding, context);
+        const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
+
+        await withRateLimit(() =>
+          updateIssue(owner, repo, {
+            number: issueToUpdate.number,
+            title,
+            body,
+            labels,
+          }),
+        );
+
+        stats.updated++;
+
+        // Track fingerprint to avoid creating more duplicates
+        fingerprintMap.set(finding.fingerprint, issueToUpdate);
+        if (issueToUpdate.metadata?.fingerprint) {
+          seenFingerprints.add(issueToUpdate.metadata.fingerprint);
+        }
+        continue;
+      }
+
       // Create new issue (respect max cap)
       if (stats.created >= issuesConfig.max_new_per_run) {
         stats.skippedMaxReached++;
@@ -270,7 +321,6 @@ export async function processFindings(
       }
 
       console.log(`Creating issue for ${finding.ruleId}`);
-      const title = generateIssueTitle(finding);
       const body = generateIssueBody(finding, context);
       const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
 
@@ -285,6 +335,26 @@ export async function processFindings(
 
       console.log(`Created issue #${issueNumber}`);
       stats.created++;
+
+      // Add to normalized title map so we don't create more duplicates this run
+      const newIssue: ExistingIssue = {
+        number: issueNumber,
+        title,
+        body,
+        state: "open",
+        labels,
+        metadata: {
+          fingerprint: finding.fingerprint,
+          lastSeenRun: context.runNumber,
+          consecutiveMisses: 0,
+        },
+      };
+      const existingForTitle = normalizedTitleMap.get(normalizedNewTitle);
+      if (existingForTitle) {
+        existingForTitle.push(newIssue);
+      } else {
+        normalizedTitleMap.set(normalizedNewTitle, [newIssue]);
+      }
 
       // Add to fingerprint map so we don't create duplicates if multiple
       // merged findings share the same fingerprint
