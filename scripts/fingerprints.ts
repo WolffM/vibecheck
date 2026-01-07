@@ -134,10 +134,11 @@ export function shortFingerprint(fingerprint: string): string {
 /**
  * Extract fingerprint from an issue body.
  * Looks for the hidden marker: <!-- vibecheck:fingerprint=sha256:... -->
+ * Also accepts legacy vibecop: prefix for backwards compatibility.
  */
 export function extractFingerprintFromBody(body: string): string | null {
   const match = body.match(
-    /<!--\s*vibecheck:fingerprint=(sha256:[a-f0-9]+)\s*-->/i,
+    /<!--\s*(?:vibecheck|vibecop):fingerprint=(sha256:[a-f0-9]+)\s*-->/i,
   );
   return match ? match[1] : null;
 }
@@ -152,11 +153,14 @@ export function generateFingerprintMarker(fingerprint: string): string {
 /**
  * Extract run metadata from an issue body.
  * Looks for: <!-- vibecheck:run=N:lastSeen=TIMESTAMP -->
+ * Also accepts legacy vibecop: prefix for backwards compatibility.
  */
 export function extractRunMetadata(
   body: string,
 ): { run: number; lastSeen: string } | null {
-  const match = body.match(/<!--\s*vibecheck:run=(\d+):lastSeen=([^\s]+)\s*-->/i);
+  const match = body.match(
+    /<!--\s*(?:vibecheck|vibecop):run=(\d+):lastSeen=([^\s]+)\s*-->/i,
+  );
   if (match) {
     return {
       run: parseInt(match[1], 10),

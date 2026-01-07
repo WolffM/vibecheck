@@ -203,6 +203,14 @@ describe("fingerprint markers", () => {
     expect(extractFingerprintFromBody("No marker here")).toBeNull();
   });
 
+  it("should extract legacy vibecop: fingerprint marker", () => {
+    const legacyMarker = "<!-- vibecop:fingerprint=sha256:abc123def456 -->";
+    const extracted = extractFingerprintFromBody(
+      `Some text\n${legacyMarker}\nMore text`,
+    );
+    expect(extracted).toBe("sha256:abc123def456");
+  });
+
   it("should generate and extract run metadata", () => {
     const marker = generateRunMetadataMarker(42, "2026-01-05T00:00:00Z");
     expect(marker).toBe(
@@ -215,6 +223,12 @@ describe("fingerprint markers", () => {
 
   it("should return null for body without run metadata", () => {
     expect(extractRunMetadata("No metadata here")).toBeNull();
+  });
+
+  it("should extract legacy vibecop: run metadata", () => {
+    const legacyMarker = "<!-- vibecop:run=42:lastSeen=2026-01-05T00:00:00Z -->";
+    const extracted = extractRunMetadata(`Some text\n${legacyMarker}\nMore text`);
+    expect(extracted).toEqual({ run: 42, lastSeen: "2026-01-05T00:00:00Z" });
   });
 });
 
