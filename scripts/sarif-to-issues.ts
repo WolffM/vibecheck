@@ -373,10 +373,17 @@ export async function processFindings(
       seenFingerprints,
       stats,
     );
-
-    // NOTE: closeDuplicateIssues() removed - duplicates should be prevented
-    // by the unified findMatchingIssue() function, not created then closed
   }
+
+  // Always close pre-existing duplicate issues (from before the dedup fix)
+  // This runs regardless of close_resolved setting to clean up legacy duplicates
+  await closePreExistingDuplicates(
+    owner,
+    repo,
+    existingIssues,
+    normalizedTitleMap,
+    stats,
+  );
 
   return stats;
 }
@@ -499,9 +506,67 @@ function normalizeIssueTitle(title: string): string {
     .trim();
 }
 
-// NOTE: closeDuplicateIssues() was removed - duplicates are now prevented
-// by the unified findMatchingIssue() function that checks ALL lookup strategies
-// (fingerprint, tool+rule, sublinter, normalized title) before creating any issue.
+/**
+ * Close pre-existing duplicate issues.
+ *
+ * When multiple open issues exist with the same normalized title, keep only
+ * the newest one (highest issue number) and close the others as duplicates.
+ *
+ * This handles legacy duplicates that were created before the dedup fix was
+ * implemented. New duplicates are prevented by findMatchingIssue().
+ */
+async function closePreExistingDuplicates(
+  owner: string,
+  repo: string,
+  existingIssues: ExistingIssue[],
+  normalizedTitleMap: Map<string, ExistingIssue[]>,
+  stats: IssueStats,
+): Promise<void> {
+  // Track which issues we've already decided to close
+  const issuesToClose = new Set<number>();
+
+  // For each normalized title, find duplicates
+  for (const [normalizedTitle, issues] of normalizedTitleMap.entries()) {
+    // Filter to only open issues
+    const openIssues = issues.filter((i) => i.state === "open");
+
+    if (openIssues.length <= 1) continue; // No duplicates
+
+    // Sort by issue number descending (newest first)
+    const sorted = [...openIssues].sort((a, b) => b.number - a.number);
+
+    // Keep the newest, mark the rest for closing
+    const [keeper, ...duplicates] = sorted;
+
+    console.log(
+      `Found ${duplicates.length} duplicate(s) for "${normalizedTitle}" - keeping #${keeper.number}`,
+    );
+
+    for (const dup of duplicates) {
+      issuesToClose.add(dup.number);
+    }
+  }
+
+  // Close the duplicates
+  for (const issue of existingIssues) {
+    if (!issuesToClose.has(issue.number)) continue;
+    if (issue.state !== "open") continue; // Double-check
+
+    console.log(`Closing duplicate issue #${issue.number} ("${issue.title}")`);
+
+    await withRateLimit(() =>
+      closeIssue(
+        owner,
+        repo,
+        issue.number,
+        `🔄 This is a duplicate issue. The findings are now tracked in a newer issue.\n\nClosed automatically by vibeCheck.`,
+      ),
+    );
+
+    issue.state = "closed";
+    stats.closed++;
+  }
+}
 
 /**
  * Close issues that are no longer detected.
