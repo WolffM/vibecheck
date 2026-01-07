@@ -149,29 +149,43 @@ export async function processFindings(
   // Track which fingerprints we've seen in this run
   const seenFingerprints = new Set<string>();
 
-  // Build secondary lookups for fallback matching
-  const toolRuleMap = new Map<string, ExistingIssue>();
-  const sublinterMap = new Map<string, ExistingIssue>(); // For trunk sublinters
+  // Build ALL lookup maps from ALL issues (open AND closed)
+  // This prevents creating duplicates when a closed issue exists with same fingerprint/title
+  const toolRuleMap = new Map<string, ExistingIssue[]>(); // tool|ruleId -> issues (prefer open)
+  const sublinterMap = new Map<string, ExistingIssue[]>(); // trunk|sublinter -> issues
+  const normalizedTitleMap = new Map<string, ExistingIssue[]>(); // normalized title -> issues
 
-  // Build normalized title map for finding duplicates
-  // Maps normalized title -> array of issues (to handle existing duplicates)
-  const normalizedTitleMap = new Map<string, ExistingIssue[]>();
-
-  for (const issue of existingIssues) {
-    // Only consider open issues for matching
-    if (issue.state !== "open") continue;
-
-    // Add to normalized title map
-    const normalizedTitle = normalizeIssueTitle(issue.title);
-    const existing = normalizedTitleMap.get(normalizedTitle);
+  // Helper to add issue to a map (stores array to handle duplicates)
+  function addToMap(map: Map<string, ExistingIssue[]>, key: string, issue: ExistingIssue) {
+    const existing = map.get(key);
     if (existing) {
       existing.push(issue);
     } else {
-      normalizedTitleMap.set(normalizedTitle, [issue]);
+      map.set(key, [issue]);
     }
+  }
 
-    // Extract tool and rule from issue title like "[vibeCheck] knip: files in ..."
-    // Also handles "[vibeCheck] yamllint: quoted-strings" and "[vibeCheck] markdownlint (12 issues..."
+  // Helper to get best issue from map (prefers open, then highest number)
+  function getBestIssue(map: Map<string, ExistingIssue[]>, key: string): ExistingIssue | undefined {
+    const issues = map.get(key);
+    if (!issues || issues.length === 0) return undefined;
+
+    // Sort: open issues first, then by number descending (newest first)
+    const sorted = [...issues].sort((a, b) => {
+      if (a.state === "open" && b.state !== "open") return -1;
+      if (a.state !== "open" && b.state === "open") return 1;
+      return b.number - a.number;
+    });
+    return sorted[0];
+  }
+
+  // Build maps from ALL existing issues
+  for (const issue of existingIssues) {
+    // Add to normalized title map
+    const normalizedTitle = normalizeIssueTitle(issue.title);
+    addToMap(normalizedTitleMap, normalizedTitle, issue);
+
+    // Extract tool and rule from issue title
     const titleMatch = issue.title.match(
       /\[vibeCheck\]\s+(\w+)(?::\s+(\S+)|[\s(])/i,
     );
@@ -180,79 +194,95 @@ export async function processFindings(
       const ruleId = titleMatch[2]?.toLowerCase();
 
       if (ruleId) {
-        // Standard format: "[vibeCheck] tool: ruleId ..."
         const key = `${toolOrSublinter}|${ruleId}`;
-        if (!toolRuleMap.has(key)) {
-          toolRuleMap.set(key, issue);
-        }
+        addToMap(toolRuleMap, key, issue);
       }
 
-      // Also map by sublinter for trunk findings (yamllint, markdownlint, etc.)
-      const sublinters = [
-        "yamllint",
-        "markdownlint",
-        "checkov",
-        "osv-scanner",
-        "prettier",
-      ];
+      // Also map by sublinter for trunk findings
+      const sublinters = ["yamllint", "markdownlint", "checkov", "osv-scanner", "prettier"];
       if (sublinters.includes(toolOrSublinter)) {
         const sublinterKey = `trunk|${toolOrSublinter}`;
-        if (!sublinterMap.has(sublinterKey)) {
-          sublinterMap.set(sublinterKey, issue);
-        }
+        addToMap(sublinterMap, sublinterKey, issue);
       }
     }
+  }
+
+  // Unified function to find matching issue using all strategies
+  function findMatchingIssue(finding: Finding): ExistingIssue | undefined {
+    // Strategy 1: Fingerprint (most reliable)
+    const fpMatch = fingerprintMap.get(finding.fingerprint);
+    if (fpMatch) return fpMatch;
+
+    // Strategy 2: Tool + Rule
+    const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
+    const toolRuleMatch = getBestIssue(toolRuleMap, toolRuleKey);
+    if (toolRuleMatch) return toolRuleMatch;
+
+    // Strategy 3: Trunk sublinter
+    if (finding.tool.toLowerCase() === "trunk") {
+      const sublinterMatch = finding.title.match(/^(\w+)[\s:(]/);
+      if (sublinterMatch) {
+        const sublinterKey = `trunk|${sublinterMatch[1].toLowerCase()}`;
+        const match = getBestIssue(sublinterMap, sublinterKey);
+        if (match) return match;
+      }
+    }
+
+    // Strategy 4: Normalized title (for legacy issues without fingerprints)
+    const newTitle = generateIssueTitle(finding);
+    const normalizedNewTitle = normalizeIssueTitle(newTitle);
+    const titleMatch = getBestIssue(normalizedTitleMap, normalizedNewTitle);
+    if (titleMatch) return titleMatch;
+
+    return undefined;
+  }
+
+  // Helper to register an issue in all lookup maps
+  function registerIssueInMaps(issue: ExistingIssue, finding: Finding) {
+    // Add to fingerprint map
+    fingerprintMap.set(finding.fingerprint, issue);
+
+    // Add to tool+rule map
+    const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
+    addToMap(toolRuleMap, toolRuleKey, issue);
+
+    // Add to sublinter map if applicable
+    if (finding.tool.toLowerCase() === "trunk") {
+      const sublinterMatch = finding.title.match(/^(\w+)[\s:(]/);
+      if (sublinterMatch) {
+        const sublinterKey = `trunk|${sublinterMatch[1].toLowerCase()}`;
+        addToMap(sublinterMap, sublinterKey, issue);
+      }
+    }
+
+    // Add to normalized title map
+    const normalizedTitle = normalizeIssueTitle(issue.title);
+    addToMap(normalizedTitleMap, normalizedTitle, issue);
   }
 
   // Process each finding
   for (const finding of actionableFindings) {
     seenFingerprints.add(finding.fingerprint);
 
-    // Try fingerprint match first
-    let existingIssue = fingerprintMap.get(finding.fingerprint);
-
-    if (!existingIssue) {
-      // Fallback 1: check if there's an existing issue for same tool+rule
-      const toolRuleKey = `${finding.tool.toLowerCase()}|${finding.ruleId.toLowerCase()}`;
-      existingIssue = toolRuleMap.get(toolRuleKey);
-
-      // Fallback 2: for trunk findings with merged rules, check by sublinter
-      if (!existingIssue && finding.tool.toLowerCase() === "trunk") {
-        // Extract sublinter from title (e.g., "yamllint (18 issues..." or "yamllint: quoted-strings")
-        const sublinterMatch = finding.title.match(/^(\w+)[\s:(]/);
-        if (sublinterMatch) {
-          const sublinterKey = `trunk|${sublinterMatch[1].toLowerCase()}`;
-          existingIssue = sublinterMap.get(sublinterKey);
-        }
-      }
-
-      if (existingIssue) {
-        console.log(
-          `Found existing issue #${existingIssue.number} by fallback match`,
-        );
-        // Add to fingerprint map so we track it
-        fingerprintMap.set(finding.fingerprint, existingIssue);
-        // Mark the old fingerprint as seen to avoid closing it
-        if (existingIssue.metadata?.fingerprint) {
-          seenFingerprints.add(existingIssue.metadata.fingerprint);
-        }
-      }
-    }
+    // Use unified matching to find existing issue (checks ALL strategies)
+    const existingIssue = findMatchingIssue(finding);
 
     if (existingIssue) {
-      // Update existing issue (including title)
+      // Mark the issue's fingerprint as seen
+      if (existingIssue.metadata?.fingerprint) {
+        seenFingerprints.add(existingIssue.metadata.fingerprint);
+      }
+
       const title = generateIssueTitle(finding);
       const body = generateIssueBody(finding, context);
       const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
 
       if (existingIssue.state === "open") {
-        console.log(
-          `Updating issue #${existingIssue.number} for ${finding.ruleId}`,
-        );
+        console.log(`Updating issue #${existingIssue.number} for ${finding.ruleId}`);
 
         await withRateLimit(() =>
           updateIssue(owner, repo, {
-            number: existingIssue!.number,
+            number: existingIssue.number,
             title,
             body,
             labels,
@@ -262,13 +292,11 @@ export async function processFindings(
         stats.updated++;
       } else {
         // Issue was closed but finding reappeared - reopen it
-        console.log(
-          `Reopening issue #${existingIssue.number} for ${finding.ruleId} (finding redetected)`,
-        );
+        console.log(`Reopening issue #${existingIssue.number} for ${finding.ruleId} (finding redetected)`);
 
         await withRateLimit(() =>
           updateIssue(owner, repo, {
-            number: existingIssue!.number,
+            number: existingIssue.number,
             title,
             body,
             labels,
@@ -276,64 +304,23 @@ export async function processFindings(
           }),
         );
 
-        // Update the issue's state in our tracking so closeDuplicateIssues sees it as open
+        // Update state in our tracking
         existingIssue.state = "open";
         existingIssue.title = title;
 
-        // Add to normalizedTitleMap so duplicate detection works
-        const normalizedTitle = normalizeIssueTitle(title);
-        const existingForTitle = normalizedTitleMap.get(normalizedTitle);
-        if (existingForTitle) {
-          existingForTitle.push(existingIssue);
-        } else {
-          normalizedTitleMap.set(normalizedTitle, [existingIssue]);
-        }
-
         stats.updated++;
       }
+
+      // Register in all maps so subsequent findings can find it
+      registerIssueInMaps(existingIssue, finding);
     } else {
-      // Before creating, check if there's an existing open issue with similar title
-      // This catches duplicates that weren't matched by fingerprint (legacy issues)
-      const title = generateIssueTitle(finding);
-      const normalizedNewTitle = normalizeIssueTitle(title);
-      const matchingIssues = normalizedTitleMap.get(normalizedNewTitle);
-
-      if (matchingIssues && matchingIssues.length > 0) {
-        // Found existing issue(s) by title - update the newest one (highest issue number)
-        const issueToUpdate = matchingIssues.sort((a, b) => b.number - a.number)[0];
-        console.log(
-          `Found existing issue #${issueToUpdate.number} by title match for ${finding.ruleId}`,
-        );
-
-        const body = generateIssueBody(finding, context);
-        const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
-
-        await withRateLimit(() =>
-          updateIssue(owner, repo, {
-            number: issueToUpdate.number,
-            title,
-            body,
-            labels,
-          }),
-        );
-
-        stats.updated++;
-
-        // Track fingerprint to avoid creating more duplicates
-        fingerprintMap.set(finding.fingerprint, issueToUpdate);
-        if (issueToUpdate.metadata?.fingerprint) {
-          seenFingerprints.add(issueToUpdate.metadata.fingerprint);
-        }
-        continue;
-      }
-
-      // Create new issue (respect max cap)
+      // No existing issue found - create new one (respect max cap)
       if (stats.created >= issuesConfig.max_new_per_run) {
         stats.skippedMaxReached++;
         continue;
       }
 
-      console.log(`Creating issue for ${finding.ruleId}`);
+      const title = generateIssueTitle(finding);
       const body = generateIssueBody(finding, context);
       const labels = getLabelsForFinding(finding, issuesConfig.label, languagesInRun);
 
@@ -349,7 +336,7 @@ export async function processFindings(
       console.log(`Created issue #${issueNumber}`);
       stats.created++;
 
-      // Add to normalized title map so we don't create more duplicates this run
+      // Register new issue in all lookup maps so subsequent findings won't create duplicates
       const newIssue: ExistingIssue = {
         number: issueNumber,
         title,
@@ -362,27 +349,7 @@ export async function processFindings(
           consecutiveMisses: 0,
         },
       };
-      const existingForTitle = normalizedTitleMap.get(normalizedNewTitle);
-      if (existingForTitle) {
-        existingForTitle.push(newIssue);
-      } else {
-        normalizedTitleMap.set(normalizedNewTitle, [newIssue]);
-      }
-
-      // Add to fingerprint map so we don't create duplicates if multiple
-      // merged findings share the same fingerprint
-      fingerprintMap.set(finding.fingerprint, {
-        number: issueNumber,
-        title,
-        body,
-        state: "open",
-        labels,
-        metadata: {
-          fingerprint: finding.fingerprint,
-          lastSeenRun: context.runNumber,
-          consecutiveMisses: 0,
-        },
-      });
+      registerIssueInMaps(newIssue, finding);
     }
   }
 
@@ -407,8 +374,8 @@ export async function processFindings(
       stats,
     );
 
-    // Close duplicate issues (same normalized title, keep only newest updated)
-    await closeDuplicateIssues(owner, repo, existingIssues, stats);
+    // NOTE: closeDuplicateIssues() removed - duplicates should be prevented
+    // by the unified findMatchingIssue() function, not created then closed
   }
 
   return stats;
@@ -532,61 +499,9 @@ function normalizeIssueTitle(title: string): string {
     .trim();
 }
 
-/**
- * Close duplicate issues, keeping only the one most recently updated.
- */
-async function closeDuplicateIssues(
-  owner: string,
-  repo: string,
-  existingIssues: ExistingIssue[],
-  stats: IssueStats,
-): Promise<void> {
-  // Group open issues by normalized title
-  const issuesByTitle = new Map<string, ExistingIssue[]>();
-
-  for (const issue of existingIssues) {
-    if (issue.state !== "open") continue;
-
-    const normalizedTitle = normalizeIssueTitle(issue.title);
-    const existing = issuesByTitle.get(normalizedTitle);
-    if (existing) {
-      existing.push(issue);
-    } else {
-      issuesByTitle.set(normalizedTitle, [issue]);
-    }
-  }
-
-  // Close duplicates (keep the highest numbered one, which is most recent)
-  for (const [normalizedTitle, issues] of issuesByTitle.entries()) {
-    if (issues.length <= 1) continue;
-
-    // Sort by issue number descending (highest = most recent)
-    issues.sort((a, b) => b.number - a.number);
-
-    // Keep the first one (highest number), close the rest
-    const keepIssue = issues[0];
-    const duplicates = issues.slice(1);
-
-    console.log(
-      `Found ${duplicates.length} duplicate(s) of "${normalizedTitle}", keeping #${keepIssue.number}`,
-    );
-
-    for (const dup of duplicates) {
-      console.log(`Closing duplicate issue #${dup.number}`);
-
-      await withRateLimit(() =>
-        closeIssue(
-          owner,
-          repo,
-          dup.number,
-          `🔄 This is a duplicate issue. The same finding is tracked in #${keepIssue.number}.\n\nClosed automatically by vibeCheck.`,
-        ),
-      );
-
-      stats.closed++;
-    }
-  }
-}
+// NOTE: closeDuplicateIssues() was removed - duplicates are now prevented
+// by the unified findMatchingIssue() function that checks ALL lookup strategies
+// (fingerprint, tool+rule, sublinter, normalized title) before creating any issue.
 
 /**
  * Close issues that are no longer detected.
