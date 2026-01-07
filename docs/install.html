@@ -116,142 +116,195 @@
     details {
       margin-top: 24px;
       border: 1px solid #30363d;
-      border-radius: 6px;
+      border-radius: 8px;
       background: #161b22;
+      overflow: hidden;
     }
     summary {
-      padding: 12px 16px;
+      padding: 14px 16px;
       cursor: pointer;
-      font-weight: 500;
-      color: #8b949e;
+      font-weight: 600;
+      color: #c9d1d9;
       user-select: none;
       display: flex;
       align-items: center;
       gap: 8px;
+      background: #1c2128;
+      border-bottom: 1px solid transparent;
+      transition: background 0.15s;
     }
     summary:hover {
-      color: #c9d1d9;
+      background: #21262d;
+    }
+    details[open] summary {
+      border-bottom-color: #30363d;
     }
     summary::marker {
       color: #58a6ff;
     }
+    summary::before {
+      content: "⚙️";
+      font-size: 14px;
+    }
     .options-content {
-      padding: 16px;
-      border-top: 1px solid #30363d;
+      padding: 20px;
     }
     .option-group {
-      margin-bottom: 20px;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #21262d;
     }
     .option-group:last-child {
       margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
     }
     .option-group h4 {
-      margin: 0 0 12px 0;
+      margin: 0 0 16px 0;
       color: #c9d1d9;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .option-group h4::before {
+      content: "";
+      width: 3px;
+      height: 14px;
+      background: #58a6ff;
+      border-radius: 2px;
     }
     .option-row {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 16px;
-      flex-wrap: wrap;
     }
     .option-field {
-      flex: 1;
-      min-width: 140px;
+      min-width: 0;
     }
     .option-field label {
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
       font-size: 12px;
       color: #8b949e;
+      font-weight: 500;
     }
     .option-field select,
     .option-field input[type="number"] {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 12px;
       font-size: 14px;
       border: 1px solid #30363d;
       border-radius: 6px;
       background: #0d1117;
       color: #c9d1d9;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
     .option-field select:focus,
     .option-field input[type="number"]:focus {
       outline: none;
       border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+    }
+    .option-field select:hover,
+    .option-field input[type="number"]:hover {
+      border-color: #484f58;
     }
 
     /* Tool Selection */
-    .tool-grid {
+    .tool-categories {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .tool-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
     .tool-category {
-      margin-bottom: 16px;
-    }
-    .tool-category:last-child {
-      margin-bottom: 0;
+      background: #0d1117;
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #21262d;
     }
     .tool-category-header {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #21262d;
-    }
-    .tool-category-header span {
-      font-size: 13px;
-      font-weight: 500;
-      color: #8b949e;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #30363d;
     }
     .tool-category-header .lang-badge {
-      font-size: 11px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #21262d;
-      color: #8b949e;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .tool-category-header .lang-badge.universal {
+      background: linear-gradient(135deg, #238636 0%, #2ea043 100%);
+      color: #fff;
+    }
+    .tool-category-header .lang-badge.js {
+      background: linear-gradient(135deg, #f0db4f 0%, #e0cb3f 100%);
+      color: #323330;
+    }
+    .tool-category-header .lang-badge.python {
+      background: linear-gradient(135deg, #3776ab 0%, #4a8fc2 100%);
+      color: #fff;
+    }
+    .tool-category-header .lang-badge.java {
+      background: linear-gradient(135deg, #e76f00 0%, #f89820 100%);
+      color: #fff;
     }
     .tool-item {
       display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 6px 8px;
-      border-radius: 4px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
       cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s, border-color 0.15s;
     }
     .tool-item:hover {
-      background: #21262d;
+      background: #161b22;
+      border-color: #30363d;
     }
     .tool-item input[type="checkbox"] {
-      margin-top: 2px;
+      width: 16px;
+      height: 16px;
+      margin: 0;
       accent-color: #58a6ff;
+      cursor: pointer;
+      flex-shrink: 0;
     }
     .tool-item .tool-info {
       flex: 1;
+      min-width: 0;
     }
     .tool-item .tool-name {
       font-size: 13px;
       color: #c9d1d9;
+      font-weight: 500;
     }
     .tool-item .tool-desc {
       font-size: 11px;
       color: #6e7681;
       margin-top: 2px;
     }
-    .select-all-btn {
-      font-size: 11px;
-      color: #58a6ff;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      margin-left: auto;
-    }
-    .select-all-btn:hover {
-      text-decoration: underline;
+    /* Responsive adjustments for smaller screens */
+    @media (max-width: 500px) {
+      .option-row {
+        grid-template-columns: 1fr;
+      }
+      .tool-categories {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Submit button after advanced options */
@@ -272,6 +325,57 @@
     }
     .custom-indicator.show {
       opacity: 1;
+    }
+
+    /* Info tooltip */
+    .info-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #30363d;
+      color: #8b949e;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: help;
+      margin-left: 4px;
+      position: relative;
+      vertical-align: middle;
+    }
+    .info-icon:hover {
+      background: #484f58;
+      color: #c9d1d9;
+    }
+    .info-icon .tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c2128;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 400;
+      color: #c9d1d9;
+      white-space: nowrap;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .info-icon .tooltip::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #30363d;
+    }
+    .info-icon:hover .tooltip {
+      display: block;
     }
   </style>
 </head>
@@ -299,29 +403,29 @@
           <h4>Analysis Settings</h4>
           <div class="option-row">
             <div class="option-field">
-              <label for="cadence">Schedule</label>
+              <label for="cadence">Schedule <span class="info-icon">i<span class="tooltip">How often to run analysis</span></span></label>
               <select id="cadence">
                 <option value="daily">Daily</option>
-                <option value="weekly" selected>Weekly (Recommended)</option>
+                <option value="weekly" selected>Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
             </div>
             <div class="option-field">
-              <label for="severity">Min Severity</label>
+              <label for="severity">Min Severity <span class="info-icon">i<span class="tooltip">Only report issues at or above this level</span></span></label>
               <select id="severity">
-                <option value="info">Info (all issues)</option>
+                <option value="info">Info</option>
                 <option value="low" selected>Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
-                <option value="critical">Critical only</option>
+                <option value="critical">Critical</option>
               </select>
             </div>
             <div class="option-field">
-              <label for="confidence">Min Confidence</label>
+              <label for="confidence">Min Confidence <span class="info-icon">i<span class="tooltip">Higher = fewer false positives, lower = more findings</span></span></label>
               <select id="confidence">
-                <option value="low">Low (more findings)</option>
+                <option value="low">Low</option>
                 <option value="medium" selected>Medium</option>
-                <option value="high">High (fewer false positives)</option>
+                <option value="high">High</option>
               </select>
             </div>
           </div>
@@ -332,13 +436,13 @@
           <h4>Issue Management</h4>
           <div class="option-row">
             <div class="option-field">
-              <label for="maxIssues">Max Issues per Run</label>
+              <label for="maxIssues">Max Issues <span class="info-icon">i<span class="tooltip">Maximum GitHub issues created per run</span></span></label>
               <input type="number" id="maxIssues" value="25" min="1" max="100">
             </div>
             <div class="option-field">
-              <label for="mergeStrategy">Merge Strategy</label>
+              <label for="mergeStrategy">Merge Strategy <span class="info-icon">i<span class="tooltip">Group similar findings into single issues</span></span></label>
               <select id="mergeStrategy">
-                <option value="none">None (separate issues)</option>
+                <option value="none">None</option>
                 <option value="same-file">Same file</option>
                 <option value="same-rule">Same rule</option>
                 <option value="same-linter" selected>Same linter</option>
@@ -351,13 +455,12 @@
         <!-- Tool Selection -->
         <div class="option-group">
           <h4>Tools</h4>
+          <div class="tool-categories">
 
           <!-- Universal Tools -->
           <div class="tool-category">
             <div class="tool-category-header">
-              <span>Universal</span>
-              <span class="lang-badge">All Projects</span>
-              <button type="button" class="select-all-btn" data-category="universal">Toggle all</button>
+              <span class="lang-badge universal">Universal</span>
             </div>
             <div class="tool-grid">
               <label class="tool-item">
@@ -387,9 +490,7 @@
           <!-- JavaScript/TypeScript Tools -->
           <div class="tool-category">
             <div class="tool-category-header">
-              <span>JavaScript / TypeScript</span>
-              <span class="lang-badge">JS/TS</span>
-              <button type="button" class="select-all-btn" data-category="js">Toggle all</button>
+              <span class="lang-badge js">JavaScript / TypeScript</span>
             </div>
             <div class="tool-grid">
               <label class="tool-item">
@@ -419,9 +520,7 @@
           <!-- Python Tools -->
           <div class="tool-category">
             <div class="tool-category-header">
-              <span>Python</span>
-              <span class="lang-badge">PY</span>
-              <button type="button" class="select-all-btn" data-category="python">Toggle all</button>
+              <span class="lang-badge python">Python</span>
             </div>
             <div class="tool-grid">
               <label class="tool-item">
@@ -451,9 +550,7 @@
           <!-- Java Tools -->
           <div class="tool-category">
             <div class="tool-category-header">
-              <span>Java</span>
-              <span class="lang-badge">JAVA</span>
-              <button type="button" class="select-all-btn" data-category="java">Toggle all</button>
+              <span class="lang-badge java">Java</span>
             </div>
             <div class="tool-grid">
               <label class="tool-item">
@@ -471,6 +568,8 @@
                 </div>
               </label>
             </div>
+          </div>
+
           </div>
         </div>
       </div>
@@ -672,17 +771,6 @@ jobs:
 
       document.getElementById('customIndicator').classList.toggle('show', isCustom);
     }
-
-    // Toggle all buttons for tool categories
-    document.querySelectorAll('.select-all-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const category = btn.dataset.category;
-        const checkboxes = document.querySelectorAll(`input[data-category="${category}"]`);
-        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-        checkboxes.forEach(cb => cb.checked = !allChecked);
-        updateCustomIndicator();
-      });
-    });
 
     // Update indicator when any option changes
     document.querySelectorAll('#advancedOptions select, #advancedOptions input').forEach(el => {
