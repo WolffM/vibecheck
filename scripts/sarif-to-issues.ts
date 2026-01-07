@@ -284,9 +284,7 @@ export async function processFindings(
       );
 
       stats.updated++;
-
-      // Register in all maps so subsequent findings can find it
-      registerIssueInMaps(existingIssue, finding);
+      // No need to register - issue is already in the maps from initial build
     } else {
       // No existing issue found - create new one (respect max cap)
       if (stats.created >= issuesConfig.max_new_per_run) {
