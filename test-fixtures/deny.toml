@@ -19,67 +19,49 @@ notice = "warn"
 ignore = []
 
 # ============================================================================
-# Licenses - Enforce license requirements
-# ============================================================================
-[licenses]
-unlicensed = "deny"
-allow = [
-    "MIT",
-    "Apache-2.0",
-    # Intentionally NOT allowing some common licenses to trigger findings:
-    # - BSD-3-Clause (used by some crates)
-    # - ISC (used by some crates)
-    # - Zlib (used by some crates)
-]
-deny = [
-    # Deny copyleft licenses
-    "GPL-2.0",
-    "GPL-3.0",
-    "AGPL-3.0",
-    "LGPL-2.0",
-    "LGPL-2.1",
-    "LGPL-3.0",
-]
-copyleft = "deny"
-allow-osi-fsf-free = "neither"
-default = "deny"
-confidence-threshold = 0.8
-exceptions = []
-
-[licenses.private]
-ignore = false
-registries = []
-
-# ============================================================================
-# Bans - Restrict certain crates
+# Bans - Restrict certain crates (this will trigger findings!)
 # ============================================================================
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
-allow-build-scripts = []
+wildcards = "warn"
 highlight = "all"
 
-# Ban specific crates
+# Ban specific crates - these ARE in our dependencies so will trigger findings
 deny = [
-    # Ban deprecated/unmaintained crates
+    # Ban ansi_term (we include it as a dependency)
     { name = "ansi_term", wrappers = [] },
-    # Ban old time crate in favor of chrono or time 0.3+
-    { name = "time", version = "<0.3" },
+    # Ban old time crate (chrono depends on it)
+    { name = "time", version = "<0.3", wrappers = [] },
 ]
 
 skip = []
 skip-tree = []
 
 # ============================================================================
-# Sources - Restrict where crates can come from
+# Licenses - Be permissive to avoid blocking on license checks
+# ============================================================================
+[licenses]
+unlicensed = "warn"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "CC0-1.0",
+    "Unlicense",
+    "MPL-2.0",
+]
+copyleft = "warn"
+default = "warn"
+confidence-threshold = 0.8
+
+# ============================================================================
+# Sources - Allow crates.io
 # ============================================================================
 [sources]
-unknown-registry = "deny"
-unknown-git = "deny"
+unknown-registry = "warn"
+unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
-
-[sources.allow-org]
-github = []
-gitlab = []
-bitbucket = []

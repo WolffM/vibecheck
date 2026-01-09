@@ -226,6 +226,19 @@ runs:
         echo "Installing Rust analysis tools (cargo-audit, cargo-deny)..."
         cargo install cargo-audit cargo-deny --locked
 
+    - name: Generate Cargo.lock files (for cargo-audit/deny)
+      if: steps.detect-rust.outputs.has_rust == 'true'
+      shell: bash
+      run: |
+        # Find all directories with Cargo.toml and generate Cargo.lock if missing
+        find "${{ github.workspace }}" -name "Cargo.toml" -not -path "*/target/*" | while read cargo_toml; do
+          dir=$(dirname "$cargo_toml")
+          if [ ! -f "$dir/Cargo.lock" ]; then
+            echo "Generating Cargo.lock in $dir..."
+            (cd "$dir" && cargo generate-lockfile 2>/dev/null) || echo "  Failed to generate lockfile (non-fatal)"
+          fi
+        done
+
     - name: Run Analysis
       id: analyze
       shell: bash

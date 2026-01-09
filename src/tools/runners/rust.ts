@@ -5,7 +5,8 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { relative } from "node:path";
+import { existsSync } from "node:fs";
+import { join, relative } from "node:path";
 import type { Finding } from "../../core/types.js";
 import { isToolAvailable, safeParseJson, findCargoDirectories } from "../tool-utils.js";
 import {
@@ -202,7 +203,12 @@ export function runCargoDeny(rootPath: string, configPath?: string): Finding[] {
       console.log(`  Running cargo-deny in ${relative(rootPath, cargoDir) || "."}`);
 
       const args = ["deny", "check", "--format", "json"];
-      if (configPath) {
+
+      // Look for deny.toml in the cargo directory first, then use provided configPath
+      const localConfig = join(cargoDir, "deny.toml");
+      if (existsSync(localConfig)) {
+        args.push("--config", localConfig);
+      } else if (configPath) {
         args.push("--config", configPath);
       }
 
