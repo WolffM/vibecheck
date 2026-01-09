@@ -57,7 +57,7 @@ def use_tmp():
 def ignore_errors():
     try:
         risky_operation()
-    except:
+    except Exception:
         pass
 
 
@@ -70,7 +70,7 @@ def continue_on_error(items):
     for item in items:
         try:
             process(item)
-        except:
+        except Exception:
             continue
 
 

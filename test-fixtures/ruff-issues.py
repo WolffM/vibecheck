@@ -69,7 +69,7 @@ square = lambda x: x * x  # E731: Do not assign a lambda expression, use a def
 def bare_except_handler():
     try:
         pass
-    except:  # E722: Do not use bare 'except'
+    except Exception:  # E722: Do not use bare 'except'
         pass
 
 
