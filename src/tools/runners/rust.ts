@@ -208,16 +208,10 @@ export function runCargoDeny(rootPath: string, configPath?: string): Finding[] {
       // Look for deny.toml in the cargo directory first, then use provided configPath
       const localConfig = join(cargoDir, "deny.toml");
       if (existsSync(localConfig)) {
-        console.log(`    Using config: ${localConfig}`);
         args.push("--config", localConfig);
       } else if (configPath) {
-        console.log(`    Using config: ${configPath}`);
         args.push("--config", configPath);
-      } else {
-        console.log("    No deny.toml config found");
       }
-
-      console.log(`    Command: cargo ${args.join(" ")}`);
 
       const result = spawnSync("cargo", args, {
         cwd: cargoDir,
@@ -232,14 +226,6 @@ export function runCargoDeny(rootPath: string, configPath?: string): Finding[] {
       const combinedOutput = stdout + "\n" + stderr;
       const diagnostics: unknown[] = [];
 
-      // Debug output
-      if (result.status !== 0) {
-        console.log(`    Exit code: ${result.status}`);
-      }
-      if (stderr && !stderr.includes("{")) {
-        console.log(`    Stderr: ${stderr.slice(0, 200)}`);
-      }
-
       for (const line of combinedOutput.split("\n")) {
         const trimmed = line.trim();
         if (trimmed.startsWith("{")) {
@@ -250,8 +236,6 @@ export function runCargoDeny(rootPath: string, configPath?: string): Finding[] {
           }
         }
       }
-
-      console.log(`    Found ${diagnostics.length} JSON diagnostics`);
 
       if (diagnostics.length > 0) {
         const findings = parseCargoDenyOutput({ diagnostics } as CargoDenyOutput);
