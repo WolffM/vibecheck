@@ -49,6 +49,7 @@ export function runClippy(rootPath: string, _configPath?: string): Finding[] {
       console.log(`  Running clippy in ${relative(rootPath, cargoDir) || "."}`);
 
       // Run clippy with JSON message format
+      // Only enable default clippy::all lints, not pedantic (too noisy)
       const args = [
         "clippy",
         "--message-format=json",
@@ -56,8 +57,6 @@ export function runClippy(rootPath: string, _configPath?: string): Finding[] {
         "--",
         "-W",
         "clippy::all",
-        "-W",
-        "clippy::pedantic",
       ];
 
       const result = spawnSync("cargo", args, {
@@ -219,11 +218,13 @@ export function runCargoDeny(rootPath: string, configPath?: string): Finding[] {
         maxBuffer: MAX_OUTPUT_BUFFER,
       });
 
-      // cargo-deny outputs JSON to stdout (one JSON object per line for each diagnostic)
-      const output = result.stdout || "";
+      // cargo-deny outputs JSON to both stdout and stderr depending on version
+      const stdout = result.stdout || "";
+      const stderr = result.stderr || "";
+      const combinedOutput = stdout + "\n" + stderr;
       const diagnostics: unknown[] = [];
 
-      for (const line of output.split("\n")) {
+      for (const line of combinedOutput.split("\n")) {
         const trimmed = line.trim();
         if (trimmed.startsWith("{")) {
           try {
