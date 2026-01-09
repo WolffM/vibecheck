@@ -11,10 +11,29 @@ name = "rust-issues"
 path = "rust-issues.rs"
 
 [dependencies]
-# Note: In a real test, you would add a dependency with known vulnerabilities
-# For example, an old version of a crate with CVEs
-# However, we don't want to actually pull in vulnerable code
-# The cargo-audit tool will check Cargo.lock for advisories
+# Intentionally vulnerable dependencies for cargo-audit testing
+# These old versions have known security advisories in RustSec
+
+# RUSTSEC-2020-0071: Memory safety issue in chrono (localtime_r)
+chrono = "0.4.19"
+
+# RUSTSEC-2021-0124: Data race in tokio (unix signal handling)
+tokio = { version = "1.8.0", features = ["full"] }
+
+# RUSTSEC-2022-0006: Regex denial of service
+regex = "1.5.4"
+
+# RUSTSEC-2021-0139: ansi_term unmaintained
+ansi_term = "0.12.1"
+
+# RUSTSEC-2020-0159: chrono uses localtime_r unsoundly
+time = "0.1.44"
+
+# RUSTSEC-2021-0127: serde_yaml/unsafe-libyaml vulnerability
+serde_yaml = "0.8.23"
+
+# RUSTSEC-2022-0090: libsqlite3-sys outdated
+rusqlite = "0.26.0"
 
 [lints.clippy]
 # Enable strict Clippy lints for testing

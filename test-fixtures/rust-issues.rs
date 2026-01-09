@@ -2,119 +2,147 @@
 // This file triggers various Clippy warnings and lints
 // WARNING: This is intentionally problematic code for testing purposes only!
 
-#![allow(unused)]
-#![allow(dead_code)]
-
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 // ============================================================================
-// clippy::unwrap_used - Using unwrap() can panic
+// clippy::approx_constant - Using approximate value of a constant
 // ============================================================================
 
-fn unwrap_example() {
-    let x: Option<i32> = Some(1);
-    let _ = x.unwrap(); // Triggers clippy::unwrap_used
+pub fn approx_pi() -> f64 {
+    3.14159 // Should use std::f64::consts::PI
 }
 
-fn unwrap_result() {
-    let x: Result<i32, &str> = Ok(1);
-    let _ = x.unwrap(); // Triggers clippy::unwrap_used
-}
-
-// ============================================================================
-// clippy::expect_used - Using expect() can panic
-// ============================================================================
-
-fn expect_example() {
-    let x: Result<i32, &str> = Ok(1);
-    let _ = x.expect("failed"); // Triggers clippy::expect_used
+pub fn approx_e() -> f64 {
+    2.71828 // Should use std::f64::consts::E
 }
 
 // ============================================================================
-// clippy::panic - Explicit panic calls
+// clippy::bad_bit_mask - Incorrect bit mask operations
 // ============================================================================
 
-fn panic_example(should_panic: bool) {
-    if should_panic {
-        panic!("this is bad"); // Triggers clippy::panic
-    }
-}
-
-fn todo_example() {
-    todo!("implement this later"); // Triggers clippy::todo
-}
-
-fn unimplemented_example() {
-    unimplemented!("not yet"); // Triggers clippy::unimplemented
+pub fn bad_bit_mask(x: u32) -> bool {
+    x & 0 == 0 // Always true, bad bit mask
 }
 
 // ============================================================================
-// clippy::cognitive_complexity - Complex function
+// clippy::collapsible_if - Nested ifs that can be collapsed
 // ============================================================================
 
-fn complex_function(a: i32, b: i32, c: i32, d: i32) -> i32 {
-    let mut result = 0;
-    if a > 0 {
-        if b > 0 {
-            if c > 0 {
-                if d > 0 {
-                    result = 1;
-                } else {
-                    result = 2;
-                }
-            } else {
-                if d > 0 {
-                    result = 3;
-                } else {
-                    result = 4;
-                }
-            }
-        } else {
-            if c > 0 {
-                result = 5;
-            } else {
-                result = 6;
-            }
+pub fn collapsible_if_example(a: bool, b: bool) -> i32 {
+    if a {
+        if b {
+            return 1;
         }
-    } else {
-        result = 7;
     }
-    result
+    0
 }
 
 // ============================================================================
-// clippy::too_many_arguments - Function with too many arguments
+// clippy::eq_op - Comparing identical expressions
 // ============================================================================
 
-fn too_many_args(a: i32, b: i32, c: i32, d: i32, e: i32, f: i32, g: i32, h: i32) -> i32 {
-    a + b + c + d + e + f + g + h
+pub fn eq_op_example(x: i32) -> bool {
+    x == x // Always true
 }
 
 // ============================================================================
-// clippy::needless_return - Unnecessary return statement
+// clippy::erasing_op - Operation that erases values
 // ============================================================================
 
-fn needless_return_example(x: i32) -> i32 {
-    return x + 1; // Triggers clippy::needless_return
+pub fn erasing_op(x: i32) -> i32 {
+    x * 0 // Always 0
 }
 
 // ============================================================================
-// clippy::clone_on_copy - Cloning a Copy type
+// clippy::inefficient_to_string - Inefficient to_string on &str
 // ============================================================================
 
-fn clone_on_copy() {
-    let x: i32 = 5;
-    let _y = x.clone(); // Triggers clippy::clone_on_copy
+pub fn inefficient_to_string() -> String {
+    let s = "hello";
+    s.to_string() // Should use s.to_owned() or String::from(s)
 }
 
 // ============================================================================
-// clippy::manual_map - Manual Option mapping
+// clippy::len_zero - Using .len() == 0 instead of .is_empty()
 // ============================================================================
 
-fn manual_map_example(x: Option<i32>) -> Option<i32> {
+pub fn len_zero_check(v: &Vec<i32>) -> bool {
+    v.len() == 0 // Should use v.is_empty()
+}
+
+pub fn len_not_zero(v: &[i32]) -> bool {
+    v.len() > 0 // Should use !v.is_empty()
+}
+
+// ============================================================================
+// clippy::manual_memcpy - Manual byte copying
+// ============================================================================
+
+pub fn manual_memcpy(src: &[u8], dst: &mut [u8]) {
+    for i in 0..src.len() {
+        dst[i] = src[i]; // Should use copy_from_slice
+    }
+}
+
+// ============================================================================
+// clippy::needless_bool - Needless bool expressions
+// ============================================================================
+
+pub fn needless_bool(x: bool) -> bool {
+    if x {
+        true
+    } else {
+        false
+    }
+}
+
+pub fn needless_bool_assign(x: bool) -> bool {
+    if x {
+        return true;
+    }
+    return false;
+}
+
+// ============================================================================
+// clippy::needless_range_loop - Needless range loop
+// ============================================================================
+
+pub fn needless_range_loop(v: &[i32]) -> i32 {
+    let mut sum = 0;
+    for i in 0..v.len() {
+        sum += v[i]; // Should iterate directly over v
+    }
+    sum
+}
+
+// ============================================================================
+// clippy::or_fun_call - Using unwrap_or with function call
+// ============================================================================
+
+pub fn or_fun_call(x: Option<String>) -> String {
+    x.unwrap_or(String::new()) // Should use unwrap_or_default() or unwrap_or_else
+}
+
+// ============================================================================
+// clippy::redundant_clone - Cloning when not needed
+// ============================================================================
+
+pub fn redundant_clone() -> String {
+    let s = String::from("hello");
+    let _ = s.clone(); // s is never used after this
+    String::from("world")
+}
+
+// ============================================================================
+// clippy::redundant_pattern_matching - Redundant pattern matching
+// ============================================================================
+
+pub fn redundant_pattern_matching(x: Option<i32>) -> bool {
     match x {
-        Some(v) => Some(v + 1),
-        None => None,
+        Some(_) => true,
+        None => false,
     }
 }
 
@@ -122,133 +150,264 @@ fn manual_map_example(x: Option<i32>) -> Option<i32> {
 // clippy::single_match - Single match arm could be if let
 // ============================================================================
 
-fn single_match_example(x: Option<i32>) {
+pub fn single_match_example(x: Option<i32>) -> i32 {
     match x {
-        Some(v) => println!("{}", v),
+        Some(v) => return v,
         _ => {}
     }
+    0
 }
 
 // ============================================================================
-// clippy::redundant_closure - Redundant closure
+// clippy::string_lit_as_bytes - Using .as_bytes() on string literal
 // ============================================================================
 
-fn redundant_closure_example() {
+pub fn string_lit_as_bytes() -> &'static [u8] {
+    "hello".as_bytes() // Should use b"hello"
+}
+
+// ============================================================================
+// clippy::useless_vec - Creating a Vec just to iterate
+// ============================================================================
+
+pub fn useless_vec() -> i32 {
+    let sum: i32 = vec![1, 2, 3].iter().sum(); // Use array instead of vec
+    sum
+}
+
+// ============================================================================
+// clippy::while_let_on_iterator - while let on iterator
+// ============================================================================
+
+pub fn while_let_iterator() {
     let v = vec![1, 2, 3];
-    let _: Vec<String> = v.iter().map(|x| x.to_string()).collect();
-}
-
-// ============================================================================
-// clippy::cast_possible_truncation - Casting that may truncate
-// ============================================================================
-
-fn cast_truncation() {
-    let x: i64 = 1_000_000_000_000;
-    let _y: i32 = x as i32; // Triggers clippy::cast_possible_truncation
-}
-
-// ============================================================================
-// clippy::cast_sign_loss - Casting that may lose sign
-// ============================================================================
-
-fn cast_sign_loss() {
-    let x: i32 = -5;
-    let _y: u32 = x as u32; // Triggers clippy::cast_sign_loss
-}
-
-// ============================================================================
-// clippy::string_add - Using + for string concatenation
-// ============================================================================
-
-fn string_add() {
-    let s1 = String::from("Hello, ");
-    let s2 = String::from("world!");
-    let _s3 = s1 + &s2; // Inefficient string concatenation
-}
-
-// ============================================================================
-// clippy::ptr_arg - Using &Vec instead of &[T]
-// ============================================================================
-
-fn ptr_arg_example(v: &Vec<i32>) -> i32 {
-    v.iter().sum()
-}
-
-// ============================================================================
-// clippy::len_zero - Using .len() == 0 instead of .is_empty()
-// ============================================================================
-
-fn len_zero_example(v: &[i32]) -> bool {
-    v.len() == 0 // Triggers clippy::len_zero
-}
-
-// ============================================================================
-// clippy::collapsible_if - Nested ifs that can be collapsed
-// ============================================================================
-
-fn collapsible_if(a: bool, b: bool) {
-    if a {
-        if b {
-            println!("both true");
-        }
+    let mut iter = v.iter();
+    while let Some(x) = iter.next() {
+        println!("{}", x); // Should use for loop
     }
 }
 
 // ============================================================================
-// Unsafe code examples
+// clippy::ptr_arg - Using &Vec<T> instead of &[T]
 // ============================================================================
 
-unsafe fn unsafe_function() {
-    // This is unsafe
+pub fn ptr_arg_vec(v: &Vec<i32>) -> i32 {
+    v.iter().sum() // Parameter should be &[i32]
 }
 
-fn calls_unsafe() {
-    unsafe {
-        unsafe_function();
+pub fn ptr_arg_string(s: &String) -> usize {
+    s.len() // Parameter should be &str
+}
+
+// ============================================================================
+// clippy::type_complexity - Overly complex types
+// ============================================================================
+
+pub fn complex_type() -> Option<Result<HashMap<String, Vec<Option<Rc<RefCell<i32>>>>>, String>> {
+    None // This type is way too complex
+}
+
+// ============================================================================
+// clippy::match_bool - Matching on a boolean
+// ============================================================================
+
+pub fn match_bool_example(b: bool) -> i32 {
+    match b {
+        true => 1,
+        false => 0,
     }
 }
 
 // ============================================================================
-// clippy::missing_safety_doc - Unsafe function without safety docs
+// clippy::map_clone - Using .map(|x| x.clone())
 // ============================================================================
 
-/// This function does something unsafe but doesn't document safety requirements
-pub unsafe fn missing_safety_doc(ptr: *const i32) -> i32 {
-    *ptr // Dereference raw pointer
+pub fn map_clone_example(v: &[String]) -> Vec<String> {
+    v.iter().map(|x| x.clone()).collect() // Should use .cloned()
 }
 
 // ============================================================================
-// clippy::mut_from_ref - Mutable reference from immutable
+// clippy::filter_map_identity - Redundant filter_map
 // ============================================================================
 
-// This pattern is dangerous but may not trigger without specific context
-fn dangerous_ref_patterns() {
-    let x = 5;
-    let _ptr = &x as *const i32;
+pub fn filter_map_identity(v: Vec<Option<i32>>) -> Vec<i32> {
+    v.into_iter().filter_map(|x| x).collect() // Should use .flatten()
 }
 
 // ============================================================================
-// Main function to use the code
+// clippy::clone_on_copy - Cloning a Copy type
+// ============================================================================
+
+pub fn clone_on_copy_example() -> i32 {
+    let x: i32 = 42;
+    x.clone() // i32 is Copy, no need to clone
+}
+
+// ============================================================================
+// clippy::cmp_owned - Comparing owned to borrowed
+// ============================================================================
+
+pub fn cmp_owned_example(s: &str) -> bool {
+    s.to_owned() == "hello" // Should compare borrowed values
+}
+
+// ============================================================================
+// clippy::unit_arg - Passing unit to a function
+// ============================================================================
+
+fn takes_option(_: Option<()>) {}
+
+pub fn unit_arg_example() {
+    takes_option(Some(println!("side effect"))); // Passing unit value
+}
+
+// ============================================================================
+// clippy::search_is_some - Using .find().is_some()
+// ============================================================================
+
+pub fn search_is_some(v: &[i32], target: i32) -> bool {
+    v.iter().find(|&&x| x == target).is_some() // Should use .any()
+}
+
+// ============================================================================
+// clippy::chars_next_cmp - Comparing chars().next() to char
+// ============================================================================
+
+pub fn chars_next_cmp(s: &str) -> bool {
+    s.chars().next() == Some('a') // Should use s.starts_with('a')
+}
+
+// ============================================================================
+// clippy::unnecessary_fold - Unnecessary fold
+// ============================================================================
+
+pub fn unnecessary_fold(v: &[i32]) -> bool {
+    v.iter().fold(false, |acc, _| acc || true) // Should use .any()
+}
+
+// ============================================================================
+// clippy::iter_nth_zero - Using .iter().nth(0)
+// ============================================================================
+
+pub fn iter_nth_zero(v: &[i32]) -> Option<&i32> {
+    v.iter().nth(0) // Should use .first()
+}
+
+// ============================================================================
+// clippy::bytes_nth - Using .bytes().nth()
+// ============================================================================
+
+pub fn bytes_nth(s: &str) -> Option<u8> {
+    s.bytes().nth(3) // Should use s.as_bytes().get(3)
+}
+
+// ============================================================================
+// clippy::explicit_counter_loop - Manual counter in loop
+// ============================================================================
+
+pub fn explicit_counter_loop(v: &[i32]) {
+    let mut i = 0;
+    for item in v {
+        println!("{}: {}", i, item);
+        i += 1; // Should use .enumerate()
+    }
+}
+
+// ============================================================================
+// clippy::mut_mut - Multiple mutable references
+// ============================================================================
+
+pub fn mut_mut_example(x: &mut &mut i32) {
+    **x = 42; // Double mutable reference is confusing
+}
+
+// ============================================================================
+// clippy::redundant_slicing - Redundant slicing
+// ============================================================================
+
+pub fn redundant_slicing(v: &[i32]) -> &[i32] {
+    &v[..] // Slicing the whole slice is redundant
+}
+
+// ============================================================================
+// clippy::manual_filter_map - Manual filter + map
+// ============================================================================
+
+pub fn manual_filter_map(v: Vec<Option<i32>>) -> Vec<i32> {
+    v.into_iter()
+        .filter(|x| x.is_some())
+        .map(|x| x.unwrap())
+        .collect() // Should use filter_map
+}
+
+// ============================================================================
+// clippy::option_as_ref_deref - Using as_ref().map(|x| x.as_str())
+// ============================================================================
+
+pub fn option_as_ref_deref(s: &Option<String>) -> Option<&str> {
+    s.as_ref().map(|x| x.as_str()) // Should use .as_deref()
+}
+
+// ============================================================================
+// Main function
 // ============================================================================
 
 fn main() {
-    // Call some functions to prevent dead_code warnings
-    unwrap_example();
-    expect_example();
-    let _ = complex_function(1, 2, 3, 4);
-    let _ = too_many_args(1, 2, 3, 4, 5, 6, 7, 8);
-    let _ = needless_return_example(5);
-    clone_on_copy();
-    let _ = manual_map_example(Some(5));
-    single_match_example(Some(5));
-    redundant_closure_example();
-    cast_truncation();
-    cast_sign_loss();
-    string_add();
+    // Call functions to prevent unused warnings
+    println!("pi ≈ {}", approx_pi());
+    println!("e ≈ {}", approx_e());
+    println!("bad mask: {}", bad_bit_mask(5));
+    println!("collapsible: {}", collapsible_if_example(true, true));
+    println!("eq_op: {}", eq_op_example(5));
+    println!("erasing: {}", erasing_op(5));
+    println!("to_string: {}", inefficient_to_string());
+
     let v = vec![1, 2, 3];
-    let _ = ptr_arg_example(&v);
-    let _ = len_zero_example(&v);
-    collapsible_if(true, true);
-    calls_unsafe();
-    dangerous_ref_patterns();
+    println!("len_zero: {}", len_zero_check(&v));
+    println!("len_not_zero: {}", len_not_zero(&v));
+
+    let mut dst = [0u8; 3];
+    manual_memcpy(&[1, 2, 3], &mut dst);
+
+    println!("needless_bool: {}", needless_bool(true));
+    println!("needless_bool_assign: {}", needless_bool_assign(true));
+    println!("range_loop: {}", needless_range_loop(&v));
+    println!("or_fun_call: {}", or_fun_call(None));
+    println!("redundant_clone: {}", redundant_clone());
+    println!("pattern_matching: {}", redundant_pattern_matching(Some(1)));
+    println!("single_match: {}", single_match_example(Some(42)));
+    println!("as_bytes: {:?}", string_lit_as_bytes());
+    println!("useless_vec: {}", useless_vec());
+    while_let_iterator();
+    println!("ptr_arg_vec: {}", ptr_arg_vec(&v));
+    println!("ptr_arg_string: {}", ptr_arg_string(&String::from("test")));
+    println!("complex_type: {:?}", complex_type());
+    println!("match_bool: {}", match_bool_example(true));
+
+    let strings = vec!["a".to_string(), "b".to_string()];
+    println!("map_clone: {:?}", map_clone_example(&strings));
+
+    let opts = vec![Some(1), None, Some(2)];
+    println!("filter_map_identity: {:?}", filter_map_identity(opts));
+    println!("clone_on_copy: {}", clone_on_copy_example());
+    println!("cmp_owned: {}", cmp_owned_example("hello"));
+    unit_arg_example();
+    println!("search_is_some: {}", search_is_some(&v, 2));
+    println!("chars_next_cmp: {}", chars_next_cmp("abc"));
+    println!("unnecessary_fold: {}", unnecessary_fold(&v));
+    println!("iter_nth_zero: {:?}", iter_nth_zero(&v));
+    println!("bytes_nth: {:?}", bytes_nth("hello"));
+    explicit_counter_loop(&v);
+
+    let mut val = 10;
+    let mut ref1 = &mut val;
+    mut_mut_example(&mut ref1);
+
+    println!("redundant_slicing: {:?}", redundant_slicing(&v));
+
+    let opts2 = vec![Some(1), None, Some(2)];
+    println!("manual_filter_map: {:?}", manual_filter_map(opts2));
+
+    let opt_string = Some(String::from("test"));
+    println!("option_as_ref_deref: {:?}", option_as_ref_deref(&opt_string));
 }

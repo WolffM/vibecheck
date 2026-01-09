@@ -1,0 +1,85 @@
+# cargo-deny configuration for test-fixtures
+# This configuration intentionally triggers findings for testing vibeCheck
+
+[graph]
+targets = []
+all-features = false
+no-default-features = false
+
+# ============================================================================
+# Advisories - Check for known security vulnerabilities
+# ============================================================================
+[advisories]
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "warn"
+notice = "warn"
+ignore = []
+
+# ============================================================================
+# Licenses - Enforce license requirements
+# ============================================================================
+[licenses]
+unlicensed = "deny"
+allow = [
+    "MIT",
+    "Apache-2.0",
+    # Intentionally NOT allowing some common licenses to trigger findings:
+    # - BSD-3-Clause (used by some crates)
+    # - ISC (used by some crates)
+    # - Zlib (used by some crates)
+]
+deny = [
+    # Deny copyleft licenses
+    "GPL-2.0",
+    "GPL-3.0",
+    "AGPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+]
+copyleft = "deny"
+allow-osi-fsf-free = "neither"
+default = "deny"
+confidence-threshold = 0.8
+exceptions = []
+
+[licenses.private]
+ignore = false
+registries = []
+
+# ============================================================================
+# Bans - Restrict certain crates
+# ============================================================================
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-build-scripts = []
+highlight = "all"
+
+# Ban specific crates
+deny = [
+    # Ban deprecated/unmaintained crates
+    { name = "ansi_term", wrappers = [] },
+    # Ban old time crate in favor of chrono or time 0.3+
+    { name = "time", version = "<0.3" },
+]
+
+skip = []
+skip-tree = []
+
+# ============================================================================
+# Sources - Restrict where crates can come from
+# ============================================================================
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+
+[sources.allow-org]
+github = []
+gitlab = []
+bitbucket = []
