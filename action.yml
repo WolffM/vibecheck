@@ -1,20 +1,20 @@
 name: vibecheck-scan
-description: "Unified static analysis with intelligent issue creation for AI-driven development"
-author: "WolffM"
+description: Unified static analysis with intelligent issue creation for AI-driven development
+author: WolffM
 
 branding:
-  icon: "shield"
-  color: "purple"
+  icon: shield
+  color: purple
 
 inputs:
   cadence:
     description: "Analysis cadence: daily, weekly, or monthly"
     required: false
-    default: "weekly"
+    default: weekly
   severity_threshold:
     description: "Minimum severity for issues: critical, high, medium, low, info"
     required: false
-    default: "info"
+    default: info
   confidence_threshold:
     description: "Minimum confidence for issues: high, medium, low"
     required: false
@@ -22,20 +22,20 @@ inputs:
   merge_strategy:
     description: "How to merge findings: none, same-file, same-rule, same-linter, same-tool"
     required: false
-    default: "same-rule"
+    default: same-rule
   skip_issues:
-    description: "Skip GitHub issue creation/updates"
+    description: Skip GitHub issue creation/updates
     required: false
     default: "false"
   config_path:
-    description: "Path to vibecheck.yml config file"
+    description: Path to vibecheck.yml config file
     required: false
-    default: "vibecheck.yml"
+    default: vibecheck.yml
   github_token:
-    description: "GitHub token for issue management"
+    description: GitHub token for issue management
     required: true
   create_config_pr:
-    description: "Create a PR with generated config files (.trunk/, etc.) if they don't exist. Requires contents:write and pull-requests:write permissions."
+    description: Create a PR with generated config files (.trunk/, etc.) if they don't exist. Requires contents:write and pull-requests:write permissions.
     required: false
     default: "false"
 
@@ -44,19 +44,19 @@ outputs:
     description: Total number of findings
     value: ${{ steps.analyze.outputs.total_findings }}
   issues_created:
-    description: "Number of issues created"
+    description: Number of issues created
     value: ${{ steps.analyze.outputs.issues_created }}
   issues_updated:
-    description: "Number of issues updated"
+    description: Number of issues updated
     value: ${{ steps.analyze.outputs.issues_updated }}
   issues_closed:
-    description: "Number of issues closed"
+    description: Number of issues closed
     value: ${{ steps.analyze.outputs.issues_closed }}
   sarif_path:
-    description: "Path to generated SARIF file"
+    description: Path to generated SARIF file
     value: ${{ steps.analyze.outputs.sarif_path }}
   llm_json_path:
-    description: "Path to generated LLM JSON file"
+    description: Path to generated LLM JSON file
     value: ${{ steps.analyze.outputs.llm_json_path }}
 
 runs:
