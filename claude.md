@@ -45,4 +45,4 @@ After running the local pipeline, check:
 Once the local pipeline passes:
 1. Commit changes
 2. Push to trigger the GitHub Actions workflow
-3. Check the created issues at https://github.com/WolffM/vibecheck/issues
+3. Check the created issues at <https://github.com/WolffM/vibecheck/issues>
