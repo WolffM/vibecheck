@@ -18,21 +18,6 @@ on:
 
   # Allow manual trigger
   workflow_dispatch:
-    inputs:
-      cadence:
-        description: Analysis cadence
-        required: false
-        default: weekly
-        type: choice
-        options:
-          - daily
-          - weekly
-          - monthly
-      skip_issues:
-        description: Skip issue creation (dry run)
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -54,10 +39,10 @@ jobs:
         uses: WolffM/vibecheck@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          cadence: ${{ github.event.inputs.cadence || 'weekly' }}
+          cadence: weekly
           severity_threshold: low
           confidence_threshold: medium
-          skip_issues: ${{ github.event.inputs.skip_issues || 'false' }}
+          skip_issues: false
           # merge_strategy defaults to same-rule (one issue per rule)
 
       - name: Upload artifacts
