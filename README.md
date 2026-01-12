@@ -134,7 +134,7 @@ tools:
 
 ### Analysis Pipeline
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
 │  Repo       │───▶│  Trunk +    │───▶│  Normalize  │───▶│  Create     │
 │  Detection  │    │  Tools      │    │  Findings   │    │  Issues     │
