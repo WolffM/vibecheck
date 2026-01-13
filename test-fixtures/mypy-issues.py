@@ -81,7 +81,7 @@ class Derived(Base):
 
 # Generic type issues
 def generic_issues():
-    from typing import TypeVar, Generic
+    from typing import TypeVar
 
     T = TypeVar('T')
 
@@ -149,7 +149,6 @@ def process(x):  # error: Missing type annotation
 
 
 # Variance issues
-from typing import Sequence
 
 
 def variance_issues():

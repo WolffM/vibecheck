@@ -1,0 +1,20 @@
+{
+  "rustc": 4758242423518056681,
+  "features": "[]",
+  "declared_features": "[\"rustc-serialize\"]",
+  "target": 13761406009643881294,
+  "profile": 9040414061990298552,
+  "path": 13071213703727522531,
+  "deps": [[203594543813181569, "libc", false, 9213564612911836536]],
+  "local": [
+    {
+      "CheckDepInfo": {
+        "dep_info": "debug/.fingerprint/time-9f5530c80d984e9f/dep-lib-time",
+        "checksum": false
+      }
+    }
+  ],
+  "rustflags": ["-D", "warnings"],
+  "config": 2069994364910194474,
+  "compile_kind": 0
+}
