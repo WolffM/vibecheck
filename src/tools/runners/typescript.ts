@@ -271,6 +271,12 @@ export function runKnip(rootPath: string, configPath?: string): Finding[] {
     // Debug: log exit code and output length
     console.log(`  Exit code: ${result.status}, stdout: ${output.length} chars, stderr: ${stderr.length} chars`);
 
+    // If exit code is 2, knip encountered an error - show the output for debugging
+    if (result.status === 2) {
+      console.log(`  Error - stdout: ${output.substring(0, 500)}`);
+      console.log(`  Error - stderr: ${stderr.substring(0, 500)}`);
+    }
+
     // Check for known non-fatal errors (e.g., missing ESLint dependencies)
     // These don't prevent knip from running, just from analyzing ESLint config
     if (stderr.includes("Error loading") && stderr.includes("eslint.config")) {
