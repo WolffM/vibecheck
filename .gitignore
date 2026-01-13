@@ -4,6 +4,8 @@
 .vibecheck-test-output/
 .vibecheck-analysis/
 
+tmpclaude-*
+
 # Dependencies
 node_modules/
 package-lock.json
