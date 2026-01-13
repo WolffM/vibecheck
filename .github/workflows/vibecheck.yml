@@ -8,15 +8,7 @@
 name: vibeCheck
 
 on:
-  # Run weekly on Monday at 3am UTC
-  schedule:
-    - cron: 0 3 * * 1
-
-  # Run on push to main (daily cadence)
-  push:
-    branches: [main, master]
-
-  # Allow manual trigger
+  # Manual trigger only - run via Actions tab
   workflow_dispatch:
 
 permissions:
