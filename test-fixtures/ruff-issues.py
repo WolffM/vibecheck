@@ -1,8 +1,6 @@
 # Ruff test file - intentionally dirty code for linting
 # This file triggers various Ruff rules
 
-import os, sys, json  # E401: Multiple imports on one line
-import typing  # F401: Unused import
 from collections import *  # F403: Star import
 
 # E501: Line too long (this comment is intentionally very very very very very very very very very very very very long)
@@ -57,7 +55,7 @@ def comparison_issues(x):
 # f-string issues
 def fstring_issues():
     name = "world"
-    greeting = f"hello"  # F541: f-string without placeholders
+    greeting = "hello"  # F541: f-string without placeholders
     return greeting
 
 
