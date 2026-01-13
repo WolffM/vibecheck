@@ -20,8 +20,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write       # Required for autofix PRs
   issues: write
+  pull-requests: write  # Required for autofix PRs
   security-events: write
 
 jobs:
@@ -43,7 +44,7 @@ jobs:
           severity_threshold: low
           confidence_threshold: medium
           skip_issues: false
-          # autofix_prs: true  # Uncomment to create PRs for safe autofixes (requires contents:write, pull-requests:write)
+          autofix_prs: true
 
       - name: Upload artifacts
         if: always()
