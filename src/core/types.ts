@@ -163,6 +163,29 @@ export interface LlmConfig {
   pr_branch_prefix: string;
 }
 
+/**
+ * Autofix command configuration for a single tool.
+ * Can override built-in commands or define new ones.
+ */
+export interface AutofixToolConfig {
+  /** Command to run (e.g., "eslint", "ruff") */
+  command: string;
+  /** Arguments before file paths (e.g., ["--fix"]) */
+  args: string[];
+  /** Use npx to run command */
+  useNpx?: boolean;
+  /** Description for PR */
+  description?: string;
+}
+
+/**
+ * Autofix configuration section.
+ * Maps tool names to autofix commands, or false to disable.
+ */
+export interface AutofixConfig {
+  [tool: string]: Partial<AutofixToolConfig> | false;
+}
+
 export interface VibeCopConfig {
   version: number;
   schedule?: ScheduleConfig;
@@ -171,6 +194,7 @@ export interface VibeCopConfig {
   issues?: IssuesConfig;
   output?: OutputConfig;
   llm?: LlmConfig;
+  autofix?: AutofixConfig;
 }
 
 /**

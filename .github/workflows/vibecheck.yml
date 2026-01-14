@@ -33,7 +33,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cadence: weekly
-          severity_threshold: low
+          severity_threshold: info
           confidence_threshold: medium
           skip_issues: false
           autofix_prs: true
