@@ -5,26 +5,27 @@
 
 // no-unused-vars: Declared but never used
 // @ts-expect-error - Intentionally unused for testing ESLint rules
-const unusedVariable = 'I am never used';
+const unusedVariable = "I am never used";
 
 // no-var: Use of var instead of let/const
-var oldStyleVariable = 'should use let or const';
+const oldStyleVariable = "should use let or const";
 
 // prefer-const: Variable never reassigned
 // @ts-expect-error - Intentionally unused for testing ESLint rules
-let shouldBeConst = 'I am never reassigned';
+const shouldBeConst = "I am never reassigned";
 
 // eqeqeq: Using == instead of ===
 function looseEquality(a: unknown) {
-  if (a == null) {  // Should be === null || === undefined
-    return 'nullish';
+  if (a == null) {
+    // Should be === null || === undefined
+    return "nullish";
   }
-  return 'not nullish';
+  return "not nullish";
 }
 
 // no-console: Console statements in production code
 function debugCode() {
-  console.log('Debug message that should not be in production');
+  console.log("Debug message that should not be in production");
   return true;
 }
 
@@ -35,58 +36,58 @@ function acceptsAny(value: any): any {
 
 // @typescript-eslint/no-non-null-assertion: Using non-null assertion
 function nonNullAssertion(obj: { value?: string }) {
-  return obj.value!.length;  // Dangerous non-null assertion
+  return obj.value!.length; // Dangerous non-null assertion
 }
 
 // no-shadow: Variable shadowing
 const shadowedVar = 1;
 function shadowExample() {
-  const shadowedVar = 2;  // Shadows outer variable
+  const shadowedVar = 2; // Shadows outer variable
   return shadowedVar;
 }
 
 // prefer-template: String concatenation instead of template
 function concatStrings(name: string) {
-  return 'Hello, ' + name + '!';  // Should use template literal
+  return "Hello, " + name + "!"; // Should use template literal
 }
 
 // @typescript-eslint/no-floating-promises: Unhandled promise
 async function asyncOperation() {
-  return 'done';
+  return "done";
 }
 function callerWithFloatingPromise() {
-  asyncOperation();  // Promise not awaited or handled
+  asyncOperation(); // Promise not awaited or handled
 }
 
 // no-return-await: Redundant return await
 async function redundantAwait() {
-  return await Promise.resolve(42);  // await is unnecessary
+  return await Promise.resolve(42); // await is unnecessary
 }
 
 // @typescript-eslint/no-unnecessary-type-assertion: Unnecessary assertion
 function unnecessaryAssertion(value: string) {
-  return value as string;  // Already a string
+  return value as string; // Already a string
 }
 
 // no-useless-escape: Unnecessary escape character
-const uselessEscapeRegex = /\a/;  // \a is not a valid escape
+const uselessEscapeRegex = /\a/; // \a is not a valid escape
 
 // @typescript-eslint/prefer-nullish-coalescing: Use ?? instead of ||
 function nullishCoalesce(value: string | null) {
-  return value || 'default';  // Should use ?? for nullish only
+  return value || "default"; // Should use ?? for nullish only
 }
 
 // @typescript-eslint/no-unused-expressions: Expression has no effect
 function unusedExpression(arr: number[]) {
-  arr.length;  // Expression result is not used
+  arr.length; // Expression result is not used
   return arr;
 }
 
 // Export something to make it a module
-export { 
-  looseEquality, 
-  debugCode, 
-  acceptsAny, 
+export {
+  looseEquality,
+  debugCode,
+  acceptsAny,
   nonNullAssertion,
   shadowExample,
   concatStrings,
@@ -95,5 +96,5 @@ export {
   unnecessaryAssertion,
   uselessEscapeRegex,
   nullishCoalesce,
-  unusedExpression
+  unusedExpression,
 };
