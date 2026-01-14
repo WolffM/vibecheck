@@ -1,20 +1,11 @@
-# vibeCheck Workflow
-#
-# This workflow runs vibeCheck static analysis on your repository.
-# Copy this file to .github/workflows/vibecheck.yml in your repository.
-#
-# For more info: https://github.com/WolffM/vibecheck
-
 name: vibeCheck
-
 on:
-  # Manual trigger only - run via Actions tab
   workflow_dispatch:
 
 permissions:
-  contents: write       # Required for autofix PRs
+  contents: write
   issues: write
-  pull-requests: write  # Required for autofix PRs
+  pull-requests: write
   security-events: write
 
 jobs:
@@ -24,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -33,14 +24,14 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           cadence: weekly
-          severity_threshold: info
+          severity_threshold: medium
           confidence_threshold: medium
           skip_issues: false
           autofix_prs: true
 
       - name: Upload artifacts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v4
         with:
           name: vibecheck-results
           path: .vibecheck-output/
