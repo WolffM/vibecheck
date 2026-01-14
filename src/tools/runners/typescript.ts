@@ -335,13 +335,6 @@ export function runEslint(rootPath: string): Finding[] {
   console.log("Running ESLint...");
 
   try {
-    // Check if ESLint is available
-    const { available, useNpx } = isToolAvailable("eslint");
-    if (!available) {
-      console.log("  ESLint not installed, skipping");
-      return [];
-    }
-
     // Check for ESLint config
     const configFile = findConfigFile(rootPath, [
       "eslint.config.mjs",
@@ -383,7 +376,46 @@ export function runEslint(rootPath: string): Finding[] {
       "--no-error-on-unmatched-pattern",
     ];
 
-    const result = runTool("eslint", args, { cwd: rootPath, useNpx });
+    // Check if ESLint is a local dependency - need to use pnpm exec to resolve config imports
+    const packageJsonPath = join(rootPath, "package.json");
+    let hasLocalEslint = false;
+    if (existsSync(packageJsonPath)) {
+      try {
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+        const allDeps = {
+          ...packageJson.dependencies,
+          ...packageJson.devDependencies,
+        };
+        hasLocalEslint = "eslint" in allDeps;
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
+    let result;
+    if (hasLocalEslint) {
+      // Use pnpm exec for pnpm projects to properly resolve local dependencies
+      const hasPnpm = existsSync(join(rootPath, "pnpm-lock.yaml"));
+      if (hasPnpm) {
+        console.log("  Using pnpm exec for local ESLint");
+        result = spawnSync("pnpm", ["exec", "eslint", ...args], {
+          cwd: rootPath,
+          encoding: "utf-8",
+          shell: true,
+        });
+      } else {
+        // Try npx with local eslint
+        result = runTool("eslint", args, { cwd: rootPath, useNpx: true });
+      }
+    } else {
+      // Fall back to global/npx eslint
+      const { available, useNpx } = isToolAvailable("eslint");
+      if (!available) {
+        console.log("  ESLint not installed, skipping");
+        return [];
+      }
+      result = runTool("eslint", args, { cwd: rootPath, useNpx });
+    }
 
     // ESLint exits with code 1 when there are linting errors
     // The JSON output is in stdout regardless
