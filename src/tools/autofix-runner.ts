@@ -33,6 +33,8 @@ export interface AutofixResult {
   error?: string;
   /** Command that was run (for debugging) */
   command?: string;
+  /** Autofix level: safe (auto-merge OK) or requires_review (draft PR) */
+  level: "safe" | "requires_review";
 }
 
 export interface AutofixSummary {
@@ -53,25 +55,17 @@ export interface AutofixSummary {
 // ============================================================================
 
 /**
- * Group findings by tool where autofix is "safe".
+ * Group findings by tool for a specific autofix level.
  * Returns a map of tool -> file paths.
  */
-export function groupSafeAutofixFindings(
+export function groupAutofixFindings(
   findings: Finding[],
+  level: "safe" | "requires_review",
 ): Map<string, Set<string>> {
   const grouped = new Map<string, Set<string>>();
 
-  // Debug: Count autofix values
-  const autofixCounts: Record<string, number> = {};
-  for (const f of findings) {
-    const val = f.autofix || "undefined";
-    autofixCounts[val] = (autofixCounts[val] || 0) + 1;
-  }
-  console.log(`  Autofix distribution: ${JSON.stringify(autofixCounts)}`);
-
   for (const finding of findings) {
-    // Only include findings with safe autofix
-    if (finding.autofix !== "safe") {
+    if (finding.autofix !== level) {
       continue;
     }
 
@@ -99,6 +93,7 @@ function runAutofixCommand(
   command: AutofixCommand,
   files: string[],
   rootPath: string,
+  level: "safe" | "requires_review",
 ): AutofixResult {
   // Normalize file paths to be relative to rootPath
   const normalizedFiles = files
@@ -122,6 +117,7 @@ function runAutofixCommand(
       files: [],
       success: true,
       error: "No valid files found",
+      level,
     };
   }
 
@@ -137,6 +133,7 @@ function runAutofixCommand(
       files: normalizedFiles,
       success: false,
       error: `Tool "${command.command}" is not available`,
+      level,
     };
   }
 
@@ -169,6 +166,7 @@ function runAutofixCommand(
         success: false,
         error: result.error.message,
         command: fullCommand,
+        level,
       };
     }
 
@@ -185,6 +183,7 @@ function runAutofixCommand(
       files: normalizedFiles,
       success: true,
       command: fullCommand,
+      level,
     };
   } catch (error) {
     return {
@@ -193,69 +192,107 @@ function runAutofixCommand(
       success: false,
       error: error instanceof Error ? error.message : String(error),
       command: fullCommand,
+      level,
     };
   }
 }
 
 /**
- * Run autofix commands for all tools with safe autofix findings.
+ * Run autofix commands for all tools with autofixable findings.
+ * Processes both "safe" and "requires_review" findings separately.
  *
  * @param rootPath - Repository root path
  * @param findings - All findings from analysis
  * @param userConfig - Optional user autofix config from vibecheck.yml
+ * @param includeReviewFixes - Whether to include requires_review fixes (default: true)
  * @returns Summary of autofix results
  */
 export function runAutofix(
   rootPath: string,
   findings: Finding[],
   userConfig?: AutofixConfig,
+  includeReviewFixes: boolean = true,
 ): AutofixSummary {
   console.log("Running autofixes...");
 
-  // Group findings by tool
-  const grouped = groupSafeAutofixFindings(findings);
+  // Debug: Count autofix values
+  const autofixCounts: Record<string, number> = {};
+  for (const f of findings) {
+    const val = f.autofix || "undefined";
+    autofixCounts[val] = (autofixCounts[val] || 0) + 1;
+  }
+  console.log(`  Autofix distribution: ${JSON.stringify(autofixCounts)}`);
+
+  // Group findings by tool for each level
+  const safeGrouped = groupAutofixFindings(findings, "safe");
+  const reviewGrouped = includeReviewFixes
+    ? groupAutofixFindings(findings, "requires_review")
+    : new Map<string, Set<string>>();
+
   console.log(
-    `  Found ${grouped.size} tools with safe autofix findings: ${Array.from(grouped.keys()).join(", ")}`,
+    `  Found ${safeGrouped.size} tools with safe autofix: ${Array.from(safeGrouped.keys()).join(", ") || "(none)"}`,
   );
+  if (includeReviewFixes && reviewGrouped.size > 0) {
+    console.log(
+      `  Found ${reviewGrouped.size} tools with review autofix: ${Array.from(reviewGrouped.keys()).join(", ")}`,
+    );
+  }
 
   const results: AutofixResult[] = [];
   let toolsSucceeded = 0;
   let toolsFailed = 0;
   let toolsSkipped = 0;
 
-  for (const [tool, filesSet] of grouped) {
-    const files = Array.from(filesSet);
-    console.log(`\n  Processing ${tool} (${files.length} files)...`);
+  // Helper to process a group of findings at a specific level
+  function processGroup(
+    grouped: Map<string, Set<string>>,
+    level: "safe" | "requires_review",
+  ) {
+    for (const [tool, filesSet] of grouped) {
+      const files = Array.from(filesSet);
+      const levelLabel = level === "safe" ? "safe" : "review";
+      console.log(`\n  Processing ${tool} [${levelLabel}] (${files.length} files)...`);
 
-    // Get autofix command from registry
-    const command = getAutofixCommand(tool, userConfig);
-    if (!command) {
-      console.log(`    Skipping ${tool}: no autofix command registered`);
-      toolsSkipped++;
-      results.push({
-        tool,
-        files,
-        success: false,
-        error: "No autofix command registered",
-      });
-      continue;
-    }
+      // Get autofix command from registry
+      const command = getAutofixCommand(tool, userConfig);
+      if (!command) {
+        console.log(`    Skipping ${tool}: no autofix command registered`);
+        toolsSkipped++;
+        results.push({
+          tool,
+          files,
+          success: false,
+          error: "No autofix command registered",
+          level,
+        });
+        continue;
+      }
 
-    // Run the autofix command
-    const result = runAutofixCommand(tool, command, files, rootPath);
-    results.push(result);
+      // Run the autofix command
+      const result = runAutofixCommand(tool, command, files, rootPath, level);
+      results.push(result);
 
-    if (result.success) {
-      console.log(`    ✓ ${tool} autofix completed`);
-      toolsSucceeded++;
-    } else {
-      console.log(`    ✗ ${tool} autofix failed: ${result.error}`);
-      toolsFailed++;
+      if (result.success) {
+        console.log(`    ✓ ${tool} autofix completed [${levelLabel}]`);
+        toolsSucceeded++;
+      } else {
+        console.log(`    ✗ ${tool} autofix failed: ${result.error}`);
+        toolsFailed++;
+      }
     }
   }
 
+  // Process safe fixes first
+  processGroup(safeGrouped, "safe");
+
+  // Then process requires_review fixes
+  if (includeReviewFixes) {
+    processGroup(reviewGrouped, "requires_review");
+  }
+
+  const totalProcessed = safeGrouped.size + (includeReviewFixes ? reviewGrouped.size : 0);
   const summary: AutofixSummary = {
-    toolsProcessed: grouped.size,
+    toolsProcessed: totalProcessed,
     toolsSucceeded,
     toolsFailed,
     toolsSkipped,
