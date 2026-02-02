@@ -361,6 +361,19 @@ export interface LlmJsonSummary {
     bySeverity: Record<Severity, number>;
     total: number;
   };
+  // Tool execution stats
+  toolsRun?: {
+    total: number;
+    successful: number;
+    failed: number;
+    skipped: number;
+    details: Array<{
+      name: string;
+      status: "success" | "failed" | "skipped";
+      findingsCount?: number;
+      skipReason?: string;
+    }>;
+  };
   // Issue stats (populated after issue processing)
   issuesCreated?: number;
   issuesUpdated?: number;

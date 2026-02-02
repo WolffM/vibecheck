@@ -38,6 +38,18 @@ import {
 // Types
 // ============================================================================
 
+export interface ToolResult {
+  name: string;
+  status: "success" | "failed" | "skipped";
+  findingsCount: number;
+  skipReason?: string;
+}
+
+export interface ToolExecutionResult {
+  findings: Finding[];
+  toolResults: ToolResult[];
+}
+
 export interface ToolDefinition {
   /** Tool identifier */
   name: ToolName;
@@ -337,9 +349,9 @@ export function executeTools(
   tools: ToolDefinition[],
   rootPath: string,
   config: VibeCopConfig,
-): Finding[] {
+): ToolExecutionResult {
   const allFindings: Finding[] = [];
-  const toolResults: { name: string; count: number; status: "success" | "failed" | "skipped"; skipReason?: string }[] = [];
+  const toolResults: ToolResult[] = [];
 
   console.log("\n=== Running Analysis Tools ===\n");
 
@@ -356,14 +368,19 @@ export function executeTools(
     try {
       const findings = tool.run(rootPath, configPath);
       
-      // Check if tool was actually skipped (0 findings + specific skip message patterns)
-      const wasSkipped = findings.length === 0; // We'll improve detection below
-      
       allFindings.push(...findings);
-      toolResults.push({ name: tool.displayName, count: findings.length, status: "success" });
+      toolResults.push({ 
+        name: tool.displayName, 
+        findingsCount: findings.length, 
+        status: "success" 
+      });
       console.log(`✅ Found ${findings.length} findings`);
     } catch (error) {
-      toolResults.push({ name: tool.displayName, count: 0, status: "failed" });
+      toolResults.push({ 
+        name: tool.displayName, 
+        findingsCount: 0, 
+        status: "failed" 
+      });
       console.warn(`❌ Failed: ${error}`);
     }
     
@@ -376,7 +393,7 @@ export function executeTools(
     const icon = result.status === "success" ? "✓" : result.status === "skipped" ? "⊘" : "✗";
     let statusStr = "";
     if (result.status === "success") {
-      statusStr = `${result.count} findings`;
+      statusStr = `${result.findingsCount} findings`;
     } else if (result.status === "skipped") {
       statusStr = `skipped${result.skipReason ? ` (${result.skipReason})` : ""}`;
     } else {
@@ -416,5 +433,9 @@ export function executeTools(
   }
 
   console.log(`\nTotal raw findings: ${filteredFindings.length}\n`);
-  return filteredFindings;
+  
+  return {
+    findings: filteredFindings,
+    toolResults,
+  };
 }

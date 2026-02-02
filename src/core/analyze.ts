@@ -122,7 +122,7 @@ export async function analyze(
   // Step 3: Run analysis tools using registry
   console.log("Step 3: Running analysis tools...");
   const toolsToRun = getToolsToRun(profile, cadence, config);
-  const allFindings = executeTools(toolsToRun, rootPath, config);
+  const { findings: allFindings, toolResults } = executeTools(toolsToRun, rootPath, config);
 
   // Step 4: Deduplicate findings
   console.log("Step 4: Deduplicating findings...");
@@ -194,6 +194,7 @@ export async function analyze(
       totalFindings: allFindings.length,
       uniqueFindings: uniqueFindings.length,
       mergedFindings: mergedFindings.length,
+      toolResults,
     };
     const llmJson = buildLlmJson(mergedFindings, context, findingStats);
     const llmJsonPath = join(outputDir, "results.llm.json");

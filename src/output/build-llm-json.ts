@@ -31,6 +31,12 @@ export interface FindingStats {
   totalFindings: number; // Raw count from all tools
   uniqueFindings: number; // After deduplication
   mergedFindings: number; // After merging
+  toolResults?: Array<{
+    name: string;
+    status: "success" | "failed" | "skipped";
+    findingsCount: number;
+    skipReason?: string;
+  }>;
 }
 
 /**
@@ -98,6 +104,18 @@ function buildSummary(
     0,
   );
 
+  // Calculate tool execution stats
+  const toolStats = stats.toolResults
+    ? {
+        total: stats.toolResults.length,
+        successful: stats.toolResults.filter((r) => r.status === "success")
+          .length,
+        failed: stats.toolResults.filter((r) => r.status === "failed").length,
+        skipped: stats.toolResults.filter((r) => r.status === "skipped").length,
+        details: stats.toolResults,
+      }
+    : undefined;
+
   return {
     totalFindings: stats.totalFindings,
     uniqueFindings: stats.uniqueFindings,
@@ -113,6 +131,8 @@ function buildSummary(
         total: totalSuppressed,
       },
     }),
+    // Include tool execution stats if available
+    ...(toolStats && { toolsRun: toolStats }),
   };
 }
 
