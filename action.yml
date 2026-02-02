@@ -142,8 +142,8 @@ runs:
         fi
         
         # Remove any existing GitHub Package Registry auth token to avoid duplicates
-        # Using sed for more robust handling
-        sed -i.bak '/^\/\/npm\.pkg\.github\.com\/:_authToken=/d' .npmrc && rm -f .npmrc.bak
+        # GitHub Actions runners use Linux, so we can use sed without backup extension
+        sed -i '/^\/\/npm\.pkg\.github\.com\/:_authToken=/d' .npmrc
         
         # Add GitHub Package Registry authentication
         echo "//npm.pkg.github.com/:_authToken=${{ inputs.vibecheck_github_package_token }}" >> .npmrc
