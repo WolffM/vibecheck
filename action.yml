@@ -151,6 +151,8 @@ runs:
 
     - name: Install Target Repo JS Dependencies
       shell: bash
+      # Allow workflow to continue even if dependencies fail to install
+      # Tools that require dependencies (ESLint, TypeScript) will be gracefully skipped
       continue-on-error: true
       run: |
         # Install target repo's node dependencies for ESLint and TypeScript analysis

@@ -12,6 +12,7 @@ import type {
   Finding,
   RepoProfile,
   ToolName,
+  ToolResult,
   VibeCopConfig,
 } from "../core/types.js";
 import { shouldRunTool } from "../core/config-loader.js";
@@ -37,13 +38,6 @@ import {
 // ============================================================================
 // Types
 // ============================================================================
-
-export interface ToolResult {
-  name: string;
-  status: "success" | "failed" | "skipped";
-  findingsCount: number;
-  skipReason?: string;
-}
 
 export interface ToolExecutionResult {
   findings: Finding[];
@@ -390,7 +384,17 @@ export function executeTools(
   // Print summary table
   console.log("\n=== Tool Summary ===\n");
   for (const result of toolResults) {
-    const icon = result.status === "success" ? "✓" : result.status === "skipped" ? "⊘" : "✗";
+    // Determine icon based on status
+    let icon: string;
+    if (result.status === "success") {
+      icon = "✓";
+    } else if (result.status === "skipped") {
+      icon = "⊘";
+    } else {
+      icon = "✗";
+    }
+    
+    // Build status string
     let statusStr = "";
     if (result.status === "success") {
       statusStr = `${result.findingsCount} findings`;

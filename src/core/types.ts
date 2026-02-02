@@ -348,6 +348,14 @@ export interface RepoInfo {
   commit: string;
 }
 
+/** Result of a single tool execution */
+export interface ToolResult {
+  name: string;
+  status: "success" | "failed" | "skipped";
+  findingsCount: number;
+  skipReason?: string;
+}
+
 export interface LlmJsonSummary {
   totalFindings: number; // Raw count before deduplication/merging
   uniqueFindings: number; // After deduplication
@@ -367,12 +375,7 @@ export interface LlmJsonSummary {
     successful: number;
     failed: number;
     skipped: number;
-    details: Array<{
-      name: string;
-      status: "success" | "failed" | "skipped";
-      findingsCount: number;
-      skipReason?: string;
-    }>;
+    details: ToolResult[];
   };
   // Issue stats (populated after issue processing)
   issuesCreated?: number;

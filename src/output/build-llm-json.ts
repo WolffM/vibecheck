@@ -18,6 +18,7 @@ import type {
   LlmJsonSummary,
   RunContext,
   Severity,
+  ToolResult,
 } from "../core/types.js";
 
 // ============================================================================
@@ -31,12 +32,7 @@ export interface FindingStats {
   totalFindings: number; // Raw count from all tools
   uniqueFindings: number; // After deduplication
   mergedFindings: number; // After merging
-  toolResults?: Array<{
-    name: string;
-    status: "success" | "failed" | "skipped";
-    findingsCount: number;
-    skipReason?: string;
-  }>;
+  toolResults?: ToolResult[];
 }
 
 /**
