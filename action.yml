@@ -38,6 +38,10 @@ inputs:
     description: "Create PRs for findings with safe autofixes (ESLint formatting, Ruff style). Requires contents:write and pull-requests:write permissions."
     required: false
     default: "false"
+  vibecheck_github_package_token:
+    description: "GitHub token for accessing private packages from GitHub Package Registry. Use this if your repository has private @org/package dependencies. Typically set to secrets.GITHUB_TOKEN or a custom PAT with packages:read scope."
+    required: false
+    default: ""
 
 outputs:
   total_findings:
@@ -123,11 +127,33 @@ runs:
         # These tools work without config files (depcruise uses --no-config, knip auto-detects)
         npm install -g dependency-cruiser knip
 
+    - name: Configure NPM Authentication
+      if: inputs.vibecheck_github_package_token != ''
+      shell: bash
+      run: |
+        # Configure authentication for GitHub Package Registry
+        # This allows vibecheck to install private @org/package dependencies
+        cd "${{ github.workspace }}"
+        echo "Configuring NPM authentication for GitHub Packages..."
+        
+        # Create or append to .npmrc
+        if [ ! -f .npmrc ]; then
+          touch .npmrc
+        fi
+        
+        # Add GitHub Package Registry authentication
+        # Format: //npm.pkg.github.com/:_authToken=TOKEN
+        echo "//npm.pkg.github.com/:_authToken=${{ inputs.vibecheck_github_package_token }}" >> .npmrc
+        echo "NPM authentication configured for GitHub Packages"
+
     - name: Install Target Repo JS Dependencies
       shell: bash
+      continue-on-error: true
       run: |
         # Install target repo's node dependencies for ESLint and TypeScript analysis
         # This is needed for modern ESLint configs that import packages
+        # Note: This step continues on error - if dependencies fail to install,
+        # tools that require them (ESLint, TypeScript) will be skipped
         cd "${{ github.workspace }}"
         if [ -f "package.json" ]; then
           if [ -f "pnpm-lock.yaml" ]; then

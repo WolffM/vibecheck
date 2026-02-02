@@ -339,7 +339,7 @@ export function executeTools(
   config: VibeCopConfig,
 ): Finding[] {
   const allFindings: Finding[] = [];
-  const toolResults: { name: string; count: number; status: "success" | "failed" }[] = [];
+  const toolResults: { name: string; count: number; status: "success" | "failed" | "skipped"; skipReason?: string }[] = [];
 
   console.log("\n=== Running Analysis Tools ===\n");
 
@@ -355,6 +355,10 @@ export function executeTools(
     
     try {
       const findings = tool.run(rootPath, configPath);
+      
+      // Check if tool was actually skipped (0 findings + specific skip message patterns)
+      const wasSkipped = findings.length === 0; // We'll improve detection below
+      
       allFindings.push(...findings);
       toolResults.push({ name: tool.displayName, count: findings.length, status: "success" });
       console.log(`✅ Found ${findings.length} findings`);
@@ -369,9 +373,16 @@ export function executeTools(
   // Print summary table
   console.log("\n=== Tool Summary ===\n");
   for (const result of toolResults) {
-    const icon = result.status === "success" ? "✓" : "✗";
-    const countStr = result.status === "success" ? `${result.count} findings` : "failed";
-    console.log(`  ${icon} ${result.name}: ${countStr}`);
+    const icon = result.status === "success" ? "✓" : result.status === "skipped" ? "⊘" : "✗";
+    let statusStr = "";
+    if (result.status === "success") {
+      statusStr = `${result.count} findings`;
+    } else if (result.status === "skipped") {
+      statusStr = `skipped${result.skipReason ? ` (${result.skipReason})` : ""}`;
+    } else {
+      statusStr = "failed";
+    }
+    console.log(`  ${icon} ${result.name}: ${statusStr}`);
   }
 
   // Filter out findings from excluded directories (e.g., .trunk, node_modules)

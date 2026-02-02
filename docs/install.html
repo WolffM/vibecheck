@@ -700,12 +700,14 @@
   contents: write      # Required for autofix PRs
   issues: write
   pull-requests: write # Required for autofix PRs
-  security-events: write`;
+  security-events: write
+  packages: read       # For private GitHub packages`;
       } else {
         permissionsSection = `permissions:
   contents: read
   issues: write
-  security-events: write`;
+  security-events: write
+  packages: read       # For private GitHub packages`;
       }
 
       // Build the workflow
@@ -734,7 +736,8 @@ jobs:
       - name: Run vibeCheck
         uses: WolffM/vibecheck@main
         with:
-          github_token: \${{ secrets.GITHUB_TOKEN }}`;
+          github_token: \${{ secrets.GITHUB_TOKEN }}
+          vibecheck_github_package_token: \${{ secrets.GITHUB_TOKEN }}`;
 
       // Add custom options only if they differ from defaults
       if (severity !== 'info') {

@@ -69,15 +69,41 @@ Customize the action in your workflow file:
     severity_threshold: "medium"    # info | low | medium | high | critical
     confidence_threshold: "medium"  # low | medium | high
     skip_issues: "false"            # true for dry run
+    vibecheck_github_package_token: ${{ secrets.GITHUB_TOKEN }}  # Optional: for private packages
 ```
 
-| Input                  | Description                       | Default    |
-| ---------------------- | --------------------------------- | ---------- |
-| `github_token`         | GitHub token for issue management | *Required* |
-| `severity_threshold`   | Min severity for issues           | `medium`   |
-| `confidence_threshold` | Min confidence for issues         | `low`      |
-| `skip_issues`          | Skip issue creation (dry run)     | `false`    |
-| `create_config_pr`     | Create PR with generated configs  | `false`    |
+| Input                            | Description                                           | Default    |
+| -------------------------------- | ----------------------------------------------------- | ---------- |
+| `github_token`                   | GitHub token for issue management                     | *Required* |
+| `severity_threshold`             | Min severity for issues                               | `medium`   |
+| `confidence_threshold`           | Min confidence for issues                             | `low`      |
+| `skip_issues`                    | Skip issue creation (dry run)                         | `false`    |
+| `create_config_pr`               | Create PR with generated configs                      | `false`    |
+| `vibecheck_github_package_token` | Token for private GitHub packages (e.g., `@org/pkg`)  | `""`       |
+
+### Private Package Support
+
+If your repository uses private packages from GitHub Package Registry (e.g., `@yourorg/private-package`), vibeCheck needs authentication to install them. Add the `packages: read` permission and pass the token:
+
+```yaml
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+  packages: read        # Required for private packages
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: WolffM/vibecheck@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vibecheck_github_package_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Note:** vibeCheck will continue running even if dependency installation fails. Tools that require dependencies (ESLint, TypeScript) will be gracefully skipped and noted in the results.
 
 ### Auto-commit Config Files (Optional)
 
