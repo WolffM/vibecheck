@@ -370,7 +370,7 @@ export interface LlmJsonSummary {
     details: Array<{
       name: string;
       status: "success" | "failed" | "skipped";
-      findingsCount?: number;
+      findingsCount: number;
       skipReason?: string;
     }>;
   };

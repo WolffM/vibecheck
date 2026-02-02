@@ -136,13 +136,16 @@ runs:
         cd "${{ github.workspace }}"
         echo "Configuring NPM authentication for GitHub Packages..."
         
-        # Create or append to .npmrc
-        if [ ! -f .npmrc ]; then
+        # Create or update .npmrc with GitHub Package Registry authentication
+        # Remove any existing GitHub Package Registry auth token first to avoid duplicates
+        if [ -f .npmrc ]; then
+          grep -v "//npm.pkg.github.com/:_authToken=" .npmrc > .npmrc.tmp || true
+          mv .npmrc.tmp .npmrc
+        else
           touch .npmrc
         fi
         
         # Add GitHub Package Registry authentication
-        # Format: //npm.pkg.github.com/:_authToken=TOKEN
         echo "//npm.pkg.github.com/:_authToken=${{ inputs.vibecheck_github_package_token }}" >> .npmrc
         echo "NPM authentication configured for GitHub Packages"
 
