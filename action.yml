@@ -373,6 +373,42 @@ runs:
           echo "| Issues Updated | $UPDATED |" >> $GITHUB_STEP_SUMMARY
           echo "| Issues Closed | $CLOSED |" >> $GITHUB_STEP_SUMMARY
 
+          # Show tool execution stats if available
+          TOOLS_TOTAL=$(jq '.summary.toolsRun.total // 0' $OUTPUT_DIR/results.llm.json)
+          if [ "$TOOLS_TOTAL" -gt 0 ]; then
+            TOOLS_SUCCESS=$(jq '.summary.toolsRun.successful // 0' $OUTPUT_DIR/results.llm.json)
+            TOOLS_FAILED=$(jq '.summary.toolsRun.failed // 0' $OUTPUT_DIR/results.llm.json)
+            TOOLS_SKIPPED=$(jq '.summary.toolsRun.skipped // 0' $OUTPUT_DIR/results.llm.json)
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Tool Execution" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Status | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Successful | $TOOLS_SUCCESS |" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$TOOLS_FAILED" -gt 0 ]; then
+              echo "| ❌ Failed | $TOOLS_FAILED |" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "$TOOLS_SKIPPED" -gt 0 ]; then
+              echo "| ⊘ Skipped | $TOOLS_SKIPPED |" >> $GITHUB_STEP_SUMMARY
+              
+              # Show details of skipped tools
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "<details>" >> $GITHUB_STEP_SUMMARY
+              echo "<summary>⚠️ <strong>Tools skipped</strong> (may need dependencies)</summary>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Extract skipped tool details
+              jq -r '.summary.toolsRun.details[] | select(.status == "skipped") | "- **\(.name)**: \(.skipReason // "dependency or config missing")"' $OUTPUT_DIR/results.llm.json >> $GITHUB_STEP_SUMMARY
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "💡 To enable these tools, ensure dependencies are installed successfully. For private packages, configure \`vibecheck_github_package_token\` in your workflow." >> $GITHUB_STEP_SUMMARY
+              echo "</details>" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
           # Show suppressed findings if any exist (below severity/confidence threshold)
           SUPPRESSED_TOTAL=$(jq '.summary.suppressed.total // 0' $OUTPUT_DIR/results.llm.json)
           if [ "$SUPPRESSED_TOTAL" -gt 0 ]; then
