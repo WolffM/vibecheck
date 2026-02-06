@@ -38,6 +38,10 @@ inputs:
     description: "Create PRs for findings with safe autofixes (ESLint formatting, Ruff style). Requires contents:write and pull-requests:write permissions."
     required: false
     default: "false"
+  vibecheck_github_package_token:
+    description: "GitHub token for accessing private packages from GitHub Package Registry. Use this if your repository has private @org/package dependencies. Typically set to secrets.GITHUB_TOKEN or a custom PAT with packages:read scope."
+    required: false
+    default: ""
 
 outputs:
   total_findings:
@@ -123,11 +127,38 @@ runs:
         # These tools work without config files (depcruise uses --no-config, knip auto-detects)
         npm install -g dependency-cruiser knip
 
+    - name: Configure NPM Authentication
+      if: inputs.vibecheck_github_package_token != ''
+      shell: bash
+      run: |
+        # Configure authentication for GitHub Package Registry
+        # This allows vibecheck to install private @org/package dependencies
+        cd "${{ github.workspace }}"
+        echo "Configuring NPM authentication for GitHub Packages..."
+        
+        # Create .npmrc if it doesn't exist
+        if [ ! -f .npmrc ]; then
+          touch .npmrc
+        fi
+        
+        # Remove any existing GitHub Package Registry auth token to avoid duplicates
+        # GitHub Actions runners use Linux, so we can use sed without backup extension
+        sed -i '/^\/\/npm\.pkg\.github\.com\/:_authToken=/d' .npmrc
+        
+        # Add GitHub Package Registry authentication
+        echo "//npm.pkg.github.com/:_authToken=${{ inputs.vibecheck_github_package_token }}" >> .npmrc
+        echo "NPM authentication configured for GitHub Packages"
+
     - name: Install Target Repo JS Dependencies
       shell: bash
+      # Allow workflow to continue even if dependencies fail to install
+      # Tools that require dependencies (ESLint, TypeScript) will be gracefully skipped
+      continue-on-error: true
       run: |
         # Install target repo's node dependencies for ESLint and TypeScript analysis
         # This is needed for modern ESLint configs that import packages
+        # Note: This step continues on error - if dependencies fail to install,
+        # tools that require them (ESLint, TypeScript) will be skipped
         cd "${{ github.workspace }}"
         if [ -f "package.json" ]; then
           if [ -f "pnpm-lock.yaml" ]; then
@@ -346,6 +377,42 @@ runs:
           echo "| Issues Created | $CREATED |" >> $GITHUB_STEP_SUMMARY
           echo "| Issues Updated | $UPDATED |" >> $GITHUB_STEP_SUMMARY
           echo "| Issues Closed | $CLOSED |" >> $GITHUB_STEP_SUMMARY
+
+          # Show tool execution stats if available
+          TOOLS_TOTAL=$(jq '.summary.toolsRun.total // 0' $OUTPUT_DIR/results.llm.json)
+          if [ "$TOOLS_TOTAL" -gt 0 ]; then
+            TOOLS_SUCCESS=$(jq '.summary.toolsRun.successful // 0' $OUTPUT_DIR/results.llm.json)
+            TOOLS_FAILED=$(jq '.summary.toolsRun.failed // 0' $OUTPUT_DIR/results.llm.json)
+            TOOLS_SKIPPED=$(jq '.summary.toolsRun.skipped // 0' $OUTPUT_DIR/results.llm.json)
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Tool Execution" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Status | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Successful | $TOOLS_SUCCESS |" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$TOOLS_FAILED" -gt 0 ]; then
+              echo "| ❌ Failed | $TOOLS_FAILED |" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "$TOOLS_SKIPPED" -gt 0 ]; then
+              echo "| ⊘ Skipped | $TOOLS_SKIPPED |" >> $GITHUB_STEP_SUMMARY
+              
+              # Show details of skipped tools
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "<details>" >> $GITHUB_STEP_SUMMARY
+              echo "<summary>⚠️ <strong>Tools skipped</strong> (may need dependencies)</summary>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              
+              # Extract skipped tool details
+              jq -r '.summary.toolsRun.details[] | select(.status == "skipped") | "- **\(.name)**: \(.skipReason // "dependency or config missing")"' $OUTPUT_DIR/results.llm.json >> $GITHUB_STEP_SUMMARY
+              
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "💡 To enable these tools, ensure dependencies are installed successfully. For private packages, configure \`vibecheck_github_package_token\` in your workflow." >> $GITHUB_STEP_SUMMARY
+              echo "</details>" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
 
           # Show suppressed findings if any exist (below severity/confidence threshold)
           SUPPRESSED_TOTAL=$(jq '.summary.suppressed.total // 0' $OUTPUT_DIR/results.llm.json)
