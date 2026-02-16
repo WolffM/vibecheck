@@ -428,6 +428,30 @@ export function mapBanditConfidence(banditConfidence: string): Confidence {
 }
 
 // ============================================================================
+// Vulture Mappings (Python Dead Code)
+// ============================================================================
+
+/**
+ * Map Vulture finding type to severity.
+ * Unused imports and unreachable code are higher severity than unused variables.
+ */
+export function mapVultureSeverity(code: string): Severity {
+  if (code === "unused-import") return "high";
+  if (code === "unreachable-code") return "high";
+  if (code === "unused-class" || code === "unused-function") return "medium";
+  return "low"; // unused-variable, unused-attribute, unused-property
+}
+
+/**
+ * Map Vulture confidence percentage (60-100) to our confidence scale.
+ */
+export function mapVultureConfidence(confidencePct: number): Confidence {
+  if (confidencePct >= 90) return "high";
+  if (confidencePct >= 70) return "medium";
+  return "low";
+}
+
+// ============================================================================
 // PMD Mappings (Java)
 // ============================================================================
 

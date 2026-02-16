@@ -24,15 +24,24 @@ import type {
 
 /**
  * Normalize a file path for consistent display and linking.
+ * - Strips rootPath prefix when provided (handles Windows absolute paths from tools like ruff)
  * - Removes absolute path prefixes (e.g., /home/runner/work/repo/repo/)
  * - Removes leading ./ prefixes
  * - Converts backslashes to forward slashes
  */
-export function normalizePath(path: string): string {
+export function normalizePath(path: string, rootPath?: string): string {
   let normalized = path;
 
   // Convert backslashes to forward slashes (Windows compatibility)
   normalized = normalized.replace(/\\/g, "/");
+
+  // Strip rootPath prefix from absolute paths (e.g., ruff emitting C:/Users/.../repo/src/file.py)
+  if (rootPath) {
+    const normalizedRoot = rootPath.replace(/\\/g, "/").replace(/\/+$/, "") + "/";
+    if (normalized.startsWith(normalizedRoot)) {
+      normalized = normalized.substring(normalizedRoot.length);
+    }
+  }
 
   // Remove common CI absolute path prefixes
   // GitHub Actions: /home/runner/work/{repo}/{repo}/
@@ -121,9 +130,10 @@ export function buildLocation(
   startColumn?: number,
   endLine?: number,
   endColumn?: number,
+  rootPath?: string,
 ): Location {
   const location: Location = {
-    path: normalizePath(path),
+    path: normalizePath(path, rootPath),
     startLine,
   };
 
@@ -141,8 +151,9 @@ export function buildLocationFromRowCol(
   path: string,
   start: { row: number; column: number },
   end?: { row: number; column: number },
+  rootPath?: string,
 ): Location {
-  return buildLocation(path, start.row, start.column, end?.row, end?.column);
+  return buildLocation(path, start.row, start.column, end?.row, end?.column, rootPath);
 }
 
 // ============================================================================

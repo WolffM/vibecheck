@@ -27,6 +27,7 @@ export {
   parseRuffOutput,
   parseMypyOutput,
   parseBanditOutput,
+  parseVultureOutput,
   type BanditOutput,
 } from "./python.js";
 

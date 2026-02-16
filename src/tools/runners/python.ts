@@ -1,7 +1,7 @@
 /**
  * Python Tool Runners
  *
- * Runners for Python analysis tools: Ruff, Mypy, Bandit
+ * Runners for Python analysis tools: Ruff, Mypy, Bandit, Vulture
  */
 
 import { spawnSync } from "node:child_process";
@@ -15,6 +15,7 @@ import {
   parseRuffOutput,
   parseMypyOutput,
   parseBanditOutput,
+  parseVultureOutput,
   type BanditOutput,
 } from "../../parsers/index.js";
 import { MAX_OUTPUT_BUFFER } from "../../utils/shared.js";
@@ -56,7 +57,7 @@ export function runRuff(rootPath: string, configPath?: string): Finding[] {
     if (output.trim().startsWith("[")) {
       try {
         const parsed = JSON.parse(output);
-        return parseRuffOutput(parsed);
+        return parseRuffOutput(parsed, rootPath);
       } catch {
         console.warn("Failed to parse ruff JSON output");
       }
@@ -119,7 +120,7 @@ export function runMypy(rootPath: string, configPath?: string): Finding[] {
     }
 
     if (errors.length > 0) {
-      return parseMypyOutput(errors);
+      return parseMypyOutput(errors, rootPath);
     }
   } catch (error) {
     console.warn("mypy failed:", error);
@@ -157,10 +158,55 @@ export function runBandit(rootPath: string, configPath?: string): Finding[] {
     const output = result.stdout || "";
     const parsed = safeParseJson<BanditOutput>(output);
     if (parsed) {
-      return parseBanditOutput(parsed);
+      return parseBanditOutput(parsed, rootPath);
     }
   } catch (error) {
     console.warn("bandit failed:", error);
+  }
+
+  return [];
+}
+
+/**
+ * Run Vulture dead code detector for Python code.
+ */
+export function runVulture(rootPath: string, configPath?: string): Finding[] {
+  console.log("Running vulture...");
+
+  try {
+    const { available } = isToolAvailable("vulture", false);
+    if (!available) {
+      console.log("  Vulture not installed, skipping");
+      return [];
+    }
+
+    const args = ["."];
+    if (configPath) {
+      args.push("--config", configPath);
+    } else {
+      args.push("--min-confidence", "60");
+    }
+    args.push("--exclude", EXCLUDE_DIRS_PYTHON);
+
+    const result = spawnSync("vulture", args, {
+      cwd: rootPath,
+      encoding: "utf-8",
+      shell: true,
+      maxBuffer: MAX_OUTPUT_BUFFER,
+    });
+
+    // Vulture exits 1 when findings exist (not an error), 3 for syntax errors
+    if (result.status !== null && result.status > 1 && result.status !== 3) {
+      console.warn("  Vulture exited with unexpected code:", result.status);
+      return [];
+    }
+
+    const output = result.stdout || "";
+    if (output.trim()) {
+      return parseVultureOutput(output, rootPath);
+    }
+  } catch (error) {
+    console.warn("vulture failed:", error);
   }
 
   return [];

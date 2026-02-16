@@ -30,6 +30,7 @@ import {
   runBandit,
   runPmd,
   runSpotBugs,
+  runVulture,
   runClippy,
   runCargoAudit,
   runCargoDeny,
@@ -169,6 +170,14 @@ const TOOL_REGISTRY: ToolDefinition[] = [
     detector: (p) => p.languages.includes("python"),
     run: (rootPath, config) => runBandit(rootPath, config),
     configKey: "bandit",
+  },
+  {
+    name: "vulture",
+    displayName: "Vulture (Python Dead Code)",
+    defaultCadence: "weekly",
+    detector: (p) => p.languages.includes("python"),
+    run: (rootPath, config) => runVulture(rootPath, config),
+    configKey: "vulture",
   },
 
   // Java tools

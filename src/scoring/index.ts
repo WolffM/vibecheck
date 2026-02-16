@@ -42,6 +42,8 @@ export {
   mapSpotBugsSeverity,
   mapTscConfidence,
   mapTscSeverity,
+  mapVultureConfidence,
+  mapVultureSeverity,
   // Rust mappers
   mapClippyConfidence,
   mapClippySeverity,

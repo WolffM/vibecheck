@@ -81,6 +81,11 @@ interface BanditConfig extends ToolConfig {
   severity?: "low" | "medium" | "high";
 }
 
+interface VultureConfig extends ToolConfig {
+  min_confidence?: number; // 0-100, default 60
+  exclude?: string[]; // Patterns to exclude
+}
+
 // Java tool configs
 interface PmdConfig extends ToolConfig {
   config_path?: string;
@@ -121,6 +126,7 @@ export interface ToolsConfig {
   ruff?: RuffConfig;
   mypy?: MypyConfig;
   bandit?: BanditConfig;
+  vulture?: VultureConfig;
   // Java tools
   pmd?: PmdConfig;
   spotbugs?: SpotBugsConfig;
@@ -292,6 +298,7 @@ export type KnownToolName =
   | "ruff"
   | "mypy"
   | "bandit"
+  | "vulture"
   // Java
   | "pmd"
   | "spotbugs"

@@ -26,6 +26,8 @@ import {
   determineAutofixLevel,
   meetsThresholds,
   compareFindingsForSort,
+  mapVultureSeverity,
+  mapVultureConfidence,
 } from '../src/scoring/index.js';
 
 describe('severity ordering', () => {
@@ -144,6 +146,26 @@ describe('semgrep mapping', () => {
     expect(mapSemgrepConfidence('high')).toBe('high');
     expect(mapSemgrepConfidence('medium')).toBe('medium');
     expect(mapSemgrepConfidence(undefined)).toBe('medium');
+  });
+});
+
+describe('vulture mapping', () => {
+  it('should map vulture severity by rule', () => {
+    expect(mapVultureSeverity('unused-import')).toBe('high');
+    expect(mapVultureSeverity('unreachable-code')).toBe('high');
+    expect(mapVultureSeverity('unused-class')).toBe('medium');
+    expect(mapVultureSeverity('unused-function')).toBe('medium');
+    expect(mapVultureSeverity('unused-variable')).toBe('low');
+    expect(mapVultureSeverity('unused-attribute')).toBe('low');
+  });
+
+  it('should map vulture confidence by percentage', () => {
+    expect(mapVultureConfidence(100)).toBe('high');
+    expect(mapVultureConfidence(90)).toBe('high');
+    expect(mapVultureConfidence(80)).toBe('medium');
+    expect(mapVultureConfidence(70)).toBe('medium');
+    expect(mapVultureConfidence(60)).toBe('low');
+    expect(mapVultureConfidence(50)).toBe('low');
   });
 });
 

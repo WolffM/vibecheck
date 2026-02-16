@@ -5,6 +5,7 @@
  * - Ruff (linter)
  * - Mypy (type checker)
  * - Bandit (security scanner)
+ * - Vulture (dead code detector)
  */
 
 import {
@@ -20,6 +21,8 @@ import {
   mapMypySeverity,
   mapRuffConfidence,
   mapRuffSeverity,
+  mapVultureConfidence,
+  mapVultureSeverity,
 } from "../scoring/index.js";
 import type { Finding } from "../core/types.js";
 
@@ -76,7 +79,7 @@ function determineRuffAutofixLevel(result: RuffResult): "safe" | "requires_revie
 /**
  * Parse Ruff JSON output into Findings.
  */
-export function parseRuffOutput(output: RuffResult[]): Finding[] {
+export function parseRuffOutput(output: RuffResult[], rootPath?: string): Finding[] {
   return parseResults(output, (result) => {
     const hasAutofix = !!result.fix;
     const autofix = determineRuffAutofixLevel(result);
@@ -92,6 +95,7 @@ export function parseRuffOutput(output: RuffResult[]): Finding[] {
         result.filename,
         result.location,
         result.end_location,
+        rootPath,
       ),
       hasAutofix,
       autofix,
@@ -116,7 +120,7 @@ interface MypyError {
 /**
  * Parse Mypy JSON output into Findings.
  */
-export function parseMypyOutput(errors: MypyError[]): Finding[] {
+export function parseMypyOutput(errors: MypyError[], rootPath?: string): Finding[] {
   return parseResults(errors, (error) => {
     // Skip notes unless they're relevant
     if (error.severity === "note" && !error.code) {
@@ -132,7 +136,7 @@ export function parseMypyOutput(errors: MypyError[]): Finding[] {
       message: error.message + (error.hint ? `\nHint: ${error.hint}` : ""),
       severity: mapMypySeverity(errorCode),
       confidence: mapMypyConfidence(errorCode),
-      location: buildLocation(error.file, error.line, error.column),
+      location: buildLocation(error.file, error.line, error.column, undefined, undefined, rootPath),
     });
   });
 }
@@ -167,7 +171,7 @@ export interface BanditOutput {
 /**
  * Parse Bandit JSON output into Findings.
  */
-export function parseBanditOutput(output: BanditOutput): Finding[] {
+export function parseBanditOutput(output: BanditOutput, rootPath?: string): Finding[] {
   return parseResults(output.results, (result) =>
     createFinding({
       result,
@@ -185,6 +189,7 @@ export function parseBanditOutput(output: BanditOutput): Finding[] {
           ? result.line_range[result.line_range.length - 1]
           : result.line_number,
         result.end_col_offset,
+        rootPath,
       ),
       layer: "security",
       evidence: {
@@ -194,4 +199,54 @@ export function parseBanditOutput(output: BanditOutput): Finding[] {
       extraLabels: [`cwe:${result.issue_cwe.id}`],
     }),
   );
+}
+
+// ============================================================================
+// Vulture Parser (Dead Code Detector)
+// ============================================================================
+
+// Vulture output format (plain text, one per line):
+// path/to/file.py:42: unused function 'old_dashboard' (60% confidence)
+// path/to/file.py:10: unused import 'os' (90% confidence)
+const VULTURE_LINE_RE =
+  /^(.+):(\d+):\s+(unused \w+|unreachable code)\s+'?([^']*?)'?\s+\((\d+)% confidence\)/;
+
+/**
+ * Map vulture's description to a normalized ruleId.
+ * "unused function" -> "unused-function", "unreachable code" -> "unreachable-code"
+ */
+function vultureTypeToRuleId(description: string): string {
+  return description.replace(/\s+/g, "-");
+}
+
+/**
+ * Parse Vulture plain-text output into Findings.
+ */
+export function parseVultureOutput(output: string, rootPath?: string): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const line of output.split("\n")) {
+    const match = line.trim().match(VULTURE_LINE_RE);
+    if (!match) continue;
+
+    const [, filePath, lineStr, description, name, confidenceStr] = match;
+    const lineNum = parseInt(lineStr, 10);
+    const confidence = parseInt(confidenceStr, 10);
+    const ruleId = vultureTypeToRuleId(description);
+
+    const finding = createFinding({
+      result: { filePath, line: lineNum, description, name, confidence },
+      tool: "vulture",
+      ruleId,
+      title: `Vulture: ${ruleId}`,
+      message: `${description} '${name}'`,
+      severity: mapVultureSeverity(ruleId),
+      confidence: mapVultureConfidence(confidence),
+      location: buildLocation(filePath, lineNum, undefined, undefined, undefined, rootPath),
+    });
+
+    findings.push(finding);
+  }
+
+  return findings;
 }
