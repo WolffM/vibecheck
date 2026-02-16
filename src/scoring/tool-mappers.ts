@@ -386,10 +386,14 @@ export function mapMypySeverity(errorCode: string): Severity {
 
 /**
  * Map Mypy findings to confidence.
- * Type checker findings are typically high confidence.
+ * Import-related errors are downgraded because they are unreliable
+ * without the project's virtualenv (missing third-party packages).
+ * Other type errors from mypy are high confidence.
  */
-export function mapMypyConfidence(_errorCode: string): Confidence {
-  // Mypy findings are definitive type errors
+export function mapMypyConfidence(errorCode: string): Confidence {
+  if (errorCode.includes("import")) {
+    return "low";
+  }
   return "high";
 }
 

@@ -28,6 +28,8 @@ import {
   compareFindingsForSort,
   mapVultureSeverity,
   mapVultureConfidence,
+  mapMypySeverity,
+  mapMypyConfidence,
 } from '../src/scoring/index.js';
 
 describe('severity ordering', () => {
@@ -166,6 +168,29 @@ describe('vulture mapping', () => {
     expect(mapVultureConfidence(70)).toBe('medium');
     expect(mapVultureConfidence(60)).toBe('low');
     expect(mapVultureConfidence(50)).toBe('low');
+  });
+});
+
+describe('mypy mapping', () => {
+  it('should map import-related codes to low confidence', () => {
+    expect(mapMypyConfidence('import-not-found')).toBe('low');
+    expect(mapMypyConfidence('import-untyped')).toBe('low');
+  });
+
+  it('should map non-import codes to high confidence', () => {
+    expect(mapMypyConfidence('attr-defined')).toBe('high');
+    expect(mapMypyConfidence('arg-type')).toBe('high');
+    expect(mapMypyConfidence('return-value')).toBe('high');
+    expect(mapMypyConfidence('assignment')).toBe('high');
+  });
+
+  it('should map severity correctly', () => {
+    expect(mapMypySeverity('import-not-found')).toBe('medium');
+    expect(mapMypySeverity('import-untyped')).toBe('medium');
+    expect(mapMypySeverity('attr-defined')).toBe('high');
+    expect(mapMypySeverity('arg-type')).toBe('high');
+    expect(mapMypySeverity('return-value')).toBe('high');
+    expect(mapMypySeverity('note')).toBe('low');
   });
 });
 

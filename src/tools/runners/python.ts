@@ -5,6 +5,8 @@
  */
 
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Finding } from "../../core/types.js";
 import {
   EXCLUDE_DIRS_PYTHON,
@@ -70,6 +72,37 @@ export function runRuff(rootPath: string, configPath?: string): Finding[] {
 }
 
 /**
+ * Check if the target project has its own mypy configuration.
+ * When a project config exists, we respect their import settings.
+ */
+function hasProjectMypyConfig(rootPath: string): boolean {
+  if (existsSync(join(rootPath, "mypy.ini"))) return true;
+  if (existsSync(join(rootPath, ".mypy.ini"))) return true;
+
+  const pyprojectPath = join(rootPath, "pyproject.toml");
+  if (existsSync(pyprojectPath)) {
+    try {
+      const content = readFileSync(pyprojectPath, "utf-8");
+      if (content.includes("[tool.mypy]")) return true;
+    } catch {
+      // ignore
+    }
+  }
+
+  const setupCfgPath = join(rootPath, "setup.cfg");
+  if (existsSync(setupCfgPath)) {
+    try {
+      const content = readFileSync(setupCfgPath, "utf-8");
+      if (content.includes("[mypy]")) return true;
+    } catch {
+      // ignore
+    }
+  }
+
+  return false;
+}
+
+/**
  * Run Mypy type checker for Python code.
  */
 export function runMypy(rootPath: string, configPath?: string): Finding[] {
@@ -84,6 +117,15 @@ export function runMypy(rootPath: string, configPath?: string): Finding[] {
 
     // Use --output=json for native JSON output (Python 3.10+)
     const args = ["--output", "json", "--exclude", EXCLUDE_DIRS_PYTHON];
+
+    // When no project-level mypy config exists, add --ignore-missing-imports
+    // to prevent false positives from unresolved third-party imports.
+    // This also prevents cascading attr-defined, arg-type, return-value errors.
+    if (!configPath && !hasProjectMypyConfig(rootPath)) {
+      args.push("--ignore-missing-imports");
+      console.log("  No mypy config found, adding --ignore-missing-imports");
+    }
+
     if (configPath) {
       args.push("--config-file", configPath);
     }
