@@ -4,6 +4,7 @@
  * Common helper functions used across modules.
  */
 
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import type { Severity } from "../core/types.js";
 
@@ -22,8 +23,18 @@ export const TOOL_INIT_TIMEOUT_MS = 120_000; // 2 minutes
 // ============================================================================
 
 /**
- * Build repository info from GitHub environment variables.
- * Used to construct RunContext.repo consistently.
+ * Run a git command and return the output, or a fallback on failure.
+ */
+function gitCommand(args: string, fallback: string): string {
+  try {
+    return execSync(`git ${args}`, { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim();
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Build repository info from GitHub env vars or local git.
  */
 export function buildRepoInfo(): {
   owner: string;
@@ -31,12 +42,42 @@ export function buildRepoInfo(): {
   defaultBranch: string;
   commit: string;
 } {
-  return {
-    owner: process.env.GITHUB_REPOSITORY_OWNER || "unknown",
-    name: process.env.GITHUB_REPOSITORY?.split("/")[1] || "unknown",
-    defaultBranch: "main",
-    commit: process.env.GITHUB_SHA || "unknown",
-  };
+  // Try GitHub Actions env vars first
+  if (process.env.GITHUB_REPOSITORY) {
+    return {
+      owner: process.env.GITHUB_REPOSITORY_OWNER || "unknown",
+      name: process.env.GITHUB_REPOSITORY.split("/")[1] || "unknown",
+      defaultBranch: "main",
+      commit: process.env.GITHUB_SHA || "unknown",
+    };
+  }
+
+  // Fall back to local git detection
+  const remoteUrl = gitCommand("config --get remote.origin.url", "");
+  let owner = "local";
+  let name = "unknown";
+
+  if (remoteUrl) {
+    // Parse various remote URL formats:
+    // https://github.com/owner/repo.git
+    // git@github.com:owner/repo.git
+    // https://dev.azure.com/org/project/_git/repo
+    const ghMatch = remoteUrl.match(/github\.com[:/]([^/]+)\/([^/.]+)/);
+    const adoMatch = remoteUrl.match(/dev\.azure\.com\/([^/]+)\/([^/]+)\/_git\/(.+)/);
+
+    if (ghMatch) {
+      owner = ghMatch[1];
+      name = ghMatch[2];
+    } else if (adoMatch) {
+      owner = `${adoMatch[1]}/${adoMatch[2]}`;
+      name = decodeURIComponent(adoMatch[3]).replace(/\.git$/, "");
+    }
+  }
+
+  const commit = gitCommand("rev-parse HEAD", "unknown");
+  const branch = gitCommand("rev-parse --abbrev-ref HEAD", "main");
+
+  return { owner, name, defaultBranch: branch, commit };
 }
 
 /**
