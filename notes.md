@@ -1,5 +1,5 @@
 ## Steps to reproduce
-1. Open a shell in `/home/runner/work/vibecheck/vibecheck`.
+1. Open a shell in the project root directory (for this run: `/home/runner/work/vibecheck/vibecheck`).
 2. Install dependencies with `npm install` (if not already installed).
 3. Run `npm run lint`.
 4. Optionally review the saved failure trace in `repro-trace.txt`.
