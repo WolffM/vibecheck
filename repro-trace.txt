@@ -1,0 +1,21 @@
+
+> vibecheck@1.0.0 lint
+> eslint src/
+
+
+/home/runner/work/vibecheck/vibecheck/src/core/types.ts
+   36:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  108:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/home/runner/work/vibecheck/vibecheck/src/output/build-llm-json.ts
+  153:13  warning  'rawOutput' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/home/runner/work/vibecheck/vibecheck/src/tools/autofix-runner.ts
+  145:7  warning  'commandArgs' is never reassigned. Use 'const' instead  prefer-const
+
+/home/runner/work/vibecheck/vibecheck/src/utils/fingerprints.ts
+  345:66  error  Unnecessary escape character: \-  no-useless-escape
+
+✖ 5 problems (3 errors, 2 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
