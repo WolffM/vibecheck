@@ -26,11 +26,13 @@ import {
   determineAutofixLevel,
   meetsThresholds,
   compareFindingsForSort,
+  prepareActionableFindings,
   mapVultureSeverity,
   mapVultureConfidence,
   mapMypySeverity,
   mapMypyConfidence,
 } from '../src/scoring/index.js';
+import type { Finding } from '../src/core/types.js';
 
 describe('severity ordering', () => {
   it('should have correct order', () => {
@@ -227,6 +229,61 @@ describe('determineAutofixLevel', () => {
 
   it('should return none when no fix available', () => {
     expect(determineAutofixLevel('eslint', 'no-undef', false)).toBe('none');
+  });
+});
+
+describe('prepareActionableFindings', () => {
+  it('filters by thresholds and sorts by priority', () => {
+    const findings: Finding[] = [
+      {
+        layer: 'code',
+        tool: 'eslint',
+        ruleId: 'no-unused-vars',
+        title: 'Unused variable',
+        message: 'x is declared but never used',
+        severity: 'medium',
+        confidence: 'high',
+        autofix: 'safe',
+        locations: [{ path: 'b.ts', startLine: 20 }],
+        labels: ['vibeCheck'],
+        fingerprint: 'fp-1',
+      },
+      {
+        layer: 'code',
+        tool: 'eslint',
+        ruleId: 'no-eval',
+        title: 'Use of eval',
+        message: 'eval is dangerous',
+        severity: 'high',
+        confidence: 'high',
+        autofix: 'none',
+        locations: [{ path: 'a.ts', startLine: 10 }],
+        labels: ['vibeCheck'],
+        fingerprint: 'fp-2',
+      },
+      {
+        layer: 'code',
+        tool: 'eslint',
+        ruleId: 'semi',
+        title: 'Missing semicolon',
+        message: 'Missing semicolon',
+        severity: 'low',
+        confidence: 'low',
+        autofix: 'safe',
+        locations: [{ path: 'c.ts', startLine: 30 }],
+        labels: ['vibeCheck'],
+        fingerprint: 'fp-3',
+      },
+    ];
+
+    const result = prepareActionableFindings(findings, 'medium', 'medium');
+
+    expect(result.filteredFindings).toHaveLength(2);
+    expect(result.skippedBelowThreshold).toBe(1);
+    expect(result.actionableFindings.map((f) => f.fingerprint)).toEqual([
+      'fp-2',
+      'fp-1',
+    ]);
   });
 });
 

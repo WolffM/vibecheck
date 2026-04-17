@@ -11,6 +11,7 @@ export {
   CONFIDENCE_ORDER,
   compareConfidence,
   compareFindingsForSort,
+  prepareActionableFindings,
   compareSeverity,
   meetsConfidenceThreshold,
   meetsSeverityThreshold,

@@ -223,6 +223,18 @@ export const DEFAULT_CONFIG: VibeCopConfig = {
   },
 };
 
+/**
+ * Merge configured issue settings with defaults.
+ */
+export function resolveIssuesConfig(config: VibeCopConfig): IssuesConfig {
+  const defaultIssues = DEFAULT_CONFIG.issues!;
+  return {
+    ...defaultIssues,
+    ...config.issues,
+    assignees: config.issues?.assignees ?? defaultIssues.assignees,
+  };
+}
+
 // ============================================================================
 // Repo Detection Types
 // ============================================================================
