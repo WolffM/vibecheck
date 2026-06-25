@@ -234,8 +234,8 @@ runs:
           cd "$WORKSPACE" && mvn compile -q -DskipTests 2>/dev/null || echo "Maven compile failed (non-fatal)"
         # Try Gradle build
         elif [ -f "$WORKSPACE/build.gradle" ] || [ -f "$WORKSPACE/build.gradle.kts" ]; then
-          echo "Found Gradle project, running gradle compileJava..."
-          cd "$WORKSPACE" && ./gradlew compileJava -q 2>/dev/null || gradle compileJava -q 2>/dev/null || echo "Gradle compile failed (non-fatal)"
+          echo "Found Gradle project, running gradle compile..."
+          cd "$WORKSPACE" && ./gradlew compileJava -q 2>&1 || ./gradlew compileDebugKotlinAndroid -q 2>&1 || ./gradlew compileKotlin -q 2>&1 || gradle compileJava -q 2>&1 || echo "Gradle compile failed (non-fatal)"
         else
           # Fallback: compile standalone Java files to a target directory
           echo "No build system found, compiling standalone Java files..."
@@ -309,8 +309,8 @@ runs:
           --cadence "${{ inputs.cadence }}" \
           --config "${{ inputs.config_path }}" \
           --output "$OUTPUT_DIR" \
-          --severity-threshold "${{ inputs.severity_threshold }}" \
-          --confidence-threshold "${{ inputs.confidence_threshold }}" \
+          --severity "${{ inputs.severity_threshold }}" \
+          --confidence "${{ inputs.confidence_threshold }}" \
           ${{ inputs.skip_issues == 'true' && '--skip-issues' || '' }}
 
         # Set outputs

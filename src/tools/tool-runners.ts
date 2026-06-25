@@ -43,7 +43,7 @@ export function runTrunk(
   try {
     // Check for TRUNK_PATH env var (set by trunk-io/trunk-action/setup)
     const trunkPathEnv = process.env.TRUNK_PATH;
-    let trunkCmd: string[];
+    let trunkCmd: string[] = [];
 
     if (trunkPathEnv) {
       // Use trunk from TRUNK_PATH (set by GitHub Action)
@@ -58,28 +58,29 @@ export function runTrunk(
         console.log(
           `  TRUNK_PATH set but trunk not working: ${versionCheck.stderr}`,
         );
-        trunkCmd = [];
       }
-    } else {
-      // Check if trunk is available (via npm or global install)
+    }
+
+    if (trunkCmd.length === 0) {
+      // Try global trunk first (trunk-action/setup adds to PATH via GITHUB_PATH)
+      const globalCheck = spawnSync("trunk", ["--version"], {
+        encoding: "utf-8",
+        shell: true,
+      });
+      if (globalCheck.status === 0) {
+        console.log("  Using trunk from PATH");
+        trunkCmd = ["trunk"];
+      }
+    }
+
+    if (trunkCmd.length === 0) {
+      // Check if trunk is available via pnpm
       const versionCheck = spawnSync("pnpm", ["exec", "trunk", "--version"], {
         cwd: rootPath,
         encoding: "utf-8",
         shell: true,
       });
-
-      if (versionCheck.error || versionCheck.status !== 0) {
-        // Try global trunk
-        const globalCheck = spawnSync("trunk", ["--version"], {
-          encoding: "utf-8",
-          shell: true,
-        });
-        if (globalCheck.error || globalCheck.status !== 0) {
-          console.log("  Trunk not installed, skipping");
-          return [];
-        }
-        trunkCmd = ["trunk"];
-      } else {
+      if (!versionCheck.error && versionCheck.status === 0) {
         trunkCmd = ["pnpm", "exec", "trunk"];
       }
     }
