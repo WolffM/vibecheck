@@ -58,8 +58,8 @@ export function runTrunk(
         console.log(
           `  TRUNK_PATH set but trunk not working, trying to download...`,
         );
-        // trunk-io/trunk-action downloads to TRUNK_TMPDIR which may not persist.
-        // Try downloading trunk ourselves.
+        // trunk-io/trunk-action downloads a launcher script that itself
+        // downloads the real binary on first run. Re-download and initialize.
         const tmpDir = process.env.TRUNK_TMPDIR || "/tmp";
         const trunkBinary = `${tmpDir}/trunk-downloaded`;
         const dlResult = spawnSync("bash", ["-c", `curl -fsSL https://trunk.io/releases/trunk -o ${trunkBinary} && chmod u+x ${trunkBinary}`], {
@@ -68,12 +68,15 @@ export function runTrunk(
           timeout: 30000,
         });
         if (dlResult.status === 0) {
-          const recheck = spawnSync(trunkBinary, ["--version"], {
+          // The downloaded file is a launcher that downloads the real binary on first run.
+          // Run it once to trigger the download.
+          const initResult = spawnSync(trunkBinary, ["version"], {
             encoding: "utf-8",
             shell: true,
+            timeout: 60000,
           });
-          if (recheck.status === 0) {
-            console.log(`  Downloaded trunk to ${trunkBinary}`);
+          if (initResult.status === 0) {
+            console.log(`  Downloaded and initialized trunk`);
             trunkCmd = [trunkBinary];
           }
         }

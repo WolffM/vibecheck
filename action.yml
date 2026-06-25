@@ -235,7 +235,7 @@ runs:
         # Try Gradle build
         elif [ -f "$WORKSPACE/build.gradle" ] || [ -f "$WORKSPACE/build.gradle.kts" ]; then
           echo "Found Gradle project, running gradle compile..."
-          cd "$WORKSPACE" && ./gradlew compileJava -q 2>&1 || ./gradlew compileDebugKotlinAndroid -q 2>&1 || ./gradlew compileKotlin -q 2>&1 || gradle compileJava -q 2>&1 || echo "Gradle compile failed (non-fatal)"
+          cd "$WORKSPACE" && ./gradlew compileJava -q 2>&1 || ./gradlew compileDebugKotlinAndroid -q 2>&1 || ./gradlew :composeApp:compileDebugKotlinAndroid -q 2>&1 || ./gradlew compileKotlin -q 2>&1 || ./gradlew :composeApp:compileKotlin -q 2>&1 || gradle compileJava -q 2>&1 || echo "Gradle compile failed (non-fatal)"
         else
           # Fallback: compile standalone Java files to a target directory
           echo "No build system found, compiling standalone Java files..."

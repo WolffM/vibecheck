@@ -82,9 +82,11 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
       "target",
       "classes",
     );
-    // KMP/Android: classes are in build/tmp/kotlin-classes or composeApp/build/intermediates
+    // KMP/Android: classes are in various module-specific paths
     const kotlinClasses = join(rootPath, "build", "tmp", "kotlin-classes");
+    const kotlinClassesDebug = join(rootPath, "build", "tmp", "kotlin-classes", "debug");
     const composeAppClasses = join(rootPath, "composeApp", "build", "intermediates", "javac", "debug");
+    const composeAppKotlin = join(rootPath, "composeApp", "build", "tmp", "kotlin-classes", "debug");
     const gradleClasses = join(rootPath, "build", "intermediates", "javac", "debug");
 
     let classesDir: string | null = null;
@@ -96,8 +98,12 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
       classesDir = testFixturesClasses;
     } else if (existsSync(kotlinClasses)) {
       classesDir = kotlinClasses;
+    } else if (existsSync(kotlinClassesDebug)) {
+      classesDir = kotlinClassesDebug;
     } else if (existsSync(composeAppClasses)) {
       classesDir = composeAppClasses;
+    } else if (existsSync(composeAppKotlin)) {
+      classesDir = composeAppKotlin;
     } else if (existsSync(gradleClasses)) {
       classesDir = gradleClasses;
     }
