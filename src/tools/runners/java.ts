@@ -73,7 +73,7 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
   console.log("Running SpotBugs...");
 
   try {
-    // Check if compiled classes exist (standard locations + test-fixtures)
+    // Check if compiled classes exist (standard locations + KMP/Gradle)
     const targetClasses = join(rootPath, "target", "classes");
     const buildClasses = join(rootPath, "build", "classes");
     const testFixturesClasses = join(
@@ -82,6 +82,10 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
       "target",
       "classes",
     );
+    // KMP/Android: classes are in build/tmp/kotlin-classes or composeApp/build/intermediates
+    const kotlinClasses = join(rootPath, "build", "tmp", "kotlin-classes");
+    const composeAppClasses = join(rootPath, "composeApp", "build", "intermediates", "javac", "debug");
+    const gradleClasses = join(rootPath, "build", "intermediates", "javac", "debug");
 
     let classesDir: string | null = null;
     if (existsSync(targetClasses)) {
@@ -90,6 +94,12 @@ export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
       classesDir = buildClasses;
     } else if (existsSync(testFixturesClasses)) {
       classesDir = testFixturesClasses;
+    } else if (existsSync(kotlinClasses)) {
+      classesDir = kotlinClasses;
+    } else if (existsSync(composeAppClasses)) {
+      classesDir = composeAppClasses;
+    } else if (existsSync(gradleClasses)) {
+      classesDir = gradleClasses;
     }
 
     if (!classesDir) {

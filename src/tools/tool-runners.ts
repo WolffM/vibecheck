@@ -56,13 +56,32 @@ export function runTrunk(
         trunkCmd = [trunkPathEnv];
       } else {
         console.log(
-          `  TRUNK_PATH set but trunk not working: ${versionCheck.stderr}`,
+          `  TRUNK_PATH set but trunk not working, trying to download...`,
         );
+        // trunk-io/trunk-action downloads to TRUNK_TMPDIR which may not persist.
+        // Try downloading trunk ourselves.
+        const tmpDir = process.env.TRUNK_TMPDIR || "/tmp";
+        const trunkBinary = `${tmpDir}/trunk-downloaded`;
+        const dlResult = spawnSync("bash", ["-c", `curl -fsSL https://trunk.io/releases/trunk -o ${trunkBinary} && chmod u+x ${trunkBinary}`], {
+          encoding: "utf-8",
+          shell: true,
+          timeout: 30000,
+        });
+        if (dlResult.status === 0) {
+          const recheck = spawnSync(trunkBinary, ["--version"], {
+            encoding: "utf-8",
+            shell: true,
+          });
+          if (recheck.status === 0) {
+            console.log(`  Downloaded trunk to ${trunkBinary}`);
+            trunkCmd = [trunkBinary];
+          }
+        }
       }
     }
 
     if (trunkCmd.length === 0) {
-      // Try global trunk first (trunk-action/setup adds to PATH via GITHUB_PATH)
+      // Try global trunk (might be on PATH)
       const globalCheck = spawnSync("trunk", ["--version"], {
         encoding: "utf-8",
         shell: true,
