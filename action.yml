@@ -82,7 +82,24 @@ runs:
         cd ${{ github.action_path }}
         pnpm install --frozen-lockfile
 
+    - name: Detect JS/TS files
+      id: detect-js
+      shell: bash
+      run: |
+        # Check for JS/TS project files
+        if [ -f "${{ github.workspace }}/package.json" ]; then
+          echo "has_js=true" >> $GITHUB_OUTPUT
+          echo "JS/TS project detected (package.json found)"
+        elif [ -n "$(find "${{ github.workspace }}" -name "*.ts" -o -name "*.tsx" -o -name "*.jsx" -type f -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null | head -1)" ]; then
+          echo "has_js=true" >> $GITHUB_OUTPUT
+          echo "JS/TS source files detected"
+        else
+          echo "has_js=false" >> $GITHUB_OUTPUT
+          echo "No JS/TS files detected"
+        fi
+
     - name: Setup Trunk
+      if: steps.detect-js.outputs.has_js == 'true'
       uses: trunk-io/trunk-action/setup@4d5ecc89b2691705fd08c747c78652d2fc806a94 # v1.1.19
 
     - name: Setup Python
@@ -300,6 +317,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
+        HAS_JS: ${{ steps.detect-js.outputs.has_js }}
       run: |
         OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
 

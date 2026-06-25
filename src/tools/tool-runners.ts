@@ -40,6 +40,12 @@ export function runTrunk(
 ): Finding[] {
   console.log("Running Trunk...");
 
+  // Skip trunk for non-JS/TS repos — trunk is a JS/TS-focused meta-linter
+  if (process.env.HAS_JS !== "true") {
+    console.log("  Skipping trunk (not a JS/TS project)");
+    return [];
+  }
+
   try {
     // Check for TRUNK_PATH env var (set by trunk-io/trunk-action/setup)
     const trunkPathEnv = process.env.TRUNK_PATH;
