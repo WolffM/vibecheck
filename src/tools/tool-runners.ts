@@ -62,19 +62,23 @@ export function runTrunk(
         // downloads the real binary on first run. Re-download and initialize.
         const tmpDir = process.env.TRUNK_TMPDIR || "/tmp";
         const trunkBinary = `${tmpDir}/trunk-downloaded`;
-        const dlResult = spawnSync("bash", ["-c", `curl -fsSL https://trunk.io/releases/trunk -o ${trunkBinary} && chmod u+x ${trunkBinary}`], {
+        console.log(`  Downloading trunk launcher to ${trunkBinary}...`);
+        const dlResult = spawnSync("bash", ["-c", `curl -fsSL https://trunk.io/releases/trunk -o ${trunkBinary} && chmod u+x ${trunkBinary} && echo "DOWNLOAD_OK"`], {
           encoding: "utf-8",
           shell: true,
           timeout: 30000,
         });
+        console.log(`  Download result: status=${dlResult.status}, stdout=${(dlResult.stdout || "").trim().slice(0, 100)}, stderr=${(dlResult.stderr || "").trim().slice(0, 100)}`);
         if (dlResult.status === 0) {
           // The downloaded file is a launcher that downloads the real binary on first run.
           // Run it once to trigger the download.
-          const initResult = spawnSync(trunkBinary, ["version"], {
+          console.log(`  Initializing trunk (downloading real binary)...`);
+          const initResult = spawnSync("bash", ["-c", `${trunkBinary} version`], {
             encoding: "utf-8",
             shell: true,
-            timeout: 60000,
+            timeout: 120000,
           });
+          console.log(`  Init result: status=${initResult.status}, stdout=${(initResult.stdout || "").trim().slice(0, 100)}, stderr=${(initResult.stderr || "").trim().slice(0, 100)}`);
           if (initResult.status === 0) {
             console.log(`  Downloaded and initialized trunk`);
             trunkCmd = [trunkBinary];
