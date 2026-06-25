@@ -72,11 +72,11 @@ export function runTrunk(
           // The downloaded file is a launcher that downloads the real binary on first run.
           // Run it once to trigger the download.
           console.log(`  Initializing trunk (downloading real binary)...`);
-          const initResult = spawnSync("bash", ["-c", '"' + trunkBinary + '" version'], {
+          const initResult = spawnSync("bash", ["-c", '"' + trunkBinary + '" version 2>&1'], {
             encoding: "utf-8",
             timeout: 120000,
           });
-          console.log(`  Init result: status=${initResult.status}, stdout=${(initResult.stdout || "").trim().slice(0, 100)}, stderr=${(initResult.stderr || "").trim().slice(0, 100)}`);
+          console.log(`  Init result: status=${initResult.status}, output=${(initResult.stdout || "").trim().slice(0, 200)}`);
           if (initResult.status === 0) {
             console.log(`  Downloaded and initialized trunk`);
             trunkCmd = [trunkBinary];
