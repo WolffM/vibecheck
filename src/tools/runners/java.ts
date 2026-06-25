@@ -72,6 +72,22 @@ export function runPmd(rootPath: string, configPath?: string): Finding[] {
 export function runSpotBugs(rootPath: string, configPath?: string): Finding[] {
   console.log("Running SpotBugs...");
 
+  // SpotBugs analyzes Java bytecode and has limited Kotlin support.
+  // For Kotlin projects (build.gradle.kts with no .java files), skip SpotBugs.
+  const hasGradleKts = existsSync(join(rootPath, "build.gradle.kts")) ||
+    existsSync(join(rootPath, "composeApp", "build.gradle.kts"));
+  if (hasGradleKts) {
+    const javaCheck = spawnSync("find", [rootPath, "-name", "*.java", "-type", "f", "-not", "-path", "*/node_modules/*", "-not", "-path", "*/.git/*"], {
+      encoding: "utf-8",
+      timeout: 10000,
+    });
+    const hasJavaFiles = (javaCheck.stdout || "").trim().length > 0;
+    if (!hasJavaFiles) {
+      console.log("  Skipping SpotBugs (Kotlin project — use PMD for Kotlin analysis)");
+      return [];
+    }
+  }
+
   try {
     // Check if compiled classes exist (standard locations + KMP/Gradle)
     const targetClasses = join(rootPath, "target", "classes");
