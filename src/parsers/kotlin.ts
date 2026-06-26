@@ -5,6 +5,7 @@
  */
 
 import type { Finding, Severity, Confidence } from "../core/types.js";
+import { normalizePath } from "../utils/parser-utils.js";
 
 /** detekt SARIF output structure (simplified) */
 export interface DetektSarifOutput {
@@ -68,7 +69,10 @@ export function parseDetektOutput(
       const location = result.locations?.[0];
       if (!location) continue;
 
-      const filePath = location.physicalLocation?.artifactLocation?.uri || "unknown";
+      const rawUri = location.physicalLocation?.artifactLocation?.uri || "unknown";
+      // detekt SARIF can emit file:// URIs or CI-absolute paths — normalize to
+      // repo-relative so paths match the other tools' findings.
+      const filePath = normalizePath(rawUri.replace(/^file:\/\//, ""), rootPath);
       const line = location.physicalLocation?.region?.startLine || 0;
 
       const severity = mapDetektSeverity(result.level);
@@ -84,7 +88,7 @@ export function parseDetektOutput(
         message,
         severity,
         confidence: "high" as Confidence,
-        autofix: "manual" as const,
+        autofix: "none" as const,
         locations: [
           {
             path: filePath,

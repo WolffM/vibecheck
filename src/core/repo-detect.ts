@@ -152,6 +152,24 @@ async function detectLanguages(rootPath: string): Promise<Language[]> {
     languages.push("java");
   }
 
+  // Kotlin detection - Gradle Kotlin DSL or .kt source files
+  const hasKotlinProject =
+    existsSync(join(rootPath, "build.gradle.kts")) ||
+    existsSync(join(rootPath, "settings.gradle.kts"));
+
+  const hasKotlinFiles = hasFilesWithExtension(rootPath, ".kt", [
+    "src",
+    "app",
+    "composeApp",
+    "shared",
+    "test-fixtures",
+    ".",
+  ]);
+
+  if (hasKotlinProject || hasKotlinFiles) {
+    languages.push("kotlin");
+  }
+
   return languages.length > 0 ? languages : ["other"];
 }
 
@@ -477,6 +495,7 @@ export async function detectRepo(
     // Python/Java detection
     hasPython: languages.includes("python"),
     hasJava: languages.includes("java"),
+    hasKotlin: languages.includes("kotlin"),
     hasRuff: toolConfigs.hasRuff,
     hasMypy: toolConfigs.hasMypy,
     hasPmd: toolConfigs.hasPmd,

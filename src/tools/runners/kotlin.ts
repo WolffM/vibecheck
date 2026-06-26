@@ -37,7 +37,6 @@ export function runDetekt(rootPath: string, configPath?: string): Finding[] {
       timeout: 30000,
     });
 
-    let detektOutput = "";
     let sarifPath = "";
 
     if (gradleCheck.status === 0 || gradleCheck.stdout?.includes("detekt")) {
@@ -51,7 +50,8 @@ export function runDetekt(rootPath: string, configPath?: string): Finding[] {
         args.push("-Pplugin=detekt");
       }
 
-      const result = spawnSync("./gradlew", args, {
+      // Run the Gradle detekt task for its side effect: writing the SARIF report.
+      spawnSync("./gradlew", args, {
         cwd: rootPath,
         encoding: "utf-8",
         timeout: 300000, // 5 min timeout for gradle build

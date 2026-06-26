@@ -41,6 +41,7 @@ function buildDefaultContext(): RunContext {
       rootPath: process.cwd(),
       hasPython: false,
       hasJava: false,
+      hasKotlin: false,
       hasRuff: false,
       hasMypy: false,
       hasPmd: false,
