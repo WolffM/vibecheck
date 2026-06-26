@@ -21,7 +21,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint src/",
+    "lint": "eslint src/ --max-warnings=0",
     "build-sarif": "tsx src/output/build-sarif.ts",
     "build-llm-json": "tsx src/output/build-llm-json.ts",
     "create-issues": "tsx src/github/sarif-to-issues.ts",

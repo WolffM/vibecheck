@@ -142,7 +142,7 @@ function runAutofixCommand(
 
   // Build the command args
   // For ruff requires_review fixes, add --unsafe-fixes flag
-  let commandArgs = [...command.args];
+  const commandArgs = [...command.args];
   if (tool === "ruff" && level === "requires_review") {
     // Ruff's "unsafe" fixes require --unsafe-fixes flag to actually apply
     commandArgs.push("--unsafe-fixes");
