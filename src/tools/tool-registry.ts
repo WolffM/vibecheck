@@ -30,6 +30,7 @@ import {
   runBandit,
   runPmd,
   runSpotBugs,
+  runDetekt,
   runVulture,
   runClippy,
   runCargoAudit,
@@ -196,6 +197,16 @@ const TOOL_REGISTRY: ToolDefinition[] = [
     detector: (p) => p.languages.includes("java"),
     run: (rootPath, config) => runSpotBugs(rootPath, config),
     configKey: "spotbugs",
+  },
+
+  // Kotlin tools
+  {
+    name: "detekt",
+    displayName: "detekt (Kotlin)",
+    defaultCadence: "weekly",
+    detector: (p) => p.languages.includes("kotlin"),
+    run: (rootPath, config) => runDetekt(rootPath, config),
+    configKey: "detekt",
   },
 
   // Rust tools

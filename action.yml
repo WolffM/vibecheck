@@ -269,6 +269,31 @@ runs:
           fi
         fi
 
+    - name: Detect Kotlin files
+      id: detect-kotlin
+      shell: bash
+      run: |
+        if [ -n "$(find "${{ github.workspace }}" -name "build.gradle.kts" -o -name "settings.gradle.kts" 2>/dev/null | head -1)" ]; then
+          echo "has_kotlin=true" >> $GITHUB_OUTPUT
+          echo "Kotlin project detected (build.gradle.kts found)"
+        elif [ -n "$(find "${{ github.workspace }}" -name "*.kt" -type f -not -path "*/.git/*" 2>/dev/null | head -1)" ]; then
+          echo "has_kotlin=true" >> $GITHUB_OUTPUT
+          echo "Kotlin source files detected"
+        else
+          echo "has_kotlin=false" >> $GITHUB_OUTPUT
+          echo "No Kotlin files detected"
+        fi
+
+    - name: Install detekt CLI (if Kotlin detected)
+      if: steps.detect-kotlin.outputs.has_kotlin == 'true'
+      shell: bash
+      run: |
+        echo "Installing detekt CLI..."
+        DETEKT_VERSION="1.23.7"
+        curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o /tmp/detekt.zip
+        unzip -q /tmp/detekt.zip -d /tmp/detekt
+        echo "/tmp/detekt/detekt-cli-${DETEKT_VERSION}/bin" >> $GITHUB_PATH
+
     - name: Detect Rust files
       id: detect-rust
       shell: bash

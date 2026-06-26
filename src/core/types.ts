@@ -234,6 +234,7 @@ export type Language =
   | "go"
   | "rust"
   | "java"
+  | "kotlin"
   | "other";
 export type PackageManager = "npm" | "yarn" | "pnpm" | "bun" | "unknown";
 
@@ -249,9 +250,10 @@ export interface RepoProfile {
   hasDependencyCruiser: boolean;
   hasKnip: boolean;
   rootPath: string;
-  // Python/Java detection
+  // Python/Java/Kotlin detection
   hasPython: boolean;
   hasJava: boolean;
+  hasKotlin: boolean;
   hasRuff: boolean;
   hasMypy: boolean;
   hasPmd: boolean;
@@ -302,6 +304,8 @@ export type KnownToolName =
   // Java
   | "pmd"
   | "spotbugs"
+  // Kotlin
+  | "detekt"
   // Rust
   | "clippy"
   | "cargo-audit"

@@ -39,6 +39,12 @@ export {
   type SpotBugsSarifOutput,
 } from "./java.js";
 
+// Kotlin parsers
+export {
+  parseDetektOutput,
+  type DetektSarifOutput,
+} from "./kotlin.js";
+
 // Security parsers (cross-language)
 export { parseSemgrepOutput, type SemgrepOutput } from "./security.js";
 
