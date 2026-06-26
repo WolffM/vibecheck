@@ -302,6 +302,8 @@ export type KnownToolName =
   // Java
   | "pmd"
   | "spotbugs"
+  // Kotlin
+  | "detekt"
   // Rust
   | "clippy"
   | "cargo-audit"

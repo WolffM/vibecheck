@@ -23,6 +23,7 @@ export {
 } from "./runners/typescript.js";
 export { runRuff, runMypy, runBandit, runVulture } from "./runners/python.js";
 export { runPmd, runSpotBugs } from "./runners/java.js";
+export { runDetekt } from "./runners/kotlin.js";
 export { runSemgrep } from "./runners/security.js";
 export { runClippy, runCargoAudit, runCargoDeny } from "./runners/rust.js";
 
