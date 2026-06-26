@@ -82,7 +82,24 @@ runs:
         cd ${{ github.action_path }}
         pnpm install --frozen-lockfile
 
+    - name: Detect JS/TS files
+      id: detect-js
+      shell: bash
+      run: |
+        # Check for JS/TS project files
+        if [ -f "${{ github.workspace }}/package.json" ]; then
+          echo "has_js=true" >> $GITHUB_OUTPUT
+          echo "JS/TS project detected (package.json found)"
+        elif [ -n "$(find "${{ github.workspace }}" -name "*.ts" -o -name "*.tsx" -o -name "*.jsx" -type f -not -path "*/node_modules/*" -not -path "*/.git/*" 2>/dev/null | head -1)" ]; then
+          echo "has_js=true" >> $GITHUB_OUTPUT
+          echo "JS/TS source files detected"
+        else
+          echo "has_js=false" >> $GITHUB_OUTPUT
+          echo "No JS/TS files detected"
+        fi
+
     - name: Setup Trunk
+      if: steps.detect-js.outputs.has_js == 'true'
       uses: trunk-io/trunk-action/setup@4d5ecc89b2691705fd08c747c78652d2fc806a94 # v1.1.19
 
     - name: Setup Python
@@ -234,8 +251,8 @@ runs:
           cd "$WORKSPACE" && mvn compile -q -DskipTests 2>/dev/null || echo "Maven compile failed (non-fatal)"
         # Try Gradle build
         elif [ -f "$WORKSPACE/build.gradle" ] || [ -f "$WORKSPACE/build.gradle.kts" ]; then
-          echo "Found Gradle project, running gradle compileJava..."
-          cd "$WORKSPACE" && ./gradlew compileJava -q 2>/dev/null || gradle compileJava -q 2>/dev/null || echo "Gradle compile failed (non-fatal)"
+          echo "Found Gradle project, running gradle compile..."
+          cd "$WORKSPACE" && ./gradlew compileJava -q 2>&1 || ./gradlew compileDebugKotlinAndroid -q 2>&1 || ./gradlew :composeApp:compileDebugKotlinAndroid -q 2>&1 || ./gradlew compileKotlin -q 2>&1 || ./gradlew :composeApp:compileKotlin -q 2>&1 || gradle compileJava -q 2>&1 || echo "Gradle compile failed (non-fatal)"
         else
           # Fallback: compile standalone Java files to a target directory
           echo "No build system found, compiling standalone Java files..."
@@ -300,6 +317,7 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
         GITHUB_REPOSITORY: ${{ github.repository }}
+        HAS_JS: ${{ steps.detect-js.outputs.has_js }}
       run: |
         OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
 
@@ -309,8 +327,8 @@ runs:
           --cadence "${{ inputs.cadence }}" \
           --config "${{ inputs.config_path }}" \
           --output "$OUTPUT_DIR" \
-          --severity-threshold "${{ inputs.severity_threshold }}" \
-          --confidence-threshold "${{ inputs.confidence_threshold }}" \
+          --severity "${{ inputs.severity_threshold }}" \
+          --confidence "${{ inputs.confidence_threshold }}" \
           ${{ inputs.skip_issues == 'true' && '--skip-issues' || '' }}
 
         # Set outputs

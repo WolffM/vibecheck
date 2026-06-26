@@ -40,10 +40,16 @@ export function runTrunk(
 ): Finding[] {
   console.log("Running Trunk...");
 
+  // Skip trunk for non-JS/TS repos — trunk is a JS/TS-focused meta-linter
+  if (process.env.HAS_JS !== "true") {
+    console.log("  Skipping trunk (not a JS/TS project)");
+    return [];
+  }
+
   try {
     // Check for TRUNK_PATH env var (set by trunk-io/trunk-action/setup)
     const trunkPathEnv = process.env.TRUNK_PATH;
-    let trunkCmd: string[];
+    let trunkCmd: string[] = [];
 
     if (trunkPathEnv) {
       // Use trunk from TRUNK_PATH (set by GitHub Action)
@@ -56,30 +62,55 @@ export function runTrunk(
         trunkCmd = [trunkPathEnv];
       } else {
         console.log(
-          `  TRUNK_PATH set but trunk not working: ${versionCheck.stderr}`,
+          `  TRUNK_PATH set but trunk not working, trying to download...`,
         );
-        trunkCmd = [];
+        // trunk-io/trunk-action downloads a launcher script that itself
+        // downloads the real binary on first run. Re-download and initialize.
+        const tmpDir = process.env.TRUNK_TMPDIR || "/tmp";
+        const trunkBinary = `${tmpDir}/trunk-downloaded`;
+        console.log(`  Downloading trunk launcher to ${trunkBinary}...`);
+        const dlResult = spawnSync("bash", ["-c", 'curl -fsSL "https://trunk.io/releases/trunk" -o "' + trunkBinary + '" && chmod u+x "' + trunkBinary + '"'], {
+          encoding: "utf-8",
+          timeout: 30000,
+        });
+        console.log(`  Download result: status=${dlResult.status}, stdout=${(dlResult.stdout || "").trim().slice(0, 100)}, stderr=${(dlResult.stderr || "").trim().slice(0, 100)}`);
+        if (dlResult.status === 0) {
+          // The downloaded file is a launcher that downloads the real binary on first run.
+          // Run it once to trigger the download.
+          console.log(`  Initializing trunk (downloading real binary)...`);
+          const initResult = spawnSync("bash", ["-c", '"' + trunkBinary + '" version 2>&1'], {
+            encoding: "utf-8",
+            timeout: 120000,
+          });
+          console.log(`  Init result: status=${initResult.status}, output=${(initResult.stdout || "").trim().slice(0, 200)}`);
+          if (initResult.status === 0) {
+            console.log(`  Downloaded and initialized trunk`);
+            trunkCmd = [trunkBinary];
+          }
+        }
       }
-    } else {
-      // Check if trunk is available (via npm or global install)
+    }
+
+    if (trunkCmd.length === 0) {
+      // Try global trunk (might be on PATH)
+      const globalCheck = spawnSync("trunk", ["--version"], {
+        encoding: "utf-8",
+        shell: true,
+      });
+      if (globalCheck.status === 0) {
+        console.log("  Using trunk from PATH");
+        trunkCmd = ["trunk"];
+      }
+    }
+
+    if (trunkCmd.length === 0) {
+      // Check if trunk is available via pnpm
       const versionCheck = spawnSync("pnpm", ["exec", "trunk", "--version"], {
         cwd: rootPath,
         encoding: "utf-8",
         shell: true,
       });
-
-      if (versionCheck.error || versionCheck.status !== 0) {
-        // Try global trunk
-        const globalCheck = spawnSync("trunk", ["--version"], {
-          encoding: "utf-8",
-          shell: true,
-        });
-        if (globalCheck.error || globalCheck.status !== 0) {
-          console.log("  Trunk not installed, skipping");
-          return [];
-        }
-        trunkCmd = ["trunk"];
-      } else {
+      if (!versionCheck.error && versionCheck.status === 0) {
         trunkCmd = ["pnpm", "exec", "trunk"];
       }
     }

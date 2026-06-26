@@ -45,3 +45,6 @@ coverage/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Chainlink tooling cache
+.chainlink/
