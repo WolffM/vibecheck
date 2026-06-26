@@ -33,9 +33,8 @@ interface ToolConfig {
   [key: string]: unknown;
 }
 
-interface TscConfig extends ToolConfig {
-  // inherits enabled
-}
+// TscConfig has no extra fields; it just inherits `enabled` from ToolConfig.
+type TscConfig = ToolConfig;
 
 interface EslintConfig extends ToolConfig {
   config_path?: string;
@@ -105,9 +104,8 @@ interface ClippyConfig extends ToolConfig {
   all_targets?: boolean; // Check all targets
 }
 
-interface CargoAuditConfig extends ToolConfig {
-  // No additional config options needed
-}
+// CargoAuditConfig has no extra fields beyond the shared ToolConfig.
+type CargoAuditConfig = ToolConfig;
 
 interface CargoDenyConfig extends ToolConfig {
   config_path?: string;

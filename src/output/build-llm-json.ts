@@ -150,7 +150,7 @@ export function buildLlmJson(
   // Enrich with suggested fixes
   const enrichedFindings = sortedFindings.map((finding) => {
     // Remove rawOutput for LLM JSON (keep it lean)
-    const { rawOutput, ...cleanFinding } = finding;
+    const { rawOutput: _rawOutput, ...cleanFinding } = finding;
 
     return {
       ...cleanFinding,

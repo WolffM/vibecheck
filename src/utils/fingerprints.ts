@@ -342,7 +342,7 @@ export function extractSublinter(findingOrTitle: Finding | string): string {
     : findingOrTitle.ruleId;
     
   // Check if title has format "sublinter: rule" or "[vibeCheck] sublinter: rule"
-  const titleMatch = title.match(/(?:\[vibeCheck\]\s+)?(\w+)[\s:(\-]/i);
+  const titleMatch = title.match(/(?:\[vibeCheck\]\s+)?(\w+)[\s:(-]/i);
   if (titleMatch) {
     return titleMatch[1].toLowerCase();
   }
