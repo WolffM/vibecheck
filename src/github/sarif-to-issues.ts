@@ -7,7 +7,8 @@
  * Reference: vibeCheck_spec.md section 8
  */
 
-import { deduplicateFindings, extractSublinter } from "../utils/fingerprints.js";
+import { extractSublinter } from "../utils/fingerprints.js";
+import { prepareAndLogFindingsForProcessing } from "../utils/finding-processing.js";
 import { addToMapArray, arraysEqual } from "../utils/shared.js";
 import {
   buildFingerprintMap,
@@ -26,8 +27,12 @@ import {
   generateIssueTitle,
   getLabelsForFinding,
 } from "../output/issue-formatter.js";
-import { compareFindingsForSort, meetsThresholds } from "../scoring/index.js";
-import { DEFAULT_CONFIG, type ExistingIssue, type Finding, type RunContext } from "../core/types.js";
+import {
+  resolveIssuesConfig,
+  type ExistingIssue,
+  type Finding,
+  type RunContext,
+} from "../core/types.js";
 
 // ============================================================================
 // Issue Orchestration
@@ -65,18 +70,7 @@ export async function processFindings(
   }
 
   const { owner, repo } = repoInfo;
-  // Use DEFAULT_CONFIG as the source of truth for issue settings
-  // Assert non-null since DEFAULT_CONFIG.issues is defined in types.ts
-  const defaultIssues = DEFAULT_CONFIG.issues!;
-  const issuesConfig = {
-    enabled: context.config.issues?.enabled ?? defaultIssues.enabled,
-    label: context.config.issues?.label ?? defaultIssues.label,
-    max_new_per_run: context.config.issues?.max_new_per_run ?? defaultIssues.max_new_per_run,
-    severity_threshold: context.config.issues?.severity_threshold ?? defaultIssues.severity_threshold,
-    confidence_threshold: context.config.issues?.confidence_threshold ?? defaultIssues.confidence_threshold,
-    close_resolved: context.config.issues?.close_resolved ?? defaultIssues.close_resolved,
-    assignees: context.config.issues?.assignees ?? defaultIssues.assignees,
-  };
+  const issuesConfig = resolveIssuesConfig(context.config);
 
   console.log(
     `Issue thresholds: severity>=${issuesConfig.severity_threshold}, confidence>=${issuesConfig.confidence_threshold}`,
@@ -118,27 +112,14 @@ export async function processFindings(
   const fingerprintMap = buildFingerprintMap(existingIssues);
   console.log(`Found ${existingIssues.length} existing issues`);
 
-  // Deduplicate findings
-  const uniqueFindings = deduplicateFindings(findings);
-  console.log(`Processing ${uniqueFindings.length} unique findings`);
-
-  // Filter findings by threshold
-  const filteredFindings = uniqueFindings.filter((finding) =>
-    meetsThresholds(
-      finding.severity,
-      finding.confidence,
+  const { actionableFindings, skippedBelowThreshold } =
+    prepareAndLogFindingsForProcessing(
+      findings,
       issuesConfig.severity_threshold,
       issuesConfig.confidence_threshold,
-    ),
-  );
+    );
 
-  stats.skippedBelowThreshold =
-    uniqueFindings.length - filteredFindings.length;
-  console.log(`${filteredFindings.length} findings meet thresholds`);
-
-  // Sort findings by severity (descending) then confidence (descending)
-  // This ensures high severity/confidence issues are created first when hitting max_new_per_run
-  const actionableFindings = [...filteredFindings].sort(compareFindingsForSort);
+  stats.skippedBelowThreshold = skippedBelowThreshold;
 
   // Detect which languages have findings (for conditional lang: labels)
   const languagesInRun = detectLanguagesInFindings(actionableFindings);
