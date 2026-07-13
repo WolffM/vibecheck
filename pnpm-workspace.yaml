@@ -1,0 +1,10 @@
+packages:
+  - .
+
+# Supply-chain: external packages must be 7 days old before they resolve. Malicious npm
+# releases are near-always caught within hours (Shai-Hulud ~12h, debug/chalk ~2.5h), so we
+# let the ecosystem find them first. @wolffm/* is EXEMPT (verified): it is the cross-ecosystem
+# deploy path and must install immediately — gating it would stall the whole package sync.
+minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@wolffm/*'
