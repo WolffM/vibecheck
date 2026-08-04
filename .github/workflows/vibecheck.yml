@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload analysis results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: vibecheck-results
           path: .vibecheck-output/
@@ -101,7 +101,7 @@ jobs:
     if: always()
     steps:
       - name: Download results
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: vibecheck-results
           path: .vibecheck-output/
