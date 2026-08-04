@@ -23,7 +23,7 @@ jobs:
       has_rust: ${{ steps.detect.outputs.has_rust }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -86,7 +86,7 @@ jobs:
 
       - name: Upload analysis results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: vibecheck-results
           path: .vibecheck-output/
@@ -101,7 +101,7 @@ jobs:
     if: always()
     steps:
       - name: Download results
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: vibecheck-results
           path: .vibecheck-output/
