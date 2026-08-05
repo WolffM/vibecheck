@@ -170,12 +170,12 @@ describe('generateWorkflow', () => {
     });
 
     it('should add comments for disabled tools', () => {
-      const options = createTestOptions({ disabledTools: ['trunk', 'semgrep'] });
+      const options = createTestOptions({ disabledTools: ['trunk', 'opengrep'] });
       const yaml = generateWorkflow(options);
 
       expect(yaml).toContain('# Note: Some tools disabled');
       expect(yaml).toContain('#   trunk: { enabled: false }');
-      expect(yaml).toContain('#   semgrep: { enabled: false }');
+      expect(yaml).toContain('#   opengrep: { enabled: false }');
     });
 
     it('should convert dependency-cruiser to dependency_cruiser in config', () => {
@@ -252,7 +252,7 @@ describe('DEFAULTS', () => {
 describe('DEFAULT_TOOLS', () => {
   it('should include all expected tools', () => {
     expect(DEFAULT_TOOLS).toContain('trunk');
-    expect(DEFAULT_TOOLS).toContain('semgrep');
+    expect(DEFAULT_TOOLS).toContain('opengrep');
     expect(DEFAULT_TOOLS).toContain('jscpd');
     expect(DEFAULT_TOOLS).toContain('tsc');
     expect(DEFAULT_TOOLS).toContain('dependency-cruiser');

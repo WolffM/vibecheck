@@ -24,7 +24,7 @@ import {
   runDependencyCruiser,
   runKnip,
   runEslint,
-  runSemgrep,
+  runOpengrep,
   runRuff,
   runMypy,
   runBandit,
@@ -139,12 +139,12 @@ const TOOL_REGISTRY: ToolDefinition[] = [
     configKey: "knip",
   },
   {
-    name: "semgrep",
-    displayName: "Semgrep (Security)",
+    name: "opengrep",
+    displayName: "Opengrep (Security)",
     defaultCadence: "weekly",
     detector: () => true, // Try on all repos
-    run: (rootPath, config) => runSemgrep(rootPath, config),
-    configKey: "semgrep",
+    run: (rootPath, config) => runOpengrep(rootPath, config),
+    configKey: "opengrep",
   },
 
   // Python tools
@@ -255,7 +255,10 @@ function getToolConfig(
   | undefined {
   const tools = config.tools as Record<string, unknown> | undefined;
   if (!tools) return undefined;
-  return tools[toolKey] as
+  // "semgrep" is accepted as a legacy config alias for "opengrep"
+  const entry =
+    tools[toolKey] ?? (toolKey === "opengrep" ? tools.semgrep : undefined);
+  return entry as
     | {
         enabled?: boolean | "auto" | Cadence;
         config_path?: string;

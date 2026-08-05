@@ -46,7 +46,7 @@ export {
 } from "./kotlin.js";
 
 // Security parsers (cross-language)
-export { parseSemgrepOutput, type SemgrepOutput } from "./security.js";
+export { parseOpengrepOutput, type OpengrepOutput } from "./security.js";
 
 // Rust parsers
 export {

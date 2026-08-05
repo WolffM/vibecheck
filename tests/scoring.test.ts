@@ -20,8 +20,8 @@ import {
   mapDepcruiseConfidence,
   mapKnipSeverity,
   mapKnipConfidence,
-  mapSemgrepSeverity,
-  mapSemgrepConfidence,
+  mapOpengrepSeverity,
+  mapOpengrepConfidence,
   classifyLayer,
   determineAutofixLevel,
   meetsThresholds,
@@ -136,18 +136,18 @@ describe('knip mapping', () => {
   });
 });
 
-describe('semgrep mapping', () => {
-  it('should map severity from semgrep levels', () => {
-    expect(mapSemgrepSeverity('error')).toBe('high');
-    expect(mapSemgrepSeverity('high')).toBe('high');
-    expect(mapSemgrepSeverity('warning')).toBe('medium');
-    expect(mapSemgrepSeverity('info')).toBe('low');
+describe('opengrep mapping', () => {
+  it('should map severity from opengrep levels', () => {
+    expect(mapOpengrepSeverity('error')).toBe('high');
+    expect(mapOpengrepSeverity('high')).toBe('high');
+    expect(mapOpengrepSeverity('warning')).toBe('medium');
+    expect(mapOpengrepSeverity('info')).toBe('low');
   });
 
   it('should map confidence', () => {
-    expect(mapSemgrepConfidence('high')).toBe('high');
-    expect(mapSemgrepConfidence('medium')).toBe('medium');
-    expect(mapSemgrepConfidence(undefined)).toBe('medium');
+    expect(mapOpengrepConfidence('high')).toBe('high');
+    expect(mapOpengrepConfidence('medium')).toBe('medium');
+    expect(mapOpengrepConfidence(undefined)).toBe('medium');
   });
 });
 
@@ -197,7 +197,7 @@ describe('mypy mapping', () => {
 describe('classifyLayer', () => {
   it('should classify security rules', () => {
     expect(classifyLayer('eslint', 'no-eval')).toBe('security');
-    expect(classifyLayer('semgrep', 'injection-rule')).toBe('security');
+    expect(classifyLayer('opengrep', 'injection-rule')).toBe('security');
   });
 
   it('should classify architecture tools', () => {

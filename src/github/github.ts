@@ -362,7 +362,7 @@ export const DEFAULT_LABELS = [
     description: "Found by dependency-cruiser",
   },
   { name: "tool:knip", color: "fca311", description: "Found by Knip" },
-  { name: "tool:semgrep", color: "14b8a6", description: "Found by Semgrep" },
+  { name: "tool:opengrep", color: "14b8a6", description: "Found by Opengrep" },
   { name: "tool:trunk", color: "10b981", description: "Found by Trunk" },
   // Python tools
   { name: "tool:ruff", color: "d4aa00", description: "Found by Ruff" },

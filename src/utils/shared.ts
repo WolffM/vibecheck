@@ -260,7 +260,7 @@ export function getLanguageFromPath(
 
 /**
  * Map tool name to language for labeling.
- * Returns null for tools that work across languages (semgrep, trunk, jscpd).
+ * Returns null for tools that work across languages (opengrep, trunk, jscpd).
  */
 export function getToolLanguage(tool: string): string | null {
   const toolLower = tool.toLowerCase();

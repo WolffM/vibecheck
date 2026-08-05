@@ -33,7 +33,7 @@ const SECURITY_PATTERNS = [
  */
 export function classifyLayer(tool: ToolName, ruleId: string): Layer {
   // Security tools are always security layer
-  if (tool === "bandit" || tool === "spotbugs") {
+  if (tool === "bandit" || tool === "spotbugs" || tool === "opengrep") {
     // SpotBugs can have non-security findings
     const ruleIdLower = ruleId.toLowerCase();
     if (

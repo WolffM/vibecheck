@@ -462,16 +462,16 @@ const GENERIC_TOOL_HINTS: Partial<Record<string, (finding: Finding) => Suggested
       ],
       acceptance: ["No unused code warnings", "Codebase is cleaner"],
     }),
-    semgrep: (finding) => ({
+    opengrep: (finding) => ({
       goal: `Address security/quality issue: ${finding.ruleId}`,
       steps: [
-        "Review the semgrep rule documentation",
+        "Review the opengrep rule documentation",
         "Understand the security or quality concern",
         "Apply the recommended fix pattern",
         "Add tests to prevent regression",
       ],
       acceptance: [
-        "Semgrep finding is resolved",
+        "Opengrep finding is resolved",
         "Security concern is addressed",
         "Tests verify the fix",
       ],

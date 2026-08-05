@@ -57,9 +57,8 @@ interface KnipConfig extends ToolConfig {
   config_path?: string;
 }
 
-interface SemgrepConfig extends ToolConfig {
-  config?: string;
-  rules_path?: string;
+interface OpengrepConfig extends ToolConfig {
+  config_path?: string; // Path to local opengrep rules
 }
 
 // Python tool configs
@@ -119,7 +118,9 @@ export interface ToolsConfig {
   jscpd?: JscpdConfig;
   dependency_cruiser?: DependencyCruiserConfig;
   knip?: KnipConfig;
-  semgrep?: SemgrepConfig;
+  opengrep?: OpengrepConfig;
+  /** @deprecated Legacy alias for opengrep (vibeCheck used Semgrep before v-next) */
+  semgrep?: OpengrepConfig;
   // Python tools
   ruff?: RuffConfig;
   mypy?: MypyConfig;
@@ -309,7 +310,7 @@ export type KnownToolName =
   | "cargo-audit"
   | "cargo-deny"
   // Security
-  | "semgrep"
+  | "opengrep"
   // Trunk meta-linter (and common sub-linters)
   | "trunk"
   | "markdownlint"

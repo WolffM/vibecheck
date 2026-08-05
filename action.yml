@@ -123,12 +123,35 @@ runs:
           echo "No Python files detected"
         fi
 
+    - name: Install Opengrep (Security Scanner)
+      shell: bash
+      run: |
+        # Opengrep (open-source semgrep fork) scans all code, not just Python.
+        # Installed as a pinned static binary; no hosted registry involved.
+        OPENGREP_VERSION="v1.26.0"
+        case "$(uname -m)" in
+          aarch64|arm64) OPENGREP_ARCH="aarch64" ;;
+          *) OPENGREP_ARCH="x86" ;;
+        esac
+        mkdir -p "$HOME/.local/bin"
+        if curl -fsSL -o "$HOME/.local/bin/opengrep" \
+          "https://github.com/opengrep/opengrep/releases/download/${OPENGREP_VERSION}/opengrep_manylinux_${OPENGREP_ARCH}"; then
+          chmod +x "$HOME/.local/bin/opengrep"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        else
+          echo "::warning::opengrep install failed, security scanning will be skipped"
+        fi
+
+        # Community security rules (fork of the pre-relicense semgrep ruleset)
+        if git clone --depth 1 https://github.com/opengrep/opengrep-rules.git "$RUNNER_TEMP/opengrep-rules"; then
+          echo "VIBECHECK_OPENGREP_RULES=$RUNNER_TEMP/opengrep-rules" >> "$GITHUB_ENV"
+        else
+          echo "::warning::opengrep-rules clone failed, security scanning will be skipped"
+        fi
+
     - name: Install Python Analysis Tools
       shell: bash
       run: |
-        # Always install semgrep for security scanning (works on all code, not just Python)
-        pip install semgrep
-
         # Install Python-specific tools only if Python files detected
         if [ "${{ steps.detect-python.outputs.has_python }}" == "true" ]; then
           echo "Installing Python analysis tools (ruff, mypy, bandit)..."

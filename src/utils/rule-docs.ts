@@ -51,9 +51,10 @@ export function getRuleDocUrl(tool: string, ruleId: string): string | null {
     return getEslintRuleDocUrl(ruleId);
   }
 
-  // Semgrep rules
-  if (tool === "semgrep") {
-    return `https://semgrep.dev/r?q=${encodeURIComponent(ruleId)}`;
+  // Opengrep rules (community fork of the semgrep ruleset)
+  if (tool === "opengrep") {
+    const shortId = ruleId.split(".").pop() ?? ruleId;
+    return `https://github.com/search?q=repo%3Aopengrep%2Fopengrep-rules+${encodeURIComponent(shortId)}&type=code`;
   }
 
   // Ruff rules

@@ -146,7 +146,7 @@ issues:
 tools:
   jscpd:
     enabled: false # Disable duplicate detection
-  semgrep:
+  opengrep:
     enabled: true # Always run security scanning
   knip:
     enabled: weekly # Run unused code detection weekly
@@ -201,7 +201,7 @@ This allows vibeCheck to track issues across minor code changes.
 | jscpd              | Duplicate code detection   |
 | dependency-cruiser | Circular dependencies      |
 | knip               | Unused exports/files       |
-| Semgrep            | Security scanning          |
+| Opengrep           | Security scanning          |
 
 ### Python
 

@@ -87,19 +87,27 @@
         "knip": {
           "$ref": "#/definitions/toolConfigWithPath"
         },
+        "opengrep": {
+          "allOf": [
+            { "$ref": "#/definitions/toolConfig" },
+            {
+              "properties": {
+                "config_path": {
+                  "type": "string",
+                  "description": "Path to local opengrep rules"
+                }
+              }
+            }
+          ]
+        },
         "semgrep": {
           "allOf": [
             { "$ref": "#/definitions/toolConfig" },
             {
               "properties": {
-                "config": {
+                "config_path": {
                   "type": "string",
-                  "default": "p/default",
-                  "description": "Semgrep config to use"
-                },
-                "rules_path": {
-                  "type": "string",
-                  "description": "Path to local semgrep rules"
+                  "description": "Deprecated alias for opengrep"
                 }
               }
             }

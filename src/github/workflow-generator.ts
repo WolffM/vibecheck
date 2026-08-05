@@ -23,7 +23,7 @@ export const DEFAULTS: WorkflowOptions = {
 
 export const DEFAULT_TOOLS = [
   'trunk',
-  'semgrep',
+  'opengrep',
   'jscpd',
   'tsc',
   'dependency-cruiser',

@@ -2,11 +2,11 @@
  * Security Tool Parsers
  *
  * Parsers for cross-language security analysis tools:
- * - Semgrep (security vulnerability detection)
+ * - Opengrep (security vulnerability detection; semgrep-compatible JSON output)
  */
 
 import { buildLocation, createFinding, parseResults } from "../utils/parser-utils.js";
-import { mapSemgrepConfidence, mapSemgrepSeverity } from "../scoring/index.js";
+import { mapOpengrepConfidence, mapOpengrepSeverity } from "../scoring/index.js";
 import type { Finding } from "../core/types.js";
 
 // ============================================================================
@@ -14,32 +14,32 @@ import type { Finding } from "../core/types.js";
 // ============================================================================
 
 /**
- * Shorten a semgrep rule ID for display in titles.
+ * Shorten an opengrep rule ID for display in titles.
  * Extracts the meaningful part from patterns like:
  * - python.lang.security.audit.exec-detected.exec-detected -> exec-detected
  * - javascript.lang.security.detect-child-process.detect-child-process -> detect-child-process
  */
-function shortenSemgrepRuleId(ruleId: string): string {
+function shortenOpengrepRuleId(ruleId: string): string {
   const parts = ruleId.split(".");
-  
-  // If the last two parts are identical (common semgrep pattern), use just one
+
+  // If the last two parts are identical (common rule-id pattern), use just one
   if (parts.length >= 2 && parts[parts.length - 1] === parts[parts.length - 2]) {
     return parts[parts.length - 1];
   }
-  
+
   // Otherwise use the last part
   if (parts.length > 0) {
     return parts[parts.length - 1];
   }
-  
+
   return ruleId;
 }
 
 // ============================================================================
-// Semgrep Parser
+// Opengrep Parser
 // ============================================================================
 
-interface SemgrepResult {
+interface OpengrepResult {
   check_id: string;
   path: string;
   start: { line: number; col: number };
@@ -56,17 +56,17 @@ interface SemgrepResult {
   };
 }
 
-export interface SemgrepOutput {
-  results: SemgrepResult[];
+export interface OpengrepOutput {
+  results: OpengrepResult[];
 }
 
 /**
- * Parse semgrep JSON output into Findings.
+ * Parse opengrep JSON output into Findings.
  */
-export function parseSemgrepOutput(output: SemgrepOutput): Finding[] {
+export function parseOpengrepOutput(output: OpengrepOutput): Finding[] {
   return parseResults(output.results, (result) => {
     const hasAutofix = !!result.extra.fix;
-    const shortRuleId = shortenSemgrepRuleId(result.check_id);
+    const shortRuleId = shortenOpengrepRuleId(result.check_id);
     const metadata = result.extra.metadata || {};
 
     // Extract CWE labels from metadata
@@ -110,12 +110,12 @@ export function parseSemgrepOutput(output: SemgrepOutput): Finding[] {
 
     return createFinding({
       result,
-      tool: "semgrep",
+      tool: "opengrep",
       ruleId: result.check_id,
-      title: `Semgrep: ${shortRuleId}`,
+      title: `Opengrep: ${shortRuleId}`,
       message: result.extra.message,
-      severity: mapSemgrepSeverity(result.extra.severity),
-      confidence: mapSemgrepConfidence(
+      severity: mapOpengrepSeverity(result.extra.severity),
+      confidence: mapOpengrepConfidence(
         result.extra.metadata?.confidence as string | undefined,
       ),
       location: buildLocation(

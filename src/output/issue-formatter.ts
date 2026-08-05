@@ -66,7 +66,10 @@ function formatLinkTitle(url: string): string {
     return ghsaMatch ? ghsaMatch[0] : "GitHub Advisory";
   }
 
-  // Semgrep rules
+  // Opengrep rules
+  if (url.includes("opengrep")) return "Opengrep Rule";
+
+  // Semgrep rules (legacy links in older issues)
   if (url.includes("semgrep.dev")) return "Semgrep Rule";
 
   // OWASP

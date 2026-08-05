@@ -240,15 +240,15 @@ export function mapKnipConfidence(issueType: string): Confidence {
 }
 
 // ============================================================================
-// Semgrep Mappings
+// Opengrep Mappings
 // ============================================================================
 
 /**
- * Map semgrep findings to severity.
- * Uses semgrep's own severity when available.
+ * Map opengrep findings to severity.
+ * Uses opengrep's own severity when available.
  */
-export function mapSemgrepSeverity(semgrepSeverity: string): Severity {
-  const normalized = semgrepSeverity.toLowerCase();
+export function mapOpengrepSeverity(opengrepSeverity: string): Severity {
+  const normalized = opengrepSeverity.toLowerCase();
   if (normalized === "error" || normalized === "high") {
     return "high";
   }
@@ -262,13 +262,13 @@ export function mapSemgrepSeverity(semgrepSeverity: string): Severity {
 }
 
 /**
- * Map semgrep findings to confidence.
+ * Map opengrep findings to confidence.
  */
-export function mapSemgrepConfidence(semgrepConfidence?: string): Confidence {
-  if (!semgrepConfidence) {
+export function mapOpengrepConfidence(opengrepConfidence?: string): Confidence {
+  if (!opengrepConfidence) {
     return "medium";
   }
-  const normalized = semgrepConfidence.toLowerCase();
+  const normalized = opengrepConfidence.toLowerCase();
   if (normalized === "high") {
     return "high";
   }
