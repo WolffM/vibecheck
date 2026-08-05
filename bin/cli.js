@@ -5,6 +5,7 @@
  *
  * Usage:
  *   vibecheck analyze [options]
+ *   vibecheck audit [options]
  *   vibecheck detect [path]
  *
  * Examples:
@@ -32,6 +33,7 @@ Usage:
 
 Commands:
   analyze     Run static analysis on a repository
+  audit       Run the code-quality audit (writes .vibecheck/audit.md)
   detect      Detect repository profile (languages, tools)
   help        Show this help message
 
@@ -87,6 +89,10 @@ function runScript(scriptPath, scriptArgs = []) {
 switch (command) {
   case "analyze":
     runScript("core/analyze.ts", args.slice(1));
+    break;
+
+  case "audit":
+    runScript("audit/cli.ts", args.slice(1));
     break;
 
   case "detect":

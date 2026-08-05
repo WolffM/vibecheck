@@ -191,6 +191,31 @@ export interface AutofixConfig {
   [tool: string]: Partial<AutofixToolConfig> | false;
 }
 
+export interface AuditLaneConfig {
+  enabled?: boolean;
+}
+
+export interface AuditDuplicationLaneConfig extends AuditLaneConfig {
+  min_lines?: number;
+}
+
+export interface AuditLanesConfig {
+  size?: AuditLaneConfig;
+  arrival?: AuditLaneConfig;
+  duplication?: AuditDuplicationLaneConfig;
+  consistency?: AuditLaneConfig;
+}
+
+export interface AuditConfig {
+  enabled?: boolean;
+  dynamic_tests?: boolean;
+  report_channel?: "issue" | "pr";
+  max_report_items?: number;
+  /** Ascending code-line boundaries for size tiers 1/2/3. */
+  size_tiers?: number[];
+  lanes?: AuditLanesConfig;
+}
+
 export interface VibeCopConfig {
   version: number;
   schedule?: ScheduleConfig;
@@ -200,6 +225,7 @@ export interface VibeCopConfig {
   output?: OutputConfig;
   llm?: LlmConfig;
   autofix?: AutofixConfig;
+  audit?: AuditConfig;
 }
 
 /**
