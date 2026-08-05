@@ -1,24 +1,26 @@
-# vibeCheck Audit (`mode: audit`) — Design Plan
+# vibe-compactor — Design Plan v0.1
 
-Status: **v4.1 — FROZEN** after four review rounds · Owner: @WolffM · 2026-08-05
+Status: **v0.1 — LOCKED** (2026-08-05) · Owner: @WolffM
 
-**Freeze rule: v5 requires M1 data.** Rounds progressed from semantic bugs
-(v2) to statistical bugs (v3) to validation-of-the-validation (v4) — the
-signature of a document at the limit of what review can extract. The
-remaining unknowns (will the ratchet ever fire, will anyone file an event,
-which channel gets answered) are reachable only through contact. Further
-pre-data revision has negative expected value.
+**Naming:** `vibe-compactor` is the project name. The user-facing surface is
+**vibeCheck Audit** — action input `mode: audit`, CLI `vibecheck audit` —
+because the product is alarm-only (it compacts nothing) and "compaction"
+collides with LLM context terminology. Project name internal, audit name
+external.
 
 A deterministic, no-LLM audit mode for vibeCheck that scrutinizes structural
 code quality and delivers a prioritized, evidence-backed report to human
-maintainers. Naming: "vibe-compactor" retired. Action input: `mode: audit`.
+maintainers.
 
-v4.1 folds in round-4 answers: first-contact repos pulled into M2 (the
-customer loop was the last open circularity), noise-rate measured against
-shipped-default firing (the ratchet was censoring its own instrument),
-ULID-stamped ledger events, a constants taxonomy with decision bands,
-abandonment-study confound controls, the inspection protocol dissolved into
-the ledger, and the segment bet named.
+**Lock rule:** revisions to this plan require M1 dogfood data, M2
+first-contact data, or a documented segment-bet pivot (§1). Constants marked
+analytic (§10.1) are set by simulation, not by edits here.
+
+Drafting history (internal drafts v2–v4.2 across four review rounds:
+semantic fixes → statistical fixes → validation-of-the-validation →
+customer loop + local-first architecture) is preserved in git history;
+snapshot tag `audit-plan-v4.1` marks the pre-local-first freeze candidate.
+The companion build plan is `docs/vibe-compactor-implementation.md`.
 
 ---
 
@@ -39,6 +41,17 @@ the ledger, and the segment bet named.
 ### Non-goals
 
 No LLM anywhere. No style findings. No PR blocking (v1). No hand-holding.
+
+### Local-first (v4.2)
+
+The core is a CLI; GitHub is a delivery adapter. `npx vibecheck audit` in
+any checkout runs the full pipeline — detectors, scoring, ledger fold,
+report render — and writes everything as local files. The action wraps the
+identical CLI and adds only publishing (issue body, data-file push,
+artifacts). Consequences: dogfooding needs no workflow; a maintainer can
+preview an audit before publishing; a GitHub outage or another forge
+degrades delivery, never the audit; and every GitHub-touching behavior in
+this doc is, by construction, optional.
 
 ### Who reads what
 
@@ -287,21 +300,39 @@ buckets risks suppressing the wrong finding.
 
 ## 6. Report & delivery
 
-### Channel: issue, decided on operational grounds
+### One renderer, multiple sinks (v4.2)
 
-One living issue, edited in place. No stale-PR bots, no force-push
-orphaning threads, no branch-protection interaction. Entry-rate data across
-channels is recorded but acknowledged confounded (self-selection); only a
-dramatic documented dogfood difference overturns the default.
-`report_channel: pr` remains available, costs documented. Acknowledgment =
-first ledger event.
+The report is rendered once as markdown. Sinks:
+
+- **Local file (always, every run, every environment):**
+  `.vibecheck/audit.md`, overwritten in place — the file analog of the
+  living issue. Full machine-readable results land beside it
+  (`.vibecheck/out/audit.sarif`, `audit.llm.json`). The starter setup adds
+  `.vibecheck/audit.md` and `.vibecheck/out/` to `.gitignore` by default
+  (regenerable working artifacts; the no-accumulation rule stands) — users
+  who want the report tracked delete the ignore lines and own that choice.
+- **GitHub issue (the action's default publish step):** same markdown as
+  the issue body, one living issue edited in place. Operational-grounds
+  rationale unchanged; `report_channel: pr` remains an option with
+  documented costs. Acknowledgment = first ledger event.
+
+Local runs are first-class, not degraded: the confidence-basis line
+discloses locally missing tools exactly as it discloses them in CI (the
+runners' existing soft-skip pattern).
 
 ### Data-file commits
 
-Action commits `ledger.jsonl` + `trends.json` to the default branch with
-fetch-rebase-retry. On push rejection (branch protection): events attach as
-a workflow artifact; report prints "apply with `npx vibecheck apply-run
-<run-id>`." No data-file PR mode.
+Locally: the CLI updates `ledger.jsonl` + `trends.json` as ordinary files;
+committing them is the user's normal git workflow (the ledger CLI already
+commits locally and never pushes unbidden). In the action: commits to the
+default branch with fetch-rebase-retry; on push rejection (branch
+protection), events attach as a workflow artifact and the report prints
+"apply with `npx vibecheck apply-run <run-id>`." No data-file PR mode.
+
+**Dirty working trees (local runs):** a run on uncommitted changes records
+`dirty: true` in its trends entry; trend comparisons only ever use
+clean-tree entries, so a maintainer poking at a half-finished refactor
+can't skew the derivative headline.
 
 ### Report structure
 
@@ -334,13 +365,23 @@ Cron weekly + dispatch; activity gate exits in seconds when quiet;
 `fetch-depth: 0` wanted, shallow soft-fails to young-repo mode; ledger fold
 prevents re-reporting; caches via actions/cache.
 
+**The activity gate is a CI cost guard only (v4.2):** local `vibecheck
+audit` always runs — an explicit invocation is its own justification.
+`--gate` exists for anyone scripting cron-like local behavior.
+
 ---
 
 ## 8. Customer delivery
 
-`uses: WolffM/vibecheck@main`, `mode: audit`, zero new secrets.
-Permissions: `contents: write`, `issues: write` (+ `pull-requests: write`
-only for `report_channel: pr`).
+Two equal entry points (v4.2):
+
+- **Local:** `npx vibecheck audit` in any checkout → `.vibecheck/audit.md`
+  + data files updated. No token, no workflow, no GitHub. This is also the
+  M1 dogfood path and the demo path ("run it on your repo right now").
+- **CI:** `uses: WolffM/vibecheck@main`, `mode: audit`, zero new secrets.
+  Permissions: `contents: write`, `issues: write` (+ `pull-requests:
+  write` only for `report_channel: pr`). The action = install pinned tools
+  → run the same CLI → publish (issue, data-file push, artifacts).
 
 ```yaml
 audit:
@@ -367,10 +408,14 @@ src/audit/
                       # smells, consistency
   scoring.ts          # anchors, floors, coverage-aware gate, rankings
   ledger.ts           # JSONL events (ULID), fold, ratchet, rename migration
-  report.ts           # issue/PR render, trends.json
+  report.ts           # markdown render (sink-agnostic), trends.json
+  publish/            # sinks: local file (core), github issue/pr, artifacts
   backtest.ts         # §10 harness + inspection sampler + anchor perturbation
   rules/              # ast-grep rulepack
 ```
+
+The core (`index.ts` → `report.ts`) has no GitHub imports; `publish/github*`
+is the only module that touches the API, and only the action wires it in.
 
 Package map from shared repo-detection. New runners join the existing
 registry, pinned + soft-fail.
@@ -453,12 +498,14 @@ subject until after the decisions it informs). Therefore:
 
 ## 11. Milestones
 
-- **M1 — the loop + the epistemics (in-house only):** exclusions, arrival
-  forensics (graph-joined co-change), size lane, coverage-aware gate, JSONL
-  ledger (ULID) + CLI verbs + ratchet + `apply-run`, issue channel (+pr
-  option), trends.json, backtest harness, **§10.1 power simulations +
-  anchor perturbation check** as exit criteria. Dogfood on vibecheck
-  itself.
+- **M1 — the loop + the epistemics (in-house only, CLI-first):**
+  `vibecheck audit` runs locally end-to-end before any action wiring —
+  exclusions, arrival forensics (graph-joined co-change), size lane,
+  coverage-aware gate, JSONL ledger (ULID) + CLI verbs + ratchet +
+  `apply-run`, local report sink, trends.json, backtest harness, **§10.1
+  power simulations + anchor perturbation check** as exit criteria. The
+  GitHub issue sink is the last M1 item, not the first. Dogfood on
+  vibecheck itself.
 - **M2 — detector breadth + first contact:** lizard, ast-grep rulepack,
   type-coverage, similarity-ts, skylos, deptry, cargo-shear; dead-code /
   duplication / smells / consistency lanes; **2–3 design-partner repos
@@ -519,6 +566,6 @@ subject until after the decisions it informs). Therefore:
 
 ---
 
-*Frozen 2026-08-05. Revisions to this document require M1 dogfood data,
-M2 first-contact data, or a documented segment-bet pivot. Constants marked
+*Locked as v0.1 on 2026-08-05. Revisions require M1 dogfood data, M2
+first-contact data, or a documented segment-bet pivot. Constants marked
 analytic are set by the §10.1 simulations, not by edits here.*
