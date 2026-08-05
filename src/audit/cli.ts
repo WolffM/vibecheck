@@ -58,6 +58,10 @@ async function main(): Promise<void> {
       (result.dirty ? " (dirty working tree)" : ""),
   );
   console.log(`  Lanes:       ${result.lanesPlanned.join(", ") || "none"}`);
+  console.log(
+    `  Files:       ${result.candidateFiles.length} candidates` +
+      ` (${result.excluded.length} excluded as generated/vendored)`,
+  );
   console.log(`  Size tiers:  ${result.config.sizeTiers.join(" / ")}`);
   console.log(`  Report:      ${result.config.reportChannel}`);
 }

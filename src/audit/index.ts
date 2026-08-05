@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
+import { applyExclusions, type Exclusion } from "./exclusions.js";
 
 export interface AuditOptions {
   rootPath?: string;
@@ -28,6 +29,23 @@ export interface AuditRunResult {
   /** True when the working tree has uncommitted changes (trends: dirty entry). */
   dirty: boolean;
   lanesPlanned: string[];
+  /** Tracked files that survived the exclusion pre-pass (design §3). */
+  candidateFiles: string[];
+  excluded: Exclusion[];
+}
+
+function listTrackedFiles(rootPath: string): string[] {
+  try {
+    const output = execFileSync("git", ["ls-files", "-z"], {
+      cwd: rootPath,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return output.split("\0").filter((f) => f.length > 0);
+  } catch {
+    return [];
+  }
 }
 
 function gitHead(rootPath: string): { sha: string | null; dirty: boolean } {
@@ -65,11 +83,18 @@ export async function runAudit(
     (lane) => config.lanes[lane].enabled,
   );
 
+  const { kept, excluded } = applyExclusions(
+    rootPath,
+    listTrackedFiles(rootPath),
+  );
+
   return {
     rootPath,
     config,
     anchorSha: sha,
     dirty,
     lanesPlanned: [...lanesPlanned],
+    candidateFiles: kept,
+    excluded,
   };
 }
