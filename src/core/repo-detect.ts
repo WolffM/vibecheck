@@ -467,6 +467,45 @@ function detectToolConfigs(rootPath: string): {
   };
 }
 
+// ============================================================================
+// Repo Age (audit young-repo mode)
+// ============================================================================
+
+export interface RepoAgeProfile {
+  commitCount: number;
+  /** Whole days between first commit and the audit anchor commit. */
+  historyDays: number;
+  /** History < 90 days or < 200 commits — the audit's young-repo mode. */
+  youngRepo: boolean;
+}
+
+const YOUNG_REPO_MAX_DAYS = 90;
+const YOUNG_REPO_MAX_COMMITS = 200;
+
+/**
+ * Classify repo age from history facts. Pure: callers (the audit's git
+ * substrate) supply dates so the same SHA always classifies identically.
+ */
+export function classifyRepoAge(
+  commitCount: number,
+  firstCommitDate: string,
+  anchorDate: string,
+): RepoAgeProfile {
+  const historyDays = Math.max(
+    0,
+    Math.floor(
+      (Date.parse(anchorDate) - Date.parse(firstCommitDate)) /
+        (24 * 60 * 60 * 1000),
+    ),
+  );
+  return {
+    commitCount,
+    historyDays,
+    youngRepo:
+      historyDays < YOUNG_REPO_MAX_DAYS || commitCount < YOUNG_REPO_MAX_COMMITS,
+  };
+}
+
 /**
  * Main detection function - builds complete RepoProfile
  */
