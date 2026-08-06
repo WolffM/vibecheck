@@ -71,14 +71,22 @@ export function resolveSpecifier(
   return null;
 }
 
-/** Forward import graph over the TS/JS subset of candidate files. */
-export function buildImportGraph(
+export interface ImportData {
+  /** Forward graph over resolved relative imports (TS/JS candidates). */
+  graph: Map<string, string[]>;
+  /** Raw package specifiers per file (non-relative, unresolved). */
+  packageImports: Map<string, string[]>;
+}
+
+/** One pass over the TS/JS subset: graph + package import sites. */
+export function buildImportData(
   rootPath: string,
   candidateFiles: string[],
-): Map<string, string[]> {
+): ImportData {
   const tsjs = candidateFiles.filter(isTsJsFile);
   const candidates = new Set(tsjs);
   const graph = new Map<string, string[]>();
+  const packageImports = new Map<string, string[]>();
   for (const file of tsjs) {
     let source: string;
     try {
@@ -88,13 +96,30 @@ export function buildImportGraph(
       continue;
     }
     const targets = new Set<string>();
+    const packages = new Set<string>();
     for (const spec of extractImportSpecifiers(source)) {
-      const resolved = resolveSpecifier(file, spec, candidates);
-      if (resolved && resolved !== file) targets.add(resolved);
+      if (spec.startsWith("./") || spec.startsWith("../")) {
+        const resolved = resolveSpecifier(file, spec, candidates);
+        if (resolved && resolved !== file) targets.add(resolved);
+      } else if (!spec.startsWith("node:")) {
+        const segments = spec.split("/");
+        packages.add(
+          spec.startsWith("@") ? segments.slice(0, 2).join("/") : segments[0],
+        );
+      }
     }
     graph.set(file, [...targets].sort());
+    if (packages.size > 0) packageImports.set(file, [...packages].sort());
   }
-  return graph;
+  return { graph, packageImports };
+}
+
+/** Forward import graph over the TS/JS subset of candidate files. */
+export function buildImportGraph(
+  rootPath: string,
+  candidateFiles: string[],
+): Map<string, string[]> {
+  return buildImportData(rootPath, candidateFiles).graph;
 }
 
 /** Files transitively imported from `start` (excluding `start` itself). */
