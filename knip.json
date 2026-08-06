@@ -1,7 +1,17 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "entry": ["src/core/run-analyze.ts"],
-  "project": ["src/**/*.ts"],
+  "entry": [
+    "src/core/run-analyze.ts",
+    "src/core/analyze.ts",
+    "src/core/repo-detect.ts",
+    "src/audit/cli.ts",
+    "src/audit/ledger-cli.ts",
+    "src/audit/backtest.ts",
+    "src/audit/publish/github-cli.ts",
+    "src/tools/run-autofix.ts",
+    "scripts/*.ts"
+  ],
+  "project": ["src/**/*.ts", "scripts/**/*.ts"],
   "ignore": ["tests/**/*.ts", "test-fixtures/**/*.ts"],
   "ignoreDependencies": ["jscpd"],
   "eslint": false,
