@@ -113,6 +113,11 @@ switch (command) {
     runScript("audit/ledger-cli.ts", args);
     break;
 
+  // Dev-only validation harness (design §10); deliberately not in help.
+  case "backtest":
+    runScript("audit/backtest.ts", args.slice(1));
+    break;
+
   case "detect":
     runScript("core/repo-detect.ts", args.slice(1));
     break;
