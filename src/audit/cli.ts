@@ -63,6 +63,21 @@ async function main(): Promise<void> {
       ` (${result.excluded.length} excluded as generated/vendored)`,
   );
   console.log(`  Size tiers:  ${result.config.sizeTiers.join(" / ")}`);
+  const size = result.lanes.size;
+  if (size) {
+    if (!size.available) {
+      console.log(`  Size lane:   ${size.disclosure}`);
+    } else {
+      const counts = [1, 2, 3].map(
+        (t) => size.entries.filter((e) => e.tier === t).length,
+      );
+      console.log(
+        `  Size lane:   ${size.entries.length} files measured — ` +
+          `tier1: ${counts[0]}, tier2: ${counts[1]}, tier3: ${counts[2]}` +
+          ` (scc ${size.toolVersion ?? "?"})`,
+      );
+    }
+  }
   console.log(`  Report:      ${result.config.reportChannel}`);
 }
 

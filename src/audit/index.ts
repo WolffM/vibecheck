@@ -13,6 +13,7 @@ import { execFileSync } from "node:child_process";
 import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
+import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
 
 export interface AuditOptions {
   rootPath?: string;
@@ -32,6 +33,9 @@ export interface AuditRunResult {
   /** Tracked files that survived the exclusion pre-pass (design §3). */
   candidateFiles: string[];
   excluded: Exclusion[];
+  lanes: {
+    size?: SizeLaneResult;
+  };
 }
 
 function listTrackedFiles(rootPath: string): string[] {
@@ -88,6 +92,11 @@ export async function runAudit(
     listTrackedFiles(rootPath),
   );
 
+  const lanes: AuditRunResult["lanes"] = {};
+  if (config.lanes.size.enabled) {
+    lanes.size = runSizeLane(rootPath, kept, config);
+  }
+
   return {
     rootPath,
     config,
@@ -96,5 +105,6 @@ export async function runAudit(
     lanesPlanned: [...lanesPlanned],
     candidateFiles: kept,
     excluded,
+    lanes,
   };
 }
