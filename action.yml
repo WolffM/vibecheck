@@ -129,6 +129,10 @@ runs:
         else
           echo "::warning::scc install failed; the size lane will be skipped with disclosure"
         fi
+        # Python dead-code coverage (soft-fail; lane discloses absence).
+        if find "${{ github.workspace }}" -name "*.py" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -1 | grep -q .; then
+          pip install --quiet vulture==2.16 || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
+        fi
 
     - name: Run audit
       if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
