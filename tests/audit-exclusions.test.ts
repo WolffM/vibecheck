@@ -101,6 +101,16 @@ describe("applyExclusions", () => {
     expect(forward.kept).toEqual([...forward.kept].sort());
   });
 
+  it("excludes user-attested audit.exclude prefixes with reason config", () => {
+    const { kept, excluded } = applyExclusions(repo, trackedFiles(), [
+      "attributed",
+    ]);
+    const reasons = new Map(excluded.map((e) => [e.path, e.reason]));
+    expect(reasons.get("attributed/gen.ts")).toBe("config");
+    expect(reasons.get("attributed/vendored.ts")).toBe("config");
+    expect(kept).toContain("src/app.ts");
+  });
+
   it("still applies path and header rules outside a git repo", () => {
     const plain = mkdtempSync(join(tmpdir(), "vibecheck-nogit-"));
     try {

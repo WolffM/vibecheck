@@ -22,6 +22,8 @@ export interface ResolvedAuditConfig {
   maxReportItems: number;
   /** Ascending code-line boundaries for size tiers 1/2/3. */
   sizeTiers: [number, number, number];
+  /** Extra excluded path prefixes, normalized without trailing slash. */
+  exclude: string[];
   lanes: {
     size: ResolvedLaneConfig;
     arrival: ResolvedLaneConfig;
@@ -38,6 +40,7 @@ export const DEFAULT_AUDIT_CONFIG: ResolvedAuditConfig = {
   reportChannel: "issue",
   maxReportItems: 15,
   sizeTiers: [500, 1000, 2000],
+  exclude: [],
   lanes: {
     size: { enabled: true },
     arrival: { enabled: true },
@@ -73,6 +76,9 @@ export function resolveAuditConfig(raw?: AuditConfig): ResolvedAuditConfig {
     reportChannel: raw?.report_channel ?? d.reportChannel,
     maxReportItems: raw?.max_report_items ?? d.maxReportItems,
     sizeTiers: resolveSizeTiers(raw?.size_tiers),
+    exclude: (raw?.exclude ?? []).map((p) =>
+      p.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, ""),
+    ),
     lanes: {
       size: { enabled: raw?.lanes?.size?.enabled ?? d.lanes.size.enabled },
       arrival: {

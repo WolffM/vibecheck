@@ -215,6 +215,8 @@ export interface AuditConfig {
   max_report_items?: number;
   /** Ascending code-line boundaries for size tiers 1/2/3. */
   size_tiers?: number[];
+  /** Extra excluded path prefixes (e.g. "backend/custom_nodes"). */
+  exclude?: string[];
   lanes?: AuditLanesConfig;
 }
 

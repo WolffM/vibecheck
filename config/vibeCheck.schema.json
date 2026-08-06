@@ -231,6 +231,12 @@
           "minimum": 1,
           "description": "Maximum worst-offender entries in the report"
         },
+        "exclude": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Extra excluded path prefixes (e.g. backend/custom_nodes)"
+        },
         "size_tiers": {
           "type": "array",
           "items": { "type": "integer", "minimum": 1 },

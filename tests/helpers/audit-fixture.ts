@@ -78,6 +78,7 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
         ],
       },
     },
+    laneScores: [],
     fileScores: [],
     worstOffenders: [
       {

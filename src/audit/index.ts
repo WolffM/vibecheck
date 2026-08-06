@@ -89,6 +89,8 @@ export interface AuditRunResult {
     smells?: SmellsLaneResult;
     consistency?: ConsistencyLaneResult;
   };
+  /** Raw per-lane scores before verdict suppression (calibration input). */
+  laneScores: LaneScore[];
   /** Per-file gate/rank results across all lanes. */
   fileScores: FileScore[];
   worstOffenders: FileScore[];
@@ -163,6 +165,7 @@ export async function runAudit(
   const { kept, excluded } = applyExclusions(
     rootPath,
     listTrackedFiles(rootPath),
+    config.exclude,
   );
 
   const history = collectGitHistory(rootPath);
@@ -345,6 +348,7 @@ export async function runAudit(
     excluded,
     history,
     lanes,
+    laneScores: allLaneScores,
     fileScores,
     worstOffenders: offenders,
     bestFirstTargets: bestFirstTargets(fileScores, blastRadius),

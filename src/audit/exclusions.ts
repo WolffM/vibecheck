@@ -18,7 +18,8 @@ import { execFileSync } from "node:child_process";
 export type ExclusionReason =
   | "path-convention"
   | "gitattributes"
-  | "generated-header";
+  | "generated-header"
+  | "config";
 
 export interface Exclusion {
   path: string;
@@ -39,6 +40,12 @@ const EXCLUDED_DIRS = new Set([
   "__snapshots__",
   "migrations",
   ".vibecheck",
+  // Fixture dirs are test assets — often deliberately-bad code — and
+  // belong with snapshot dirs, not in any lane.
+  "fixtures",
+  "test-fixtures",
+  "__fixtures__",
+  "testdata",
 ]);
 
 const LOCKFILES = new Set([
@@ -133,19 +140,28 @@ function hasGeneratedHeader(absPath: string): boolean {
 
 /**
  * Partition repo-relative paths into kept and excluded. Output order is
- * sorted for determinism regardless of input order.
+ * sorted for determinism regardless of input order. `configExcludes` are
+ * user-attested path prefixes from `audit.exclude`.
  */
 export function applyExclusions(
   rootPath: string,
   files: string[],
+  configExcludes: string[] = [],
 ): ExclusionResult {
   const sorted = [...files].sort();
   const kept: string[] = [];
   const excluded: Exclusion[] = [];
 
+  const matchesConfig = (file: string): boolean =>
+    configExcludes.some(
+      (prefix) => file === prefix || file.startsWith(prefix + "/"),
+    );
+
   const afterConvention: string[] = [];
   for (const file of sorted) {
-    if (matchesPathConvention(file)) {
+    if (matchesConfig(file)) {
+      excluded.push({ path: file, reason: "config" });
+    } else if (matchesPathConvention(file)) {
       excluded.push({ path: file, reason: "path-convention" });
     } else {
       afterConvention.push(file);

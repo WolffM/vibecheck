@@ -8,7 +8,8 @@ const tempDir = mkdtempSync(join(tmpdir(), "vibecheck-audit-"));
 afterAll(() => rmSync(tempDir, { recursive: true, force: true }));
 
 describe("runAudit (scaffold)", () => {
-  it("resolves config and git anchor on this repo", async () => {
+  // Runs the full six-lane audit (knip, jscpd, type-coverage) — slow.
+  it("resolves config and git anchor on this repo", { timeout: 60_000 }, async () => {
     const result = await runAudit({
       rootPath: process.cwd(),
       stampLedger: false,

@@ -39,3 +39,14 @@
 {"id":"01KZANQE8GJC4P5B2N6X5A2Y48","at":"2026-08-05T21:36:26-07:00","kind":"firing","fingerprint":"smells:src/tools/tool-runners.ts","score":0.6918238993710691,"threshold":0.5}
 {"id":"01KZANQE8GJC4P5B2N6X5A2Y49","at":"2026-08-05T21:36:26-07:00","kind":"firing","fingerprint":"smells:tests/audit-report.test.ts","score":1.1363636363636362,"threshold":0.5}
 {"id":"01KZANQE8GJC4P5B2N6X5A2Y4A","at":"2026-08-05T21:36:26-07:00","kind":"firing","fingerprint":"consistency:src/core/run-analyze.ts","score":0.8,"threshold":0.7}
+{"id":"01KZANYFV8769ZT5FYVD8768CV","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"size:action.yml","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768CW","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"size:docs/install.html","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768CX","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/PmdIssues.java","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768CY","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/SpotBugsIssues.java","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768CZ","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/eslint-issues.ts","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768D0","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/ruff-issues.py","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768D1","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/rust-issues.rs","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768D2","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/security-issues.ts","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768D3","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/typescript-errors.ts","score":0,"threshold":1}
+{"id":"01KZANYFV8769ZT5FYVD8768D4","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/bandit-issues.py","score":0,"threshold":0.5}
+{"id":"01KZANYFV8769ZT5FYVD8768D5","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/ruff-issues.py","score":0,"threshold":0.5}

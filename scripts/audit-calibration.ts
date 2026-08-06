@@ -1,10 +1,10 @@
 /**
- * M1 dogfood calibration (T11)
+ * Dogfood calibration (M1 T11, generalized for all lanes in M2)
  *
  * Runs the audit read-only (no ledger stamping, no local sink) across one
- * or more repos and reports the numbers the M1 exit wants:
- *  - lane score distributions and firing rates at the current anchors
- *  - firing-set Jaccard + conditional Spearman (independence, provisional)
+ * or more repos and reports the exit-criteria numbers:
+ *  - per-lane score distributions and firing rates at current anchors
+ *  - pairwise firing-set Jaccard + conditional Spearman (independence)
  *  - anchor perturbation ±1 step (25%) → worst-offender ordering stability
  *
  * Run: npx tsx scripts/audit-calibration.ts <repo-path> [...more]
@@ -15,7 +15,6 @@ import {
   LANE_ANCHORS,
   scoreFiles,
   worstOffenders,
-  type LaneScore,
 } from "../src/audit/scoring.js";
 
 function quantiles(values: number[]): string {
@@ -23,7 +22,7 @@ function quantiles(values: number[]): string {
   const sorted = [...values].sort((a, b) => a - b);
   const q = (p: number) =>
     sorted[Math.min(sorted.length - 1, Math.round(p * (sorted.length - 1)))];
-  return `p25=${q(0.25).toFixed(2)} p50=${q(0.5).toFixed(2)} p75=${q(0.75).toFixed(2)} p90=${q(0.9).toFixed(2)} max=${q(1).toFixed(2)}`;
+  return `p50=${q(0.5).toFixed(2)} p75=${q(0.75).toFixed(2)} p90=${q(0.9).toFixed(2)} max=${q(1).toFixed(2)}`;
 }
 
 function spearman(pairs: [number, number][]): number | null {
@@ -61,12 +60,8 @@ function spearman(pairs: [number, number][]): number | null {
 async function calibrate(rootPath: string): Promise<void> {
   console.log(`\n=== ${rootPath} ===`);
   const result = await runAudit({ rootPath, stampLedger: false });
-
-  const sizeScores = (result.lanes.size?.entries ?? []).map((e) => e.score);
-  const arrivalApplicable = (result.lanes.arrival?.entries ?? []).filter(
-    (e) => e.applicable,
-  );
-  const arrivalScores = arrivalApplicable.map((e) => e.score);
+  const laneScores = result.laneScores;
+  const lanes = [...new Set(laneScores.map((s) => s.lane))].sort();
 
   console.log(
     `files: ${result.candidateFiles.length} candidates, ` +
@@ -74,95 +69,67 @@ async function calibrate(rootPath: string): Promise<void> {
       `young-repo: ${result.history?.age.youngRepo ?? "n/a"}; ` +
       `squash-dominant: ${result.history?.workflowShape.squashDominant ?? "n/a"}`,
   );
-  console.log(`size scores    (${sizeScores.length}): ${quantiles(sizeScores)}`);
-  console.log(
-    `arrival scores (${arrivalScores.length} applicable): ${quantiles(arrivalScores)}`,
-  );
 
-  const laneScores: LaneScore[] = [
-    ...(result.lanes.size?.entries ?? []).map((e) => ({
-      lane: "size",
-      path: e.path,
-      score: e.score,
-      applicable: true,
-    })),
-    ...(result.lanes.arrival?.entries ?? []).map((e) => ({
-      lane: "arrival",
-      path: e.path,
-      score: e.score,
-      applicable: e.applicable,
-    })),
-  ];
-
-  const firing = (lane: string, anchor: number) =>
-    new Set(
-      laneScores
-        .filter((s) => s.lane === lane && s.applicable && s.score >= anchor)
-        .map((s) => s.path),
+  const firingSets = new Map<string, Set<string>>();
+  for (const lane of lanes) {
+    const applicable = laneScores.filter((s) => s.lane === lane && s.applicable);
+    const firing = applicable.filter((s) => s.score >= (LANE_ANCHORS[lane] ?? 1));
+    firingSets.set(lane, new Set(firing.map((s) => s.path)));
+    console.log(
+      `${lane.padEnd(12)} firing ${String(firing.length).padStart(4)}/${String(applicable.length).padEnd(5)} ${quantiles(applicable.map((s) => s.score))}`,
     );
-  const sizeFiring = firing("size", LANE_ANCHORS.size);
-  const arrivalFiring = firing("arrival", LANE_ANCHORS.arrival);
-  const sizePool = new Set(
-    laneScores.filter((s) => s.lane === "size").map((s) => s.path),
-  );
-  const arrivalPool = new Set(arrivalApplicable.map((e) => e.path));
-  console.log(
-    `firing rates: size ${sizeFiring.size}/${sizePool.size}, ` +
-      `arrival ${arrivalFiring.size}/${arrivalPool.size}`,
-  );
+  }
 
-  const intersection = [...sizeFiring].filter((p) => arrivalFiring.has(p));
-  const union = new Set([...sizeFiring, ...arrivalFiring]);
-  const jaccard =
-    union.size === 0 ? null : intersection.length / union.size;
-
-  const scoreByPath = new Map<string, { size?: number; arrival?: number }>();
+  console.log("independence (pairs with both lanes firing somewhere):");
+  const scoreByPath = new Map<string, Map<string, number>>();
   for (const s of laneScores) {
     if (!s.applicable) continue;
-    const entry = scoreByPath.get(s.path) ?? {};
-    entry[s.lane as "size" | "arrival"] = s.score;
+    const entry = scoreByPath.get(s.path) ?? new Map<string, number>();
+    entry.set(s.lane, s.score);
     scoreByPath.set(s.path, entry);
   }
-  const pairs: [number, number][] = [...scoreByPath.values()]
-    .filter(
-      (e) =>
-        e.size !== undefined &&
-        e.arrival !== undefined &&
-        (e.size > 0 || e.arrival > 0),
-    )
-    .map((e) => [e.size as number, e.arrival as number]);
-  const rho = spearman(pairs);
-  console.log(
-    `independence: firing-set Jaccard ${jaccard === null ? "n/a" : jaccard.toFixed(2)} (gate ≤0.5), ` +
-      `conditional Spearman ${rho === null ? "n/a" : rho.toFixed(2)} over ${pairs.length} files (gate ≤0.6)`,
-  );
+  for (let i = 0; i < lanes.length; i++) {
+    for (let j = i + 1; j < lanes.length; j++) {
+      const a = firingSets.get(lanes[i]) as Set<string>;
+      const b = firingSets.get(lanes[j]) as Set<string>;
+      if (a.size === 0 || b.size === 0) continue;
+      const intersection = [...a].filter((p) => b.has(p)).length;
+      const union = new Set([...a, ...b]).size;
+      const pairs: [number, number][] = [];
+      for (const entry of scoreByPath.values()) {
+        const x = entry.get(lanes[i]);
+        const y = entry.get(lanes[j]);
+        if (x !== undefined && y !== undefined && (x > 0 || y > 0)) {
+          pairs.push([x, y]);
+        }
+      }
+      const rho = spearman(pairs);
+      console.log(
+        `  ${lanes[i]}×${lanes[j]}: Jaccard ${(intersection / union).toFixed(2)}` +
+          `, cond. Spearman ${rho === null ? "n/a" : rho.toFixed(2)} (n=${pairs.length})`,
+      );
+    }
+  }
 
-  // Anchor perturbation ±1 step (25%): ordering stability of offenders.
   const baseline = worstOffenders(scoreFiles(laneScores), 15).map((f) => f.path);
   console.log(`offenders @ current anchors: [${baseline.join(", ")}]`);
-  for (const lane of Object.keys(LANE_ANCHORS)) {
+  for (const lane of lanes) {
     for (const factor of [0.75, 1.25]) {
       const anchors = {
         ...LANE_ANCHORS,
-        [lane]: LANE_ANCHORS[lane] * factor,
+        [lane]: (LANE_ANCHORS[lane] ?? 1) * factor,
       };
       const perturbed = worstOffenders(scoreFiles(laneScores, { anchors }), 15).map(
         (f) => f.path,
       );
       const common = baseline.filter((p) => perturbed.includes(p));
-      const orderStable = common.every(
-        (p, i) =>
-          perturbed.indexOf(p) ===
-          perturbed.indexOf(common[0]) + i -
-            common.indexOf(common[0]),
-      );
+      const commonInPerturbedOrder = perturbed.filter((p) => common.includes(p));
+      const orderStable =
+        JSON.stringify(common) === JSON.stringify(commonInPerturbedOrder);
+      const delta = perturbed.length - baseline.length;
       console.log(
-        `perturb ${lane} ×${factor}: ${perturbed.length} offenders, ` +
-          `${common.length}/${baseline.length} of baseline retained, ` +
-          `relative order ${orderStable ? "stable" : "CHANGED"}` +
-          (perturbed.length !== baseline.length
-            ? ` (set: [${perturbed.join(", ")}])`
-            : ""),
+        `  perturb ${lane} ×${factor}: ${common.length}/${baseline.length} retained, ` +
+          `${delta >= 0 ? "+" : ""}${delta} entries, order ${orderStable ? "stable" : "CHANGED"}`,
       );
     }
   }

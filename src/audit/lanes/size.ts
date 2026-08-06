@@ -27,6 +27,33 @@ export function sizeMultiplier(language: string): number {
   return SIZE_LANGUAGE_MULTIPLIERS[language] ?? 1.0;
 }
 
+/**
+ * Data/markup languages scc measures but the size lane must not tier —
+ * a 3000-line JSON blueprint is data, not a maintainability offender
+ * (M1 dogfood: blueprint JSON dominated a repo's offender list).
+ */
+const DATA_LANGUAGES = new Set([
+  "JSON",
+  "YAML",
+  "TOML",
+  "XML",
+  "Markdown",
+  "HTML",
+  "SVG",
+  "CSV",
+  "INI",
+  "Plain Text",
+  "Text",
+  "gitignore",
+  "License",
+  "Properties File",
+  "Jupyter",
+]);
+
+export function isDataLanguage(language: string): boolean {
+  return DATA_LANGUAGES.has(language);
+}
+
 export type SizeTier = 0 | 1 | 2 | 3;
 
 export interface SizeLaneEntry {
@@ -85,7 +112,7 @@ export function buildSizeLane(
   const candidates = new Set(candidateFiles);
   const tiers = config.sizeTiers;
   const entries: SizeLaneEntry[] = scc.files
-    .filter((f) => candidates.has(f.path))
+    .filter((f) => candidates.has(f.path) && !isDataLanguage(f.language))
     .map((f) => {
       const multiplier = sizeMultiplier(f.language);
       return {
