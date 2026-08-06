@@ -13,6 +13,8 @@ import { execFileSync } from "node:child_process";
 import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
+import { collectGitHistory, type GitHistory } from "./git-arrival.js";
+import { runArrivalLane, type ArrivalLaneResult } from "./lanes/arrival.js";
 import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
 
 export interface AuditOptions {
@@ -33,8 +35,10 @@ export interface AuditRunResult {
   /** Tracked files that survived the exclusion pre-pass (design §3). */
   candidateFiles: string[];
   excluded: Exclusion[];
+  history: GitHistory | null;
   lanes: {
     size?: SizeLaneResult;
+    arrival?: ArrivalLaneResult;
   };
 }
 
@@ -92,9 +96,14 @@ export async function runAudit(
     listTrackedFiles(rootPath),
   );
 
+  const history = collectGitHistory(rootPath);
+
   const lanes: AuditRunResult["lanes"] = {};
   if (config.lanes.size.enabled) {
     lanes.size = runSizeLane(rootPath, kept, config);
+  }
+  if (config.lanes.arrival.enabled) {
+    lanes.arrival = runArrivalLane(rootPath, history, kept);
   }
 
   return {
@@ -105,6 +114,7 @@ export async function runAudit(
     lanesPlanned: [...lanesPlanned],
     candidateFiles: kept,
     excluded,
+    history,
     lanes,
   };
 }

@@ -78,6 +78,21 @@ async function main(): Promise<void> {
       );
     }
   }
+  const arrival = result.lanes.arrival;
+  if (arrival) {
+    if (!arrival.available) {
+      console.log(`  Arrival:     ${arrival.disclosures.join("; ")}`);
+    } else {
+      const applicable = arrival.entries.filter((e) => e.applicable);
+      console.log(
+        `  Arrival:     ${applicable.length} files with ≥3 touches` +
+          (arrival.bulkMuted ? " (bulk arrival muted)" : ""),
+      );
+      for (const note of arrival.disclosures) {
+        console.log(`               · ${note}`);
+      }
+    }
+  }
   console.log(`  Report:      ${result.config.reportChannel}`);
 }
 
