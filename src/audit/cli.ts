@@ -106,6 +106,18 @@ async function main(): Promise<void> {
   } else {
     console.log(`  Worst offenders: none pass the ≥2-lane gate + entry threshold`);
   }
+  const floors = Object.entries(result.ledger.floors);
+  if (floors.length > 0) {
+    console.log(
+      `  Standing floors: ` +
+        floors.map(([laneName, floor]) => `${laneName}=${floor}`).join(", "),
+    );
+  }
+  if (result.ledger.suppressed.length > 0) {
+    console.log(
+      `  Ledger: ${result.ledger.suppressed.length} findings suppressed by verdicts`,
+    );
+  }
 }
 
 main().catch((error) => {

@@ -13,13 +13,30 @@ import { execFileSync } from "node:child_process";
 import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
-import { collectGitHistory, type GitHistory } from "./git-arrival.js";
+import {
+  collectGitHistory,
+  collectRenames,
+  type GitHistory,
+} from "./git-arrival.js";
 import { buildImportGraph } from "./import-graph.js";
+import {
+  appendEvents,
+  computeRenameEvents,
+  computeRunEvents,
+  floorsForScoring,
+  foldLedger,
+  makeFingerprint,
+  readLedger,
+  resolveVerdict,
+  type ResolvedVerdict,
+  type VerdictEvent,
+} from "./ledger.js";
 import { runArrivalLane, type ArrivalLaneResult } from "./lanes/arrival.js";
 import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
 import {
   bestFirstTargets,
   computeBlastRadius,
+  LANE_ANCHORS,
   scoreFiles,
   worstOffenders,
   type FileScore,
@@ -31,6 +48,8 @@ export interface AuditOptions {
   configPath?: string;
   /** CI cost guard; local runs never gate unless explicitly asked (design §7). */
   gate?: boolean;
+  /** Append firing/fixed/rename events to the ledger (default true). */
+  stampLedger?: boolean;
 }
 
 export interface AuditRunResult {
@@ -53,6 +72,18 @@ export interface AuditRunResult {
   fileScores: FileScore[];
   worstOffenders: FileScore[];
   bestFirstTargets: FileScore[];
+  ledger: {
+    /** Absolute per-lane floors applied this run (attested ratchet). */
+    floors: Record<string, number>;
+    /** Lane findings suppressed by standing verdicts. */
+    suppressed: ResolvedVerdict[];
+    /** Justifications past their age expiry — refresh-and-quote list. */
+    agingJustifications: VerdictEvent[];
+    /** Fingerprints hard-reopened by growth invalidation. */
+    reopened: string[];
+    /** Machine events (firing/fixed/rename) appended by this run. */
+    stampedEvents: number;
+  };
 }
 
 function listTrackedFiles(rootPath: string): string[] {
@@ -120,7 +151,7 @@ export async function runAudit(
     lanes.arrival = runArrivalLane(rootPath, history, kept, importGraph);
   }
 
-  const laneScores: LaneScore[] = [
+  const allLaneScores: LaneScore[] = [
     ...(lanes.size?.entries.map((e) => ({
       lane: "size",
       path: e.path,
@@ -134,12 +165,68 @@ export async function runAudit(
       applicable: e.applicable,
     })) ?? []),
   ];
-  // Floors default to 0 until the ledger's attested ratchet (T7) feeds them.
-  const fileScores = scoreFiles(laneScores);
   const codeLines = new Map(
     (lanes.size?.entries ?? []).map((e) => [e.path, e.codeLines]),
   );
+
+  // Ledger: rename migration first, then verdicts/floors from the fold.
+  const anchorDate = history?.anchorDate ?? new Date(0).toISOString();
+  let fold = foldLedger(readLedger(rootPath));
+  const renameEvents = computeRenameEvents(
+    fold,
+    collectRenames(rootPath),
+    new Set(kept),
+    anchorDate,
+  );
+  const stampLedger = options.stampLedger ?? true;
+  if (renameEvents.length > 0) {
+    if (stampLedger) appendEvents(rootPath, renameEvents);
+    fold = foldLedger([...fold.events, ...renameEvents]);
+  }
+  const floors = floorsForScoring(fold);
+  const verdictCtx = { anchorDate, codeLines };
+
+  const suppressed: ResolvedVerdict[] = [];
+  const reopened: string[] = [];
+  const laneScores = allLaneScores.filter((score) => {
+    const resolved = resolveVerdict(
+      fold,
+      makeFingerprint(score.lane, score.path),
+      verdictCtx,
+    );
+    if (resolved.status === "reopened-growth") reopened.push(resolved.fingerprint);
+    if (resolved.suppressed) {
+      suppressed.push(resolved);
+      return false;
+    }
+    return true;
+  });
+  const agingJustifications = [...fold.verdicts.keys()]
+    .map((fp) => resolveVerdict(fold, fp, verdictCtx))
+    .filter((r) => r.status === "justified-aging")
+    .map((r) => r.event as VerdictEvent);
+
+  const fileScores = scoreFiles(laneScores, { floors });
   const blastRadius = computeBlastRadius(codeLines, importGraph);
+
+  // Stamp firing/fixed machine events for unsuppressed lane findings,
+  // anchored to the audit date (never wall clock).
+  const currentScores = new Map(
+    laneScores
+      .filter((s) => s.applicable)
+      .map((s) => [
+        makeFingerprint(s.lane, s.path),
+        {
+          score: s.score,
+          threshold: Math.max(
+            LANE_ANCHORS[s.lane] ?? Number.POSITIVE_INFINITY,
+            floors[s.lane] ?? 0,
+          ),
+        },
+      ]),
+  );
+  const runEvents = computeRunEvents(fold, currentScores, anchorDate);
+  if (stampLedger && runEvents.length > 0) appendEvents(rootPath, runEvents);
 
   return {
     rootPath,
@@ -154,5 +241,12 @@ export async function runAudit(
     fileScores,
     worstOffenders: worstOffenders(fileScores, config.maxReportItems),
     bestFirstTargets: bestFirstTargets(fileScores, blastRadius),
+    ledger: {
+      floors,
+      suppressed,
+      agingJustifications,
+      reopened,
+      stampedEvents: renameEvents.length + runEvents.length,
+    },
   };
 }

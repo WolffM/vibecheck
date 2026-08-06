@@ -9,7 +9,10 @@ afterAll(() => rmSync(tempDir, { recursive: true, force: true }));
 
 describe("runAudit (scaffold)", () => {
   it("resolves config and git anchor on this repo", async () => {
-    const result = await runAudit({ rootPath: process.cwd() });
+    const result = await runAudit({
+      rootPath: process.cwd(),
+      stampLedger: false,
+    });
     expect(result.anchorSha).toMatch(/^[0-9a-f]{40}$/);
     expect(result.lanesPlanned).toEqual(["size", "arrival"]);
     expect(result.config.sizeTiers).toEqual([500, 1000, 2000]);

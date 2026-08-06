@@ -221,3 +221,33 @@ export function buildFileHistories(
 export function serializeHistory(history: GitHistory): string {
   return JSON.stringify(history);
 }
+
+/**
+ * Rename map (old → new, newest wins) from a dedicated `-M` pass — the
+ * numstat substrate itself runs `--no-renames`. Chains (a→b→c) resolve by
+ * following the map. Feeds the ledger's rename-migration pass.
+ */
+export function collectRenames(rootPath: string): Map<string, string> {
+  const renames = new Map<string, string>();
+  let raw: string;
+  try {
+    raw = git(rootPath, [
+      "log",
+      "-M",
+      "--diff-filter=R",
+      "--name-status",
+      "--format=%x1e",
+    ]);
+  } catch {
+    return renames;
+  }
+  for (const line of raw.split("\n")) {
+    const match = line.match(/^R\d+\t([^\t]+)\t([^\t]+)$/);
+    if (!match) continue;
+    const from = match[1].replace(/\\/g, "/");
+    const to = match[2].replace(/\\/g, "/");
+    // Newest-first log order: keep the newest rename for a given source.
+    if (!renames.has(from)) renames.set(from, to);
+  }
+  return renames;
+}
