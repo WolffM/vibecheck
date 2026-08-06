@@ -52,7 +52,24 @@ function makeRepo(prefix: string) {
 
 function untestedFixture() {
   const repo = makeRepo("vibecheck-cli-");
-  repo.commit("initial", { "src/naked.ts": "export const naked = 0;\n" });
+  repo.commit("initial", {
+    "src/naked.ts": "export const naked = 0;\n",
+    // The suppression loop only needs the arrival lane; the tool-backed
+    // lanes would have npx fetching knip/jscpd inside a bare temp repo
+    // on CI (slow, networked, and irrelevant here).
+    "vibecheck.json": JSON.stringify({
+      version: 1,
+      audit: {
+        lanes: {
+          size: { enabled: false },
+          deadcode: { enabled: false },
+          duplication: { enabled: false },
+          smells: { enabled: false },
+          consistency: { enabled: false },
+        },
+      },
+    }),
+  });
   for (let round = 1; round <= 3; round++) {
     repo.commit(`grow ${round}`, {
       "src/naked.ts": `export const naked = ${round};\n`,
