@@ -1,0 +1,25 @@
+name: vibeCheck Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history — the audit reads git forensics)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run vibeCheck Audit
+        uses: ./
+        with:
+          mode: audit
+          github_token: ${{ secrets.GITHUB_TOKEN }}

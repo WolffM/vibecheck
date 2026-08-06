@@ -7,6 +7,10 @@ branding:
   color: "purple"
 
 inputs:
+  mode:
+    description: "Run mode: analyze (static analysis + issues) or audit (vibeCheck Audit living report)"
+    required: false
+    default: "analyze"
   cadence:
     description: "Analysis cadence: daily, weekly, or monthly"
     required: false
@@ -82,7 +86,68 @@ runs:
         cd ${{ github.action_path }}
         pnpm install --frozen-lockfile
 
+    # ------------------------------------------------------------------
+    # mode: audit — activity gate, pinned scc, audit run, publish.
+    # The gate is a CI cost guard only; local runs always execute.
+    # ------------------------------------------------------------------
+    - name: Audit activity gate
+      if: inputs.mode == 'audit'
+      id: audit-gate
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}
+        LAST_SHA=$(node -e "try{const t=require('./.vibecheck/trends.json');const c=t.filter(e=>!e.dirty);console.log(c.length?c[c.length-1].sha:'')}catch{console.log('')}")
+        HEAD_SHA=$(git rev-parse HEAD)
+        if [ -n "$LAST_SHA" ] && [ "$LAST_SHA" = "$HEAD_SHA" ]; then
+          echo "active=false" >> $GITHUB_OUTPUT
+          echo "Repository quiet since last audit ($HEAD_SHA) — exiting early."
+        else
+          echo "active=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Install scc (audit)
+      if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
+      shell: bash
+      run: |
+        SCC_VERSION="3.7.0"
+        case "$(uname -m)" in
+          aarch64|arm64) SCC_ARCH="arm64" ;;
+          *) SCC_ARCH="x86_64" ;;
+        esac
+        mkdir -p "$HOME/.local/bin"
+        if curl -sSfL "https://github.com/boyter/scc/releases/download/v${SCC_VERSION}/scc_Linux_${SCC_ARCH}.tar.gz" | tar -xz -C "$HOME/.local/bin" scc; then
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "scc ${SCC_VERSION} installed"
+        else
+          echo "::warning::scc install failed; the size lane will be skipped with disclosure"
+        fi
+
+    - name: Run audit
+      if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        node bin/cli.js audit --root "${{ github.workspace }}"
+
+    - name: Publish audit
+      if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
+      id: audit-publish
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        cd ${{ github.action_path }}
+        node --import tsx src/audit/publish/github-cli.ts --root "${{ github.workspace }}"
+
+    - name: Upload apply-run artifact
+      if: inputs.mode == 'audit' && steps.audit-publish.outputs.push_rejected == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: vibecheck-audit-run-${{ github.run_id }}
+        path: ${{ steps.audit-publish.outputs.artifact_path }}
+
     - name: Detect JS/TS files
+      if: inputs.mode != 'audit'
       id: detect-js
       shell: bash
       run: |
@@ -103,11 +168,13 @@ runs:
       uses: trunk-io/trunk-action/setup@4d5ecc89b2691705fd08c747c78652d2fc806a94 # v1.1.19
 
     - name: Setup Python
+      if: inputs.mode != 'audit'
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "3.11"
 
     - name: Detect Python files
+      if: inputs.mode != 'audit'
       id: detect-python
       shell: bash
       run: |
@@ -124,6 +191,7 @@ runs:
         fi
 
     - name: Install Opengrep (Security Scanner)
+      if: inputs.mode != 'audit'
       shell: bash
       run: |
         # Opengrep (open-source semgrep fork) scans all code, not just Python.
@@ -150,6 +218,7 @@ runs:
         fi
 
     - name: Install Python Analysis Tools
+      if: inputs.mode != 'audit'
       shell: bash
       run: |
         # Install Python-specific tools only if Python files detected
@@ -161,6 +230,7 @@ runs:
         fi
 
     - name: Install JS/TS Analysis Tools
+      if: inputs.mode != 'audit'
       shell: bash
       run: |
         # Install dependency-cruiser and knip globally for cross-repo analysis
@@ -168,7 +238,7 @@ runs:
         npm install -g dependency-cruiser knip
 
     - name: Configure NPM Authentication
-      if: inputs.vibecheck_github_package_token != ''
+      if: inputs.mode != 'audit' && inputs.vibecheck_github_package_token != ''
       shell: bash
       run: |
         # Configure authentication for GitHub Package Registry
@@ -190,6 +260,7 @@ runs:
         echo "NPM authentication configured for GitHub Packages"
 
     - name: Install Target Repo JS Dependencies
+      if: inputs.mode != 'audit'
       shell: bash
       # Allow workflow to continue even if dependencies fail to install
       # Tools that require dependencies (ESLint, TypeScript) will be gracefully skipped
@@ -219,6 +290,7 @@ runs:
         fi
 
     - name: Detect Java files
+      if: inputs.mode != 'audit'
       id: detect-java
       shell: bash
       run: |
@@ -293,6 +365,7 @@ runs:
         fi
 
     - name: Detect Kotlin files
+      if: inputs.mode != 'audit'
       id: detect-kotlin
       shell: bash
       run: |
@@ -318,6 +391,7 @@ runs:
         echo "/tmp/detekt/detekt-cli-${DETEKT_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Detect Rust files
+      if: inputs.mode != 'audit'
       id: detect-rust
       shell: bash
       run: |
@@ -360,6 +434,7 @@ runs:
         done
 
     - name: Run Analysis
+      if: inputs.mode != 'audit'
       id: analyze
       shell: bash
       env:
@@ -396,6 +471,7 @@ runs:
         echo "llm_json_path=$OUTPUT_DIR/results.llm.json" >> $GITHUB_OUTPUT
 
     - name: Check if Code Scanning is available
+      if: inputs.mode != 'audit'
       id: check-code-scanning
       shell: bash
       env:
@@ -424,6 +500,7 @@ runs:
         category: vibeCheck
 
     - name: Generate Summary
+      if: inputs.mode != 'audit'
       shell: bash
       run: |
         OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
@@ -504,7 +581,7 @@ runs:
         fi
 
     - name: Create Config PR
-      if: inputs.create_config_pr == 'true'
+      if: inputs.mode != 'audit' && inputs.create_config_pr == 'true'
       continue-on-error: true
       shell: bash
       env:
@@ -573,7 +650,7 @@ runs:
         echo "Created PR for config files"
 
     - name: Run Autofixes
-      if: inputs.autofix_prs == 'true'
+      if: inputs.mode != 'audit' && inputs.autofix_prs == 'true'
       continue-on-error: true
       shell: bash
       run: |
@@ -594,7 +671,7 @@ runs:
           --output "$OUTPUT_DIR/autofix-results.json"
 
     - name: Create Autofix PRs
-      if: inputs.autofix_prs == 'true'
+      if: inputs.mode != 'audit' && inputs.autofix_prs == 'true'
       continue-on-error: true
       shell: bash
       env:
