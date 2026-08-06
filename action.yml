@@ -96,6 +96,13 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}
+        # Cron cost guard only — an explicit dispatch is its own
+        # justification, exactly like a local run (design §7).
+        if [ "${{ github.event_name }}" != "schedule" ]; then
+          echo "active=true" >> $GITHUB_OUTPUT
+          echo "Explicit ${{ github.event_name }} run — gate bypassed."
+          exit 0
+        fi
         LAST_SHA=$(node -e "try{const t=require('./.vibecheck/trends.json');const c=t.filter(e=>!e.dirty);console.log(c.length?c[c.length-1].sha:'')}catch{console.log('')}")
         # Quiet = no commits since the last audit outside .vibecheck/
         # (the data-file bot commit must not count as activity).
