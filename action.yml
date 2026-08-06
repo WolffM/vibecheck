@@ -97,10 +97,11 @@ runs:
       run: |
         cd ${{ github.workspace }}
         LAST_SHA=$(node -e "try{const t=require('./.vibecheck/trends.json');const c=t.filter(e=>!e.dirty);console.log(c.length?c[c.length-1].sha:'')}catch{console.log('')}")
-        HEAD_SHA=$(git rev-parse HEAD)
-        if [ -n "$LAST_SHA" ] && [ "$LAST_SHA" = "$HEAD_SHA" ]; then
+        # Quiet = no commits since the last audit outside .vibecheck/
+        # (the data-file bot commit must not count as activity).
+        if [ -n "$LAST_SHA" ] && CHANGES=$(git rev-list --count "$LAST_SHA"..HEAD -- . ':(exclude).vibecheck' 2>/dev/null) && [ "$CHANGES" = "0" ]; then
           echo "active=false" >> $GITHUB_OUTPUT
-          echo "Repository quiet since last audit ($HEAD_SHA) — exiting early."
+          echo "Repository quiet since last audit ($LAST_SHA) — exiting early."
         else
           echo "active=true" >> $GITHUB_OUTPUT
         fi
