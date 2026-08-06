@@ -84,6 +84,31 @@ function evidenceFor(result: AuditRunResult, path: string): string {
       parts.push(`snapshot churn in ${pct(arrival.snapshotChurnShare)} of touches`);
     }
   }
+  const dead = result.lanes.deadcode?.entries.find((e) => e.path === path);
+  if (dead && dead.score > 0) {
+    parts.push(
+      dead.unusedFile
+        ? "entire file unreferenced (knip)"
+        : `${plural(dead.deadItems, "definition")} of ${dead.definitionCount} believed dead`,
+    );
+  }
+  const dup = result.lanes.duplication?.entries.find((e) => e.path === path);
+  if (dup && dup.duplicatedLines > 0) {
+    parts.push(
+      `${dup.duplicatedLines} duplicated lines across ${plural(dup.clusterFanOut, "partner file")}`,
+    );
+  }
+  const smell = result.lanes.smells?.entries.find((e) => e.path === path);
+  if (smell && smell.anyCount > 0 && smell.score >= 0.5) {
+    parts.push(`${plural(smell.anyCount, "any-typed identifier")}`);
+  }
+  const cons = result.lanes.consistency?.entries.find((e) => e.path === path);
+  if (cons) {
+    if (cons.copyArtifactOf) parts.push(`copy artifact of \`${cons.copyArtifactOf}\``);
+    if (cons.orphan) parts.push("orphaned — nothing imports it");
+    if (cons.minorityOf) parts.push(`minority provider (${cons.minorityOf})`);
+    if (cons.cycleSize) parts.push(`in a ${cons.cycleSize}-file import cycle`);
+  }
   return parts.join("; ");
 }
 
@@ -169,6 +194,82 @@ function laneSection(result: AuditRunResult): string[] {
         lines.push(`- ${note}`);
       }
     }
+  }
+
+  const deadcode = result.lanes.deadcode;
+  if (deadcode) {
+    lines.push("", "### Dead code (L1)");
+    if (!deadcode.available) {
+      lines.push("", `_${deadcode.disclosures.join("; ")}_`);
+    } else {
+      const flagged = deadcode.entries.filter((e) => e.score > 0);
+      const wholeFiles = deadcode.entries.filter((e) => e.unusedFile);
+      lines.push(
+        "",
+        `${plural(deadcode.entries.length, "file")} assessed (${deadcode.coverage.join(", ")}); ` +
+          `${flagged.length} carry dead-surface findings, ` +
+          `${wholeFiles.length} flagged entirely unreferenced. ` +
+          `Firing: ${entry.aggregates.perLane.deadcode?.firing ?? 0}. Alarm-only — nothing is deleted on your behalf.`,
+      );
+      for (const note of deadcode.disclosures) lines.push(`- ${note}`);
+    }
+  }
+
+  const duplication = result.lanes.duplication;
+  if (duplication) {
+    lines.push("", "### Duplication (L2)");
+    if (!duplication.available) {
+      lines.push("", `_${duplication.disclosure}_`);
+    } else {
+      const dupLines = duplication.entries.reduce(
+        (sum, e) => sum + e.duplicatedLines,
+        0,
+      );
+      lines.push(
+        "",
+        `${plural(duplication.entries.length, "file")} carry clones (${dupLines} duplicated lines repo-wide, ` +
+          `min block ${result.config.lanes.duplication.minLines} lines). ` +
+          `Firing: ${entry.aggregates.perLane.duplication?.firing ?? 0}.`,
+      );
+    }
+  }
+
+  const smells = result.lanes.smells;
+  if (smells) {
+    lines.push("", "### Structural smells (L6)");
+    if (!smells.available) {
+      lines.push("", `_${smells.disclosures.join("; ")}_`);
+    } else {
+      lines.push(
+        "",
+        `Repo is ${smells.typedPercent}% typed (type-coverage). ` +
+          `Firing: ${entry.aggregates.perLane.smells?.firing ?? 0} (low-weighted lane).`,
+      );
+      for (const note of smells.disclosures) lines.push(`- ${note}`);
+    }
+  }
+
+  const consistency = result.lanes.consistency;
+  if (consistency) {
+    lines.push("", "### Consistency & redundant infrastructure (L7)");
+    const flagged = consistency.entries.filter((e) => e.score > 0);
+    lines.push(
+      "",
+      `${flagged.length} of ${plural(consistency.entries.length, "file")} carry consistency findings. ` +
+        `Firing: ${entry.aggregates.perLane.consistency?.firing ?? 0}.`,
+    );
+    if (consistency.categoryFindings.length > 0) {
+      lines.push("", "Multiple providers of one concern (context, per package):");
+      for (const finding of consistency.categoryFindings) {
+        const providers = Object.entries(finding.providers)
+          .map(([name, count]) => `${name} (${count} import sites)`)
+          .join(", ");
+        lines.push(
+          `- ${finding.category}${finding.packageDir ? ` in \`${finding.packageDir}\`` : ""}: ${providers}`,
+        );
+      }
+    }
+    for (const note of consistency.disclosures) lines.push(`- ${note}`);
   }
 
   const languages = new Set(

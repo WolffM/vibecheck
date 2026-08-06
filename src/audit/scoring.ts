@@ -24,16 +24,31 @@
  *    of applicable files — corroborating nothing), so the anchor moved
  *    to the one crisp point the distribution has. Refined from
  *    pre-ratchet firing data only, per §4's calibration-authority rule.
+ *  - deadcode: 0.5 = half the exported/defined surface believed dead
+ *    (whole-file knip claims score 1.0 and clear it trivially).
+ *  - duplication: 0.3 = 30% of the file's code lines duplicated
+ *    elsewhere.
+ *  - smells: 0.5 = one `any` per twenty code lines; low-weighted.
+ *  - consistency: 0.7 = copy artifacts (1.0), orphans (0.8), and
+ *    minority-provider sites (0.7) fire; cycles (0.5) corroborate only.
  */
 export const LANE_ANCHORS: Record<string, number> = {
   size: 1.0,
   arrival: 1.0,
+  deadcode: 0.5,
+  duplication: 0.3,
+  smells: 0.5,
+  consistency: 0.7,
 };
 
 /** Hand-set lane weights applied to anchor-normalized scores. */
 export const LANE_WEIGHTS: Record<string, number> = {
   size: 1.0,
   arrival: 1.0,
+  deadcode: 1.0,
+  duplication: 1.0,
+  smells: 0.5,
+  consistency: 1.0,
 };
 
 /**

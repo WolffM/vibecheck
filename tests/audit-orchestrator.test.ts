@@ -14,7 +14,14 @@ describe("runAudit (scaffold)", () => {
       stampLedger: false,
     });
     expect(result.anchorSha).toMatch(/^[0-9a-f]{40}$/);
-    expect(result.lanesPlanned).toEqual(["size", "arrival"]);
+    expect(result.lanesPlanned).toEqual([
+      "size",
+      "arrival",
+      "deadcode",
+      "duplication",
+      "smells",
+      "consistency",
+    ]);
     expect(result.config.sizeTiers).toEqual([500, 1000, 2000]);
   });
 

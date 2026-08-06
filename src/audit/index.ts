@@ -18,7 +18,17 @@ import {
   collectRenames,
   type GitHistory,
 } from "./git-arrival.js";
-import { buildImportGraph } from "./import-graph.js";
+import { buildImportData } from "./import-graph.js";
+import {
+  buildConsistencyLane,
+  type ConsistencyLaneResult,
+} from "./lanes/consistency.js";
+import { runDeadcodeLane, type DeadcodeLaneResult } from "./lanes/deadcode.js";
+import {
+  runDuplicationLane,
+  type DuplicationLaneResult,
+} from "./lanes/duplication.js";
+import { runSmellsLane, type SmellsLaneResult } from "./lanes/smells.js";
 import {
   appendEvents,
   computeRenameEvents,
@@ -74,6 +84,10 @@ export interface AuditRunResult {
   lanes: {
     size?: SizeLaneResult;
     arrival?: ArrivalLaneResult;
+    deadcode?: DeadcodeLaneResult;
+    duplication?: DuplicationLaneResult;
+    smells?: SmellsLaneResult;
+    consistency?: ConsistencyLaneResult;
   };
   /** Per-file gate/rank results across all lanes. */
   fileScores: FileScore[];
@@ -142,10 +156,9 @@ export async function runAudit(
   const config = resolveAuditConfig(repoConfig.audit);
   const { sha, dirty } = gitHead(rootPath);
 
-  // M1 lanes; T3 (size) and T5 (arrival) replace this stub with real runs.
-  const lanesPlanned = (["size", "arrival"] as const).filter(
-    (lane) => config.lanes[lane].enabled,
-  );
+  const lanesPlanned = (
+    ["size", "arrival", "deadcode", "duplication", "smells", "consistency"] as const
+  ).filter((lane) => config.lanes[lane].enabled);
 
   const { kept, excluded } = applyExclusions(
     rootPath,
@@ -153,14 +166,30 @@ export async function runAudit(
   );
 
   const history = collectGitHistory(rootPath);
-  const importGraph = buildImportGraph(rootPath, kept);
+  const importData = buildImportData(rootPath, kept);
+  const importGraph = importData.graph;
 
   const lanes: AuditRunResult["lanes"] = {};
   if (config.lanes.size.enabled) {
     lanes.size = runSizeLane(rootPath, kept, config);
   }
+  const codeLines = new Map(
+    (lanes.size?.entries ?? []).map((e) => [e.path, e.codeLines]),
+  );
   if (config.lanes.arrival.enabled) {
     lanes.arrival = runArrivalLane(rootPath, history, kept, importGraph);
+  }
+  if (config.lanes.deadcode.enabled) {
+    lanes.deadcode = runDeadcodeLane(rootPath, kept);
+  }
+  if (config.lanes.duplication.enabled) {
+    lanes.duplication = runDuplicationLane(rootPath, kept, codeLines, config);
+  }
+  if (config.lanes.smells.enabled) {
+    lanes.smells = runSmellsLane(rootPath, kept, codeLines);
+  }
+  if (config.lanes.consistency.enabled) {
+    lanes.consistency = buildConsistencyLane(rootPath, kept, importData);
   }
 
   const allLaneScores: LaneScore[] = [
@@ -176,10 +205,42 @@ export async function runAudit(
       score: e.score,
       applicable: e.applicable,
     })) ?? []),
+    ...(lanes.deadcode?.entries.map((e) => ({
+      lane: "deadcode",
+      path: e.path,
+      score: e.score,
+      applicable: e.applicable,
+    })) ?? []),
+    // Duplication entries exist only for files with clones; clone-free
+    // files are still applicable when the tool ran.
+    ...(lanes.duplication?.available
+      ? (() => {
+          const byPath = new Map(
+            (lanes.duplication?.entries ?? []).map((e) => [e.path, e.score]),
+          );
+          return kept
+            .filter((path) => codeLines.has(path))
+            .map((path) => ({
+              lane: "duplication",
+              path,
+              score: byPath.get(path) ?? 0,
+              applicable: true,
+            }));
+        })()
+      : []),
+    ...(lanes.smells?.entries.map((e) => ({
+      lane: "smells",
+      path: e.path,
+      score: e.score,
+      applicable: e.applicable,
+    })) ?? []),
+    ...(lanes.consistency?.entries.map((e) => ({
+      lane: "consistency",
+      path: e.path,
+      score: e.score,
+      applicable: e.applicable,
+    })) ?? []),
   ];
-  const codeLines = new Map(
-    (lanes.size?.entries ?? []).map((e) => [e.path, e.codeLines]),
-  );
 
   // Ledger: rename migration first, then verdicts/floors from the fold.
   const anchorDate = history?.anchorDate ?? new Date(0).toISOString();
@@ -253,11 +314,9 @@ export async function runAudit(
         lanesPlanned.map((lane) => [
           lane,
           {
-            measured:
-              lane === "size"
-                ? (lanes.size?.entries.length ?? 0)
-                : (lanes.arrival?.entries.filter((e) => e.applicable).length ??
-                  0),
+            measured: allLaneScores.filter(
+              (s) => s.lane === lane && s.applicable,
+            ).length,
             firing: fileScores.filter((f) =>
               f.firingLanes.some((fl) => fl.lane === lane),
             ).length,

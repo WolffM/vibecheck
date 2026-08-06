@@ -245,6 +245,8 @@
           "properties": {
             "size": { "$ref": "#/definitions/auditLane" },
             "arrival": { "$ref": "#/definitions/auditLane" },
+            "deadcode": { "$ref": "#/definitions/auditLane" },
+            "smells": { "$ref": "#/definitions/auditLane" },
             "duplication": {
               "allOf": [
                 { "$ref": "#/definitions/auditLane" },

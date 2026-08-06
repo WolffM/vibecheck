@@ -25,7 +25,9 @@ export interface ResolvedAuditConfig {
   lanes: {
     size: ResolvedLaneConfig;
     arrival: ResolvedLaneConfig;
+    deadcode: ResolvedLaneConfig;
     duplication: ResolvedDuplicationLaneConfig;
+    smells: ResolvedLaneConfig;
     consistency: ResolvedLaneConfig;
   };
 }
@@ -39,7 +41,9 @@ export const DEFAULT_AUDIT_CONFIG: ResolvedAuditConfig = {
   lanes: {
     size: { enabled: true },
     arrival: { enabled: true },
+    deadcode: { enabled: true },
     duplication: { enabled: true, minLines: 30 },
+    smells: { enabled: true },
     consistency: { enabled: true },
   },
 };
@@ -74,11 +78,17 @@ export function resolveAuditConfig(raw?: AuditConfig): ResolvedAuditConfig {
       arrival: {
         enabled: raw?.lanes?.arrival?.enabled ?? d.lanes.arrival.enabled,
       },
+      deadcode: {
+        enabled: raw?.lanes?.deadcode?.enabled ?? d.lanes.deadcode.enabled,
+      },
       duplication: {
         enabled:
           raw?.lanes?.duplication?.enabled ?? d.lanes.duplication.enabled,
         minLines:
           raw?.lanes?.duplication?.min_lines ?? d.lanes.duplication.minLines,
+      },
+      smells: {
+        enabled: raw?.lanes?.smells?.enabled ?? d.lanes.smells.enabled,
       },
       consistency: {
         enabled:

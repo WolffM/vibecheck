@@ -55,20 +55,18 @@ async function main(): Promise<void> {
 
   const { reportPath } = publishLocal(result);
 
-  const size = result.lanes.size;
-  const arrival = result.lanes.arrival;
   const laneBits: string[] = [];
-  if (size) {
-    laneBits.push(
-      size.available ? `size (${size.entries.length} measured)` : "size (skipped)",
-    );
-  }
-  if (arrival) {
-    laneBits.push(
-      arrival.available
-        ? `arrival (${arrival.entries.filter((e) => e.applicable).length} applicable)`
-        : "arrival (skipped)",
-    );
+  for (const lane of result.lanesPlanned) {
+    const laneResult = result.lanes[lane as keyof typeof result.lanes];
+    if (!laneResult) continue;
+    if (!laneResult.available) {
+      laneBits.push(`${lane} (skipped)`);
+      continue;
+    }
+    const applicable = laneResult.entries.filter(
+      (e) => !("applicable" in e) || e.applicable,
+    ).length;
+    laneBits.push(`${lane} (${applicable})`);
   }
   const floors = Object.entries(result.ledger.floors);
 

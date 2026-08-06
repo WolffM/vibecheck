@@ -202,7 +202,9 @@ export interface AuditDuplicationLaneConfig extends AuditLaneConfig {
 export interface AuditLanesConfig {
   size?: AuditLaneConfig;
   arrival?: AuditLaneConfig;
+  deadcode?: AuditLaneConfig;
   duplication?: AuditDuplicationLaneConfig;
+  smells?: AuditLaneConfig;
   consistency?: AuditLaneConfig;
 }
 
