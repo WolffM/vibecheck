@@ -42,6 +42,13 @@ import {
   type FileScore,
   type LaneScore,
 } from "./scoring.js";
+import {
+  appendTrendEntry,
+  computeDerivative,
+  readTrends,
+  type TrendDerivative,
+  type TrendEntry,
+} from "./trends.js";
 
 export interface AuditOptions {
   rootPath?: string;
@@ -83,6 +90,11 @@ export interface AuditRunResult {
     reopened: string[];
     /** Machine events (firing/fixed/rename) appended by this run. */
     stampedEvents: number;
+  };
+  trends: {
+    entry: TrendEntry;
+    /** Null until a clean ≥21-day-old baseline exists. */
+    derivative: TrendDerivative | null;
   };
 }
 
@@ -228,6 +240,42 @@ export async function runAudit(
   const runEvents = computeRunEvents(fold, currentScores, anchorDate);
   if (stampLedger && runEvents.length > 0) appendEvents(rootPath, runEvents);
 
+  const offenders = worstOffenders(fileScores, config.maxReportItems);
+  const trendEntry: TrendEntry = {
+    at: anchorDate,
+    sha: sha ?? "no-git",
+    dirty,
+    toolVersions: { scc: lanes.size?.toolVersion ?? null },
+    floors,
+    aggregates: {
+      candidateFiles: kept.length,
+      perLane: Object.fromEntries(
+        lanesPlanned.map((lane) => [
+          lane,
+          {
+            measured:
+              lane === "size"
+                ? (lanes.size?.entries.length ?? 0)
+                : (lanes.arrival?.entries.filter((e) => e.applicable).length ??
+                  0),
+            firing: fileScores.filter((f) =>
+              f.firingLanes.some((fl) => fl.lane === lane),
+            ).length,
+          },
+        ]),
+      ),
+      gatePassing: fileScores.filter((f) => f.gatePassed).length,
+      offenders: offenders.length,
+      suppressedByFloor: fileScores.reduce(
+        (sum, f) => sum + f.suppressedByFloor.length,
+        0,
+      ),
+    },
+  };
+  const priorTrends = readTrends(rootPath);
+  const derivative = computeDerivative(priorTrends, trendEntry);
+  if (stampLedger) appendTrendEntry(rootPath, trendEntry);
+
   return {
     rootPath,
     config,
@@ -239,7 +287,7 @@ export async function runAudit(
     history,
     lanes,
     fileScores,
-    worstOffenders: worstOffenders(fileScores, config.maxReportItems),
+    worstOffenders: offenders,
     bestFirstTargets: bestFirstTargets(fileScores, blastRadius),
     ledger: {
       floors,
@@ -247,6 +295,10 @@ export async function runAudit(
       agingJustifications,
       reopened,
       stampedEvents: renameEvents.length + runEvents.length,
+    },
+    trends: {
+      entry: trendEntry,
+      derivative,
     },
   };
 }
