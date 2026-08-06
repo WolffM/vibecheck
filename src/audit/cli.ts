@@ -6,6 +6,9 @@
  * ledger-cli.ts.
  */
 
+import { loadVibeCopConfig } from "../core/config-loader.js";
+import { resolveAuditConfig } from "./config.js";
+import { evaluateGate } from "./gate.js";
 import { runAudit, type AuditOptions } from "./index.js";
 import { publishLocal } from "./publish/local.js";
 
@@ -18,8 +21,9 @@ Runs the code-quality audit and writes .vibecheck/audit.md locally.
 Options:
   --root <path>      Root directory to audit (default: cwd)
   --config <path>    Path to vibecheck config file (default: vibecheck.json)
-  --gate             Exit early when the repo has been quiet (CI cost guard;
-                     plain local runs always execute)
+  --gate             Consult the activity gate first and skip when quiet
+                     (fix-confirmation / volume / staleness paths; plain
+                     runs without this flag always execute)
   --help, -h         Show this help message
 `);
 }
@@ -44,6 +48,19 @@ async function main(): Promise<void> {
       printHelp();
       process.exit(1);
     }
+  }
+
+  if (options.gate) {
+    const rootPath = options.rootPath ?? process.cwd();
+    const config = resolveAuditConfig(
+      loadVibeCopConfig(rootPath, options.configPath).audit,
+    );
+    const decision = evaluateGate(rootPath, config);
+    if (!decision.active) {
+      console.log(`Gate: quiet — ${decision.detail}. Skipping audit.`);
+      return;
+    }
+    console.log(`Gate: ${decision.reason} — ${decision.detail}`);
   }
 
   const result = await runAudit(options);

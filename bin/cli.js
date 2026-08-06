@@ -40,6 +40,7 @@ Commands:
   ledger      Inspect the audit decision ledger (ledger show)
   floors      Manage attested lane floors (floors reset <lane>)
   apply-run   Apply a CI run's ledger events from an artifact file
+  gate        Evaluate the audit activity gate (prints active=true|false)
   detect      Detect repository profile (languages, tools)
   help        Show this help message
 
@@ -111,6 +112,10 @@ switch (command) {
   case "floors":
   case "apply-run":
     runScript("audit/ledger-cli.ts", args);
+    break;
+
+  case "gate":
+    runScript("audit/gate-cli.ts", args.slice(1));
     break;
 
   // Dev-only validation harness (design §10); deliberately not in help.

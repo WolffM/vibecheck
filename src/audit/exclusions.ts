@@ -81,6 +81,25 @@ function matchesPathConvention(relPath: string): boolean {
 }
 
 /**
+ * Fast path-only exclusion check (no git attrs, no header sniffing) —
+ * the activity gate's subset: it must run in milliseconds and only needs
+ * to keep vendored/generated churn out of the volume count.
+ */
+export function isPathExcludedFast(
+  relPath: string,
+  configExcludes: string[] = [],
+): boolean {
+  if (
+    configExcludes.some(
+      (prefix) => relPath === prefix || relPath.startsWith(prefix + "/"),
+    )
+  ) {
+    return true;
+  }
+  return matchesPathConvention(relPath);
+}
+
+/**
  * Batch-query linguist-generated/linguist-vendored via git. Returns the
  * subset of `files` excluded by attributes; empty outside a git repo.
  */

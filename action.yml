@@ -95,7 +95,6 @@ runs:
       id: audit-gate
       shell: bash
       run: |
-        cd ${{ github.workspace }}
         # Cron cost guard only — an explicit dispatch is its own
         # justification, exactly like a local run (design §7).
         if [ "${{ github.event_name }}" != "schedule" ]; then
@@ -103,15 +102,10 @@ runs:
           echo "Explicit ${{ github.event_name }} run — gate bypassed."
           exit 0
         fi
-        LAST_SHA=$(node -e "try{const t=require('./.vibecheck/trends.json');const c=t.filter(e=>!e.dirty);console.log(c.length?c[c.length-1].sha:'')}catch{console.log('')}")
-        # Quiet = no commits since the last audit outside .vibecheck/
-        # (the data-file bot commit must not count as activity).
-        if [ -n "$LAST_SHA" ] && CHANGES=$(git rev-list --count "$LAST_SHA"..HEAD -- . ':(exclude).vibecheck' 2>/dev/null) && [ "$CHANGES" = "0" ]; then
-          echo "active=false" >> $GITHUB_OUTPUT
-          echo "Repository quiet since last audit ($LAST_SHA) — exiting early."
-        else
-          echo "active=true" >> $GITHUB_OUTPUT
-        fi
+        cd ${{ github.action_path }}
+        OUTPUT=$(node bin/cli.js gate --root "${{ github.workspace }}")
+        echo "$OUTPUT"
+        echo "$OUTPUT" | grep "^active=" >> $GITHUB_OUTPUT
 
     - name: Install scc (audit)
       if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'

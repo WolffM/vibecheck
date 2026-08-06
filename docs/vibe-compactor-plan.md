@@ -1,6 +1,14 @@
-# vibe-compactor — Design Plan v0.1
+# vibe-compactor — Design Plan v0.2
 
-Status: **v0.1 — LOCKED** (2026-08-05) · Owner: @WolffM
+Status: **v0.2 — LOCKED** (2026-08-06) · Owner: @WolffM
+
+**v0.2 changelog:** §7 trigger redesign — the binary any-commit gate
+becomes the three-path gate (fix-confirmation / volume / staleness),
+funded under the lock rule by M1+M2 dogfood data
+(`docs/audit-m1-notes.md`, `docs/audit-m2-notes.md`) and the observed
+engagement asymmetry: re-auditing an untouched repo produces zero new
+bits, while prompt `fixed`-stamping on fix attempts is the loop that
+keeps a maintainer engaged.
 
 **Naming:** `vibe-compactor` is the project name. The user-facing surface is
 **vibeCheck Audit** — action input `mode: audit`, CLI `vibecheck audit` —
@@ -361,13 +369,42 @@ near-exact-graph confidence claim; bulk arrival self-mutes.
 
 ## 7. Scheduling & incrementality
 
-Cron weekly + dispatch; activity gate exits in seconds when quiet;
-`fetch-depth: 0` wanted, shallow soft-fails to young-repo mode; ledger fold
-prevents re-reporting; caches via actions/cache.
+Cron (daily-to-weekly — polling frequency stops mattering because the
+gate exits in seconds) + dispatch; `fetch-depth: 0` wanted, shallow
+soft-fails to young-repo mode; ledger fold prevents re-reporting; caches
+via actions/cache.
 
-**The activity gate is a CI cost guard only (v4.2):** local `vibecheck
-audit` always runs — an explicit invocation is its own justification.
-`--gate` exists for anyone scripting cron-like local behavior.
+**The three-path activity gate (v0.2):** a scheduled run audits when any
+of the following holds, else exits in seconds:
+
+1. **Fix-confirmation** — a commit since the last audited SHA touches a
+   currently-firing file (active firing fingerprints fold straight out
+   of the committed ledger). No threshold: prompt feedback on fix
+   attempts is the engagement loop, and the condition self-resolves when
+   the maintainer stops touching flagged files. Cadence escalates on
+   *activity targeting findings*, never on outstanding severity —
+   re-auditing an untouched repo produces zero new information and
+   trains the maintainer to ignore the bell.
+2. **Volume** — ≥ 2000 code lines touched since the last audited SHA
+   (numstat added+deleted; path-convention and `audit.exclude` churn
+   ignored). 2000 = the tier-3 boundary: "a no-justification-file's
+   worth of work has landed." Behavioral constant, calibrated like the
+   anchors.
+3. **Staleness** — ≥ 90 days since the last audit with any activity at
+   all; keeps trend entries breathing and resurfaces aging
+   justifications on low-volume repos. Repo-derived dates only (last
+   audit anchor vs HEAD commit date), never wall clock.
+
+The two rhythms coexist: fix-confirmation runs may land days apart, but
+the trend derivative still compares against a clean entry ≥21 days old,
+so the health headline moves at monthly resolution regardless.
+
+**The gate guards cron only (v4.2, sharpened v0.2):** local `vibecheck
+audit` and manual dispatch always run — an explicit invocation is its
+own justification. `vibecheck gate` prints the decision for anyone
+scripting cron-like local behavior; `vibecheck audit --gate` consults it
+first. Fails open: no audit history, or an unreachable last-audited SHA
+(rewritten history), both mean "audit now."
 
 ---
 
