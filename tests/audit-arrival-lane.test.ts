@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { collectGitHistory } from "../src/audit/git-arrival.js";
 import {
+  buildImportGraph,
   extractImportSpecifiers,
   resolveSpecifier,
 } from "../src/audit/import-graph.js";
@@ -165,7 +166,9 @@ describe("arrival lane — graph join", () => {
       "src/b.ts": "export const b = 1;\n",
       "tests/a.test.ts": "import { a } from '../src/a.js';\n",
     });
-    const reach = buildTestReachability(repo.root, repo.tracked());
+    const reach = buildTestReachability(
+      buildImportGraph(repo.root, repo.tracked()),
+    );
     expect([...reach.keys()]).toEqual(["tests/a.test.ts"]);
     // Transitive: the test reaches b through a.
     expect(reach.get("tests/a.test.ts")).toEqual(

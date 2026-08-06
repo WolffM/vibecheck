@@ -208,13 +208,11 @@ export function buildArrivalLane(
 
 /** Reachability of candidate files from each current test file. */
 export function buildTestReachability(
-  rootPath: string,
-  candidateFiles: string[],
+  importGraph: Map<string, string[]>,
 ): Map<string, Set<string>> {
-  const graph = buildImportGraph(rootPath, candidateFiles);
   const reach = new Map<string, Set<string>>();
-  for (const file of graph.keys()) {
-    if (isTestFile(file)) reach.set(file, reachableFrom(graph, file));
+  for (const file of importGraph.keys()) {
+    if (isTestFile(file)) reach.set(file, reachableFrom(importGraph, file));
   }
   return reach;
 }
@@ -223,6 +221,7 @@ export function runArrivalLane(
   rootPath: string,
   history: GitHistory | null,
   candidateFiles: string[],
+  importGraph?: Map<string, string[]>,
 ): ArrivalLaneResult {
   if (!history) {
     return {
@@ -235,9 +234,6 @@ export function runArrivalLane(
       entries: [],
     };
   }
-  return buildArrivalLane(
-    history,
-    candidateFiles,
-    buildTestReachability(rootPath, candidateFiles),
-  );
+  const graph = importGraph ?? buildImportGraph(rootPath, candidateFiles);
+  return buildArrivalLane(history, candidateFiles, buildTestReachability(graph));
 }

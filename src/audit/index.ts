@@ -14,8 +14,17 @@ import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
 import { collectGitHistory, type GitHistory } from "./git-arrival.js";
+import { buildImportGraph } from "./import-graph.js";
 import { runArrivalLane, type ArrivalLaneResult } from "./lanes/arrival.js";
 import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
+import {
+  bestFirstTargets,
+  computeBlastRadius,
+  scoreFiles,
+  worstOffenders,
+  type FileScore,
+  type LaneScore,
+} from "./scoring.js";
 
 export interface AuditOptions {
   rootPath?: string;
@@ -40,6 +49,10 @@ export interface AuditRunResult {
     size?: SizeLaneResult;
     arrival?: ArrivalLaneResult;
   };
+  /** Per-file gate/rank results across all lanes. */
+  fileScores: FileScore[];
+  worstOffenders: FileScore[];
+  bestFirstTargets: FileScore[];
 }
 
 function listTrackedFiles(rootPath: string): string[] {
@@ -97,14 +110,36 @@ export async function runAudit(
   );
 
   const history = collectGitHistory(rootPath);
+  const importGraph = buildImportGraph(rootPath, kept);
 
   const lanes: AuditRunResult["lanes"] = {};
   if (config.lanes.size.enabled) {
     lanes.size = runSizeLane(rootPath, kept, config);
   }
   if (config.lanes.arrival.enabled) {
-    lanes.arrival = runArrivalLane(rootPath, history, kept);
+    lanes.arrival = runArrivalLane(rootPath, history, kept, importGraph);
   }
+
+  const laneScores: LaneScore[] = [
+    ...(lanes.size?.entries.map((e) => ({
+      lane: "size",
+      path: e.path,
+      score: e.score,
+      applicable: true,
+    })) ?? []),
+    ...(lanes.arrival?.entries.map((e) => ({
+      lane: "arrival",
+      path: e.path,
+      score: e.score,
+      applicable: e.applicable,
+    })) ?? []),
+  ];
+  // Floors default to 0 until the ledger's attested ratchet (T7) feeds them.
+  const fileScores = scoreFiles(laneScores);
+  const codeLines = new Map(
+    (lanes.size?.entries ?? []).map((e) => [e.path, e.codeLines]),
+  );
+  const blastRadius = computeBlastRadius(codeLines, importGraph);
 
   return {
     rootPath,
@@ -116,5 +151,8 @@ export async function runAudit(
     excluded,
     history,
     lanes,
+    fileScores,
+    worstOffenders: worstOffenders(fileScores, config.maxReportItems),
+    bestFirstTargets: bestFirstTargets(fileScores, blastRadius),
   };
 }

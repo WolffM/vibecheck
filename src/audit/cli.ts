@@ -94,6 +94,18 @@ async function main(): Promise<void> {
     }
   }
   console.log(`  Report:      ${result.config.reportChannel}`);
+  if (result.worstOffenders.length > 0) {
+    console.log(`  Worst offenders (gate: ≥2 lanes firing):`);
+    for (const [rank, offender] of result.worstOffenders.entries()) {
+      console.log(
+        `    ${rank + 1}. ${offender.path} — lanes: ` +
+          offender.firingLanes.map((f) => f.lane).join("+") +
+          ` (${offender.applicableLanes.length} applicable)`,
+      );
+    }
+  } else {
+    console.log(`  Worst offenders: none pass the ≥2-lane gate + entry threshold`);
+  }
 }
 
 main().catch((error) => {
