@@ -17,12 +17,17 @@
  * at T11):
  *  - size: 1.0 = the language-adjusted tier-1 boundary (500 code lines
  *    unadjusted).
- *  - arrival: 0.6 ≈ three of five touches arriving with no reaching test,
- *    before secondary-signal bonuses.
+ *  - arrival: 1.0 = every single windowed touch arrived with no reaching
+ *    test. Initially 0.6, which assumed partial test co-change; M1
+ *    dogfood across four repos (docs/audit-m1-notes.md) showed the
+ *    vibecoded segment saturates untested-share ≈ 1 (firing on 85–100%
+ *    of applicable files — corroborating nothing), so the anchor moved
+ *    to the one crisp point the distribution has. Refined from
+ *    pre-ratchet firing data only, per §4's calibration-authority rule.
  */
 export const LANE_ANCHORS: Record<string, number> = {
   size: 1.0,
-  arrival: 0.6,
+  arrival: 1.0,
 };
 
 /** Hand-set lane weights applied to anchor-normalized scores. */
@@ -70,6 +75,8 @@ export interface FileScore {
 export interface ScoringOptions {
   /** Per-lane attested floors (ratchet); absent lanes floor at 0. */
   floors?: Record<string, number>;
+  /** Anchor overrides — used only by the perturbation check (§10.1). */
+  anchors?: Record<string, number>;
 }
 
 export function scoreFiles(
@@ -77,6 +84,7 @@ export function scoreFiles(
   options: ScoringOptions = {},
 ): FileScore[] {
   const floors = options.floors ?? {};
+  const anchors = { ...LANE_ANCHORS, ...options.anchors };
   const byPath = new Map<string, LaneScore[]>();
   for (const score of laneScores) {
     const list = byPath.get(score.path) ?? [];
@@ -92,7 +100,7 @@ export function scoreFiles(
     let weightedScore = 0;
 
     for (const s of applicable) {
-      const anchor = LANE_ANCHORS[s.lane];
+      const anchor = anchors[s.lane];
       if (anchor === undefined) continue;
       const floor = floors[s.lane] ?? 0;
       const threshold = Math.max(anchor, floor);

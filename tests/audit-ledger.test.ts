@@ -57,6 +57,13 @@ describe("makeUlid", () => {
     expect(earlier).toMatch(/^[0-9A-HJKMNP-TV-Z]{26}$/);
     expect(earlier < later).toBe(true);
   });
+
+  it("is monotonic within a single millisecond", () => {
+    const ids = Array.from({ length: 50 }, () => makeUlid(1234567890));
+    const sorted = [...ids].sort();
+    expect(ids).toEqual(sorted);
+    expect(new Set(ids).size).toBe(50);
+  });
 });
 
 describe("foldLedger", () => {
@@ -133,8 +140,8 @@ describe("attested ratchet", () => {
 
   it("translates steps into absolute floors above the anchor", () => {
     const fold = foldLedger(noiseEvents("arrival", 3));
-    // arrival anchor 0.6, one 25% step → 0.75.
-    expect(floorsForScoring(fold).arrival).toBeCloseTo(0.75);
+    // arrival anchor 1.0, one 25% step → 1.25.
+    expect(floorsForScoring(fold).arrival).toBeCloseTo(1.25);
     expect(floorsForScoring(foldLedger(noiseEvents("arrival", 2)))).toEqual({});
   });
 });

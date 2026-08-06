@@ -42,7 +42,17 @@ export const LEDGER_PATH = ".vibecheck/ledger.jsonl";
 
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-/** 26-char ULID: 48-bit timestamp + 80-bit randomness, Crockford base32. */
+let ulidLastTime = -1;
+let ulidLastRand: number[] = [];
+
+/**
+ * 26-char ULID: 48-bit timestamp + 80-bit randomness, Crockford base32.
+ * Monotonic within a process: same-millisecond calls increment the
+ * random part, so events created in order also *sort* in order — the
+ * fold's (at, id) tiebreak must never invert creation order from a
+ * single writer (e.g. three noise verdicts then a floor reset inside
+ * one millisecond).
+ */
 export function makeUlid(time: number = Date.now()): string {
   let ts = "";
   let t = time;
@@ -50,19 +60,32 @@ export function makeUlid(time: number = Date.now()): string {
     ts = CROCKFORD[t % 32] + ts;
     t = Math.floor(t / 32);
   }
-  const bytes = randomBytes(10);
-  let rand = "";
-  let acc = 0;
-  let bits = 0;
-  for (const byte of bytes) {
-    acc = (acc << 8) | byte;
-    bits += 8;
-    while (bits >= 5) {
-      rand += CROCKFORD[(acc >>> (bits - 5)) & 31];
-      bits -= 5;
+
+  if (time === ulidLastTime) {
+    for (let i = ulidLastRand.length - 1; i >= 0; i--) {
+      if (ulidLastRand[i] < 31) {
+        ulidLastRand[i]++;
+        break;
+      }
+      ulidLastRand[i] = 0;
     }
+  } else {
+    ulidLastTime = time;
+    const bytes = randomBytes(10);
+    const digits: number[] = [];
+    let acc = 0;
+    let bits = 0;
+    for (const byte of bytes) {
+      acc = (acc << 8) | byte;
+      bits += 8;
+      while (bits >= 5) {
+        digits.push((acc >>> (bits - 5)) & 31);
+        bits -= 5;
+      }
+    }
+    ulidLastRand = digits.slice(0, 16);
   }
-  return ts + rand.slice(0, 16);
+  return ts + ulidLastRand.map((d) => CROCKFORD[d]).join("");
 }
 
 // ============================================================================
