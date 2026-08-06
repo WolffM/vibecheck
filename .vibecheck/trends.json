@@ -23,5 +23,30 @@
       "offenders": 0,
       "suppressedByFloor": 0
     }
+  },
+  {
+    "at": "2026-08-05T17:39:13-07:00",
+    "sha": "edd7e93d8452736b5dc151d4d2f729a85cb1dae1",
+    "dirty": false,
+    "toolVersions": {
+      "scc": "3.7.0"
+    },
+    "floors": {},
+    "aggregates": {
+      "candidateFiles": 142,
+      "perLane": {
+        "size": {
+          "measured": 133,
+          "firing": 4
+        },
+        "arrival": {
+          "measured": 39,
+          "firing": 20
+        }
+      },
+      "gatePassing": 0,
+      "offenders": 0,
+      "suppressedByFloor": 0
+    }
   }
 ]
