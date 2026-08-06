@@ -34,8 +34,17 @@ Usage:
 Commands:
   analyze     Run static analysis on a repository
   audit       Run the code-quality audit (writes .vibecheck/audit.md)
+  justify     Record a justified verdict for an audit finding
+  wontfix     Record a wontfix verdict for an audit finding
+  noise       Record a noise verdict for an audit finding
+  ledger      Inspect the audit decision ledger (ledger show)
+  floors      Manage attested lane floors (floors reset <lane>)
+  apply-run   Apply a CI run's ledger events from an artifact file
   detect      Detect repository profile (languages, tools)
   help        Show this help message
+
+Audit verdict usage:
+  vibecheck justify|wontfix|noise <lane>:<path> --reason "..." [--push]
 
 Options for 'analyze':
   --root <path>              Root path to analyze (default: current directory)
@@ -93,6 +102,15 @@ switch (command) {
 
   case "audit":
     runScript("audit/cli.ts", args.slice(1));
+    break;
+
+  case "justify":
+  case "wontfix":
+  case "noise":
+  case "ledger":
+  case "floors":
+  case "apply-run":
+    runScript("audit/ledger-cli.ts", args);
     break;
 
   case "detect":
