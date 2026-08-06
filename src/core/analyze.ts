@@ -9,6 +9,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { detectRepo } from "./repo-detect.js";
 import { buildSarifLog, writeSarifFile } from "../output/build-sarif.js";
 import {
@@ -372,4 +373,6 @@ Options:
   }
 }
 
-main().catch(console.error);
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch(console.error);
+}
