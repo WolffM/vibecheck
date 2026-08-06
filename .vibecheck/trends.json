@@ -1,0 +1,27 @@
+[
+  {
+    "at": "2026-08-05T17:34:14-07:00",
+    "sha": "fe48da19fd5e154ec20ecd634e39c0704924da4e",
+    "dirty": false,
+    "toolVersions": {
+      "scc": "3.7.0"
+    },
+    "floors": {},
+    "aggregates": {
+      "candidateFiles": 137,
+      "perLane": {
+        "size": {
+          "measured": 128,
+          "firing": 4
+        },
+        "arrival": {
+          "measured": 39,
+          "firing": 20
+        }
+      },
+      "gatePassing": 0,
+      "offenders": 0,
+      "suppressedByFloor": 0
+    }
+  }
+]
