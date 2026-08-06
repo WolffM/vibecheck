@@ -48,3 +48,7 @@ __pycache__/
 
 # Chainlink tooling cache
 .chainlink/
+
+# vibeCheck audit working artifacts (regenerable; ledger + trends stay tracked)
+.vibecheck/audit.md
+.vibecheck/out/

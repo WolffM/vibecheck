@@ -1,11 +1,13 @@
 /**
  * CLI entry for `vibecheck audit`.
  *
- * Thin wrapper: parses args, calls the orchestrator, prints the summary.
- * Ledger verbs (justify/wontfix/noise/...) join here in later tasks.
+ * Thin wrapper: parses args, runs the orchestrator, publishes the local
+ * sink (always — design §6), prints a terse summary. Ledger verbs live in
+ * ledger-cli.ts.
  */
 
 import { runAudit, type AuditOptions } from "./index.js";
+import { publishLocal } from "./publish/local.js";
 
 function printHelp(): void {
   console.log(`
@@ -51,73 +53,60 @@ async function main(): Promise<void> {
     return;
   }
 
-  console.log(`vibeCheck Audit (stub — lanes land in upcoming tasks)`);
-  console.log(`  Root:        ${result.rootPath}`);
-  console.log(
-    `  Anchor:      ${result.anchorSha ?? "not a git repository"}` +
-      (result.dirty ? " (dirty working tree)" : ""),
-  );
-  console.log(`  Lanes:       ${result.lanesPlanned.join(", ") || "none"}`);
-  console.log(
-    `  Files:       ${result.candidateFiles.length} candidates` +
-      ` (${result.excluded.length} excluded as generated/vendored)`,
-  );
-  console.log(`  Size tiers:  ${result.config.sizeTiers.join(" / ")}`);
+  const { reportPath } = publishLocal(result);
+
   const size = result.lanes.size;
-  if (size) {
-    if (!size.available) {
-      console.log(`  Size lane:   ${size.disclosure}`);
-    } else {
-      const counts = [1, 2, 3].map(
-        (t) => size.entries.filter((e) => e.tier === t).length,
-      );
-      console.log(
-        `  Size lane:   ${size.entries.length} files measured — ` +
-          `tier1: ${counts[0]}, tier2: ${counts[1]}, tier3: ${counts[2]}` +
-          ` (scc ${size.toolVersion ?? "?"})`,
-      );
-    }
-  }
   const arrival = result.lanes.arrival;
-  if (arrival) {
-    if (!arrival.available) {
-      console.log(`  Arrival:     ${arrival.disclosures.join("; ")}`);
-    } else {
-      const applicable = arrival.entries.filter((e) => e.applicable);
-      console.log(
-        `  Arrival:     ${applicable.length} files with ≥3 touches` +
-          (arrival.bulkMuted ? " (bulk arrival muted)" : ""),
-      );
-      for (const note of arrival.disclosures) {
-        console.log(`               · ${note}`);
-      }
-    }
+  const laneBits: string[] = [];
+  if (size) {
+    laneBits.push(
+      size.available ? `size (${size.entries.length} measured)` : "size (skipped)",
+    );
   }
-  console.log(`  Report:      ${result.config.reportChannel}`);
-  if (result.worstOffenders.length > 0) {
-    console.log(`  Worst offenders (gate: ≥2 lanes firing):`);
-    for (const [rank, offender] of result.worstOffenders.entries()) {
-      console.log(
-        `    ${rank + 1}. ${offender.path} — lanes: ` +
-          offender.firingLanes.map((f) => f.lane).join("+") +
-          ` (${offender.applicableLanes.length} applicable)`,
-      );
-    }
-  } else {
-    console.log(`  Worst offenders: none pass the ≥2-lane gate + entry threshold`);
+  if (arrival) {
+    laneBits.push(
+      arrival.available
+        ? `arrival (${arrival.entries.filter((e) => e.applicable).length} applicable)`
+        : "arrival (skipped)",
+    );
   }
   const floors = Object.entries(result.ledger.floors);
+
+  console.log(`vibeCheck Audit`);
+  console.log(
+    `  Anchor:    ${result.anchorSha?.slice(0, 12) ?? "no git"}` +
+      (result.dirty ? " (dirty working tree)" : ""),
+  );
+  console.log(
+    `  Files:     ${result.candidateFiles.length} candidates, ` +
+      `${result.excluded.length} excluded as generated/vendored`,
+  );
+  console.log(`  Lanes:     ${laneBits.join(", ") || "none"}`);
+  console.log(
+    `  Findings:  ${result.worstOffenders.length} worst offenders, ` +
+      `${result.bestFirstTargets.length} best-first targets` +
+      (result.ledger.suppressed.length > 0
+        ? `, ${result.ledger.suppressed.length} suppressed by verdicts`
+        : ""),
+  );
   if (floors.length > 0) {
     console.log(
-      `  Standing floors: ` +
-        floors.map(([laneName, floor]) => `${laneName}=${floor}`).join(", "),
+      `  Floors:    ` +
+        floors.map(([lane, floor]) => `${lane}=${floor}`).join(", "),
     );
   }
-  if (result.ledger.suppressed.length > 0) {
+  const derivative = result.trends.derivative;
+  if (derivative) {
+    const sign = derivative.offendersDelta > 0 ? "+" : "";
     console.log(
-      `  Ledger: ${result.ledger.suppressed.length} findings suppressed by verdicts`,
+      `  Trend:     ${sign}${derivative.offendersDelta} offenders since ` +
+        `${derivative.baselineAt.slice(0, 10)}` +
+        (derivative.trendBreaks.length > 0
+          ? ` (⚠ ${derivative.trendBreaks.length} trend breaks)`
+          : ""),
     );
   }
+  console.log(`  Report:    ${reportPath}`);
 }
 
 main().catch((error) => {
