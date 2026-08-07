@@ -145,6 +145,16 @@ runs:
         cd ${{ github.action_path }}
         node --import tsx src/audit/publish/github-cli.ts --root "${{ github.workspace }}"
 
+    - name: Upload audit outputs (report, briefing, machine data)
+      if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: vibecheck-audit-outputs-${{ github.run_id }}
+        path: |
+          ${{ github.workspace }}/.vibecheck/audit.md
+          ${{ github.workspace }}/.vibecheck/out/
+        retention-days: 30
+
     - name: Upload apply-run artifact
       if: inputs.mode == 'audit' && steps.audit-publish.outputs.push_rejected == 'true'
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
