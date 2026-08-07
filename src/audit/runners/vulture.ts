@@ -12,6 +12,8 @@ export interface VultureItem {
   path: string;
   line: number;
   confidence: number;
+  /** e.g. "unused function 'render_pose'". */
+  description: string;
 }
 
 export interface VultureResult {
@@ -19,7 +21,7 @@ export interface VultureResult {
   items: VultureItem[];
 }
 
-const LINE_PATTERN = /^(.+?):(\d+): unused .+ \((\d+)% confidence/;
+const LINE_PATTERN = /^(.+?):(\d+): (unused .+?) \((\d+)% confidence/;
 
 export function runVulture(rootPath: string): VultureResult {
   const probe = spawnSync("vulture", ["--version"], {
@@ -60,7 +62,8 @@ export function runVulture(rootPath: string): VultureResult {
     items.push({
       path: match[1].replace(/\\/g, "/").replace(/^\.\//, ""),
       line: Number(match[2]),
-      confidence: Number(match[3]),
+      description: match[3],
+      confidence: Number(match[4]),
     });
   }
   return { available: true, items };

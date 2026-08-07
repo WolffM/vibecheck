@@ -10,12 +10,24 @@
 import type { ResolvedAuditConfig } from "../config.js";
 import { runJscpd, type JscpdResult } from "../runners/jscpd.js";
 
+export interface CloneRef {
+  /** Line range in this file. */
+  start: number;
+  end: number;
+  /** Partner file ("" = same file, internal duplication) + its range. */
+  partner: string;
+  partnerStart: number;
+  partnerEnd: number;
+}
+
 export interface DuplicationLaneEntry {
   path: string;
   duplicatedLines: number;
   codeLines: number;
   /** Distinct files sharing at least one clone with this one. */
   clusterFanOut: number;
+  /** The largest clone pairs, exact ranges (capped at 5). */
+  clones: CloneRef[];
   /** Lane density: duplicated lines ÷ scc code lines (0..1-ish). */
   score: number;
 }
@@ -63,7 +75,15 @@ export function buildDuplicationLane(
   const candidates = new Set(candidateFiles);
   const intervals = new Map<string, [number, number][]>();
   const partners = new Map<string, Set<string>>();
-  const add = (file: string, start: number, end: number, partner: string) => {
+  const cloneRefs = new Map<string, CloneRef[]>();
+  const add = (
+    file: string,
+    start: number,
+    end: number,
+    partner: string,
+    partnerStart: number,
+    partnerEnd: number,
+  ) => {
     if (!candidates.has(file)) return;
     const list = intervals.get(file) ?? [];
     list.push([start, end]);
@@ -71,10 +91,19 @@ export function buildDuplicationLane(
     const set = partners.get(file) ?? new Set<string>();
     if (partner !== file) set.add(partner);
     partners.set(file, set);
+    const refs = cloneRefs.get(file) ?? [];
+    refs.push({
+      start,
+      end,
+      partner: partner === file ? "" : partner,
+      partnerStart,
+      partnerEnd,
+    });
+    cloneRefs.set(file, refs);
   };
   for (const clone of jscpd.clones) {
-    add(clone.fileA, clone.startA, clone.endA, clone.fileB);
-    add(clone.fileB, clone.startB, clone.endB, clone.fileA);
+    add(clone.fileA, clone.startA, clone.endA, clone.fileB, clone.startB, clone.endB);
+    add(clone.fileB, clone.startB, clone.endB, clone.fileA, clone.startA, clone.endA);
   }
 
   const entries: DuplicationLaneEntry[] = [];
@@ -86,6 +115,9 @@ export function buildDuplicationLane(
       duplicatedLines,
       codeLines: lines,
       clusterFanOut: partners.get(path)?.size ?? 0,
+      clones: (cloneRefs.get(path) ?? [])
+        .sort((a, b) => b.end - b.start - (a.end - a.start))
+        .slice(0, 5),
       // Without scc the share is unknowable; keep the entry with score 0
       // rather than invent a denominator.
       score: lines > 0 ? Math.min(1, duplicatedLines / lines) : 0,

@@ -16,7 +16,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isTsJsFile } from "../import-graph.js";
-import { runKnip, type KnipResult } from "../runners/knip.js";
+import { runKnip, type DeadExport, type KnipResult } from "../runners/knip.js";
 import { runVulture, type VultureResult } from "../runners/vulture.js";
 
 /** Single-source (vulture-only) findings score at this fraction. */
@@ -34,6 +34,8 @@ export interface DeadcodeLaneEntry {
   unusedFile: boolean;
   deadItems: number;
   definitionCount: number;
+  /** The actual dead surface: names + lines (knip) or descriptions (vulture). */
+  deadDetail: { name: string; line: number }[];
   score: number;
 }
 
@@ -138,10 +140,15 @@ export function buildDeadcodeLane(
     );
   }
 
-  const vultureByFile = new Map<string, number>();
+  const vultureDetailByFile = new Map<
+    string,
+    { description: string; line: number }[]
+  >();
   for (const item of vulture.items) {
     if (!candidates.has(item.path)) continue;
-    vultureByFile.set(item.path, (vultureByFile.get(item.path) ?? 0) + 1);
+    const list = vultureDetailByFile.get(item.path) ?? [];
+    list.push({ description: item.description, line: item.line });
+    vultureDetailByFile.set(item.path, list);
   }
 
   const entries: DeadcodeLaneEntry[] = [];
@@ -155,24 +162,28 @@ export function buildDeadcodeLane(
     const defs = definitions.get(path) ?? 0;
     let score = 0;
     let unusedFile = false;
-    let deadItems = 0;
+    let deadDetail: { name: string; line: number }[] = [];
     if (tsjs) {
       unusedFile = unusedFiles.has(path) && !filesSignalMuted;
       // Entry files' exports ARE the published surface — "unused" only
       // means unimported in-repo.
-      deadItems = entryPoints.has(path)
-        ? 0
-        : (knip.unusedExports.get(path) ?? 0);
+      const exports: DeadExport[] = entryPoints.has(path)
+        ? []
+        : (knip.unusedExports.get(path) ?? []);
+      deadDetail = exports.map((e) => ({ name: e.name, line: e.line }));
       score = unusedFile
         ? 1
         : defs > 0
-          ? Math.min(1, deadItems / defs)
+          ? Math.min(1, deadDetail.length / defs)
           : 0;
     } else {
-      deadItems = vultureByFile.get(path) ?? 0;
+      deadDetail = (vultureDetailByFile.get(path) ?? []).map((i) => ({
+        name: i.description,
+        line: i.line,
+      }));
       score =
         defs > 0
-          ? SINGLE_SOURCE_DEMOTION * Math.min(1, deadItems / defs)
+          ? SINGLE_SOURCE_DEMOTION * Math.min(1, deadDetail.length / defs)
           : 0;
     }
 
@@ -180,8 +191,9 @@ export function buildDeadcodeLane(
       path,
       applicable: true,
       unusedFile,
-      deadItems,
+      deadItems: deadDetail.length,
       definitionCount: defs,
+      deadDetail,
       score,
     });
   }
@@ -206,7 +218,7 @@ export function runDeadcodeLane(
   const hasPython = candidateFiles.some(isPythonFile);
   const knip = hasTsJs
     ? runKnip(rootPath)
-    : { available: false, unusedFiles: [], unusedExports: new Map<string, number>() };
+    : { available: false, unusedFiles: [], unusedExports: new Map() };
   const vulture = hasPython
     ? runVulture(rootPath)
     : { available: false, items: [] };

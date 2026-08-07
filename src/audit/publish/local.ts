@@ -7,9 +7,10 @@
  * and trends files stay tracked.
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { renderAgentBriefing } from "../briefing.js";
+import { renderFindingPackages } from "../findings.js";
 import type { AuditRunResult } from "../index.js";
 import { buildMachineResult, renderAuditReport } from "../report.js";
 
@@ -17,6 +18,9 @@ export interface LocalPublishResult {
   reportPath: string;
   machinePath: string;
   briefingPath: string;
+  /** Regenerated per-finding packages (tracked, data-file committed). */
+  findingsDir: string;
+  findingCount: number;
 }
 
 export function publishLocal(result: AuditRunResult): LocalPublishResult {
@@ -37,5 +41,21 @@ export function publishLocal(result: AuditRunResult): LocalPublishResult {
   const briefingPath = join(outDir, "agent-briefing.md");
   writeFileSync(briefingPath, renderAgentBriefing(result), "utf-8");
 
-  return { reportPath, machinePath, briefingPath };
+  // Per-finding packages: regenerate wholesale so resolved findings'
+  // packages vanish with them.
+  const findingsDir = join(vibecheckDir, "findings");
+  rmSync(findingsDir, { recursive: true, force: true });
+  const packages = renderFindingPackages(result);
+  mkdirSync(findingsDir, { recursive: true });
+  for (const [name, content] of packages) {
+    writeFileSync(join(findingsDir, name), content, "utf-8");
+  }
+
+  return {
+    reportPath,
+    machinePath,
+    briefingPath,
+    findingsDir,
+    findingCount: packages.size,
+  };
 }

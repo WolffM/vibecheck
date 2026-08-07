@@ -153,6 +153,7 @@ runs:
         path: |
           ${{ github.workspace }}/.vibecheck/audit.md
           ${{ github.workspace }}/.vibecheck/out/
+          ${{ github.workspace }}/.vibecheck/findings/
         retention-days: 30
 
     - name: Upload apply-run artifact

@@ -18,6 +18,8 @@ import { dirname, join } from "node:path";
 import { LEDGER_PATH } from "../ledger.js";
 import { TRENDS_PATH } from "../trends.js";
 
+const FINDINGS_DIR = ".vibecheck/findings";
+
 export const AUDIT_ISSUE_MARKER = "<!-- vibecheck-audit-living-issue -->";
 export const AUDIT_ISSUE_LABEL = "vibecheck-audit";
 const AUDIT_ISSUE_TITLE = "vibeCheck Audit";
@@ -125,12 +127,13 @@ export function commitDataFiles(
   options: { branch: string; retries?: number; committer?: { name: string; email: string } } ,
 ): DataFileCommitResult {
   const retries = options.retries ?? 3;
-  const paths = [LEDGER_PATH, TRENDS_PATH].filter((p) =>
+  const paths = [LEDGER_PATH, TRENDS_PATH, FINDINGS_DIR].filter((p) =>
     existsSync(join(rootPath, p)),
   );
   if (paths.length === 0) return { committed: false, pushed: true, attempts: 0 };
 
-  git(rootPath, ["add", ...paths]);
+  // -A so packages deleted by regeneration are staged as deletions too.
+  git(rootPath, ["add", "-A", "--", ...paths]);
   const staged = git(rootPath, ["diff", "--cached", "--name-only"]);
   if (!staged) return { committed: false, pushed: true, attempts: 0 };
 

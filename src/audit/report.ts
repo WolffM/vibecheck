@@ -8,6 +8,7 @@
  */
 
 import type { AuditRunResult } from "./index.js";
+import { findingSlug } from "./evidence.js";
 import { pathOf } from "./ledger.js";
 
 function pct(value: number): string {
@@ -160,7 +161,8 @@ function offendersSection(result: AuditRunResult): string[] {
       `${rank + 1}. \`${offender.path}\` — firing: ` +
         offender.firingLanes.map((f) => f.lane).join(" + ") +
         ` (${offender.applicableLanes.length} lanes applicable)` +
-        `\n   ${evidenceFor(result, offender.path)}`,
+        `\n   ${evidenceFor(result, offender.path)}` +
+        `\n   Full evidence package: \`.vibecheck/findings/${findingSlug(offender.path)}.md\``,
     );
   }
   return lines;

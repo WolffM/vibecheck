@@ -115,8 +115,21 @@ describe("deadcode entry-point awareness", () => {
         available: true,
         unusedFiles: ["src/entry.ts"],
         unusedExports: new Map([
-          ["src/entry.ts", 8],
-          ["src/other.ts", 2],
+          [
+            "src/entry.ts",
+            Array.from({ length: 8 }, (_, i) => ({
+              name: `e${i}`,
+              line: i + 1,
+              kind: "export" as const,
+            })),
+          ],
+          [
+            "src/other.ts",
+            [
+              { name: "deadA", line: 2, kind: "export" as const },
+              { name: "deadB", line: 5, kind: "export" as const },
+            ],
+          ],
         ]),
       },
       { available: false, items: [] },

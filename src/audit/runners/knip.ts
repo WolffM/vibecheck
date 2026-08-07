@@ -9,18 +9,24 @@
 
 import { spawnSync } from "node:child_process";
 
+export interface DeadExport {
+  name: string;
+  line: number;
+  kind: "export" | "type";
+}
+
 export interface KnipResult {
   available: boolean;
   /** Files knip believes are entirely unused. */
   unusedFiles: string[];
-  /** Unused export/type count per file. */
-  unusedExports: Map<string, number>;
+  /** Unused exports/types per file, with names and lines. */
+  unusedExports: Map<string, DeadExport[]>;
 }
 
 interface KnipJsonIssue {
   file: string;
-  exports?: { name: string }[];
-  types?: { name: string }[];
+  exports?: { name: string; line?: number }[];
+  types?: { name: string; line?: number }[];
 }
 
 interface KnipJson {
@@ -53,12 +59,26 @@ export function runKnip(rootPath: string): KnipResult {
     return { available: false, unusedFiles: [], unusedExports: new Map() };
   }
 
-  const unusedExports = new Map<string, number>();
+  const unusedExports = new Map<string, DeadExport[]>();
   for (const issue of parsed.issues ?? []) {
-    const count = (issue.exports?.length ?? 0) + (issue.types?.length ?? 0);
-    if (count > 0) {
+    const items: DeadExport[] = [
+      ...(issue.exports ?? []).map((e) => ({
+        name: e.name,
+        line: e.line ?? 0,
+        kind: "export" as const,
+      })),
+      ...(issue.types ?? []).map((e) => ({
+        name: e.name,
+        line: e.line ?? 0,
+        kind: "type" as const,
+      })),
+    ];
+    if (items.length > 0) {
       const path = issue.file.replace(/\\/g, "/");
-      unusedExports.set(path, (unusedExports.get(path) ?? 0) + count);
+      unusedExports.set(path, [
+        ...(unusedExports.get(path) ?? []),
+        ...items,
+      ]);
     }
   }
   return {

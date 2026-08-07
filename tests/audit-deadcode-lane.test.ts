@@ -52,7 +52,15 @@ describe("buildDeadcodeLane", () => {
     const knip: KnipResult = {
       available: true,
       unusedFiles: ["src/orphan.ts"],
-      unusedExports: new Map([["src/partial.ts", 2]]),
+      unusedExports: new Map([
+        [
+          "src/partial.ts",
+          [
+            { name: "unusedA", line: 3, kind: "export" as const },
+            { name: "UnusedType", line: 9, kind: "type" as const },
+          ],
+        ],
+      ]),
     };
     const result = buildDeadcodeLane(
       knip,
@@ -77,8 +85,8 @@ describe("buildDeadcodeLane", () => {
     const vulture: VultureResult = {
       available: true,
       items: [
-        { path: "pkg/mod.py", line: 3, confidence: 60 },
-        { path: "pkg/mod.py", line: 9, confidence: 90 },
+        { path: "pkg/mod.py", line: 3, confidence: 60, description: "unused function 'a'" },
+        { path: "pkg/mod.py", line: 9, confidence: 90, description: "unused class 'B'" },
       ],
     };
     const result = buildDeadcodeLane(
