@@ -1,6 +1,6 @@
 # src/core/run-analyze.ts
 
-Deletion candidate · orphaned — zero import fan-in, no declared entry point · anchor `e9a6d3d66351`
+Deletion candidate · orphaned — zero import fan-in, no declared entry point · anchor `2756b2da6b9a`
 
 ### Pre-run verification
 

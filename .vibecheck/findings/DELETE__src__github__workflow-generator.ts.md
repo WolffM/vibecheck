@@ -1,6 +1,6 @@
 # src/github/workflow-generator.ts
 
-Deletion candidate · knip: entire file unreferenced · anchor `e9a6d3d66351`
+Deletion candidate · knip: entire file unreferenced · anchor `2756b2da6b9a`
 
 ### Pre-run verification
 
