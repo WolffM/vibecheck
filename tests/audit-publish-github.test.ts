@@ -5,10 +5,14 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   applyRunFooter,
+  AUDIT_DATA_BRANCH,
   AUDIT_ISSUE_MARKER,
+  AUDIT_PR_MARKER,
   commitDataFiles,
   publishLivingIssue,
+  pushDataBranch,
   stageRunArtifact,
+  upsertDataPr,
   type IssueClient,
 } from "../src/audit/publish/github.js";
 
@@ -17,11 +21,16 @@ afterAll(() => {
   for (const dir of cleanups) rmSync(dir, { recursive: true, force: true });
 });
 
-function fakeClient(existing: { number: number; body: string | null }[]) {
+function fakeClient(
+  existing: { number: number; body: string | null }[],
+  openPulls: { number: number }[] = [],
+) {
   const calls: Record<string, unknown[]> = {
     create: [],
     update: [],
     label: [],
+    createPull: [],
+    updatePull: [],
   };
   const client: IssueClient = {
     async listIssues() {
@@ -36,6 +45,16 @@ function fakeClient(existing: { number: number; body: string | null }[]) {
     },
     async ensureLabel(params) {
       calls.label.push(params);
+    },
+    async listPulls() {
+      return openPulls;
+    },
+    async createPull(params) {
+      calls.createPull.push(params);
+      return { number: 42 };
+    },
+    async updatePull(params) {
+      calls.updatePull.push(params);
     },
   };
   return { client, calls };
@@ -167,5 +186,46 @@ describe("stageRunArtifact", () => {
     const path = stageRunArtifact(work, "12345");
     expect(path).toBe(join(work, ".vibecheck", "runs", "12345.jsonl"));
     expect(readFileSync(path, "utf-8")).toContain("01TESTD");
+  });
+});
+
+describe("living data PR (delivery ladder rung two)", () => {
+  it("creates the PR when none is open, with the marker and merge note", async () => {
+    const { client, calls } = fakeClient([]);
+    const result = await upsertDataPr(client, "o", "r", "main", "Run 1: updated.");
+    expect(result).toEqual({ prNumber: 42, created: true });
+    const params = calls.createPull[0] as { head: string; base: string; body: string };
+    expect(params.head).toBe(AUDIT_DATA_BRANCH);
+    expect(params.base).toBe("main");
+    expect(params.body).toContain(AUDIT_PR_MARKER);
+    expect(params.body).toContain("required status checks");
+  });
+
+  it("refreshes the existing PR instead of opening another", async () => {
+    const { client, calls } = fakeClient([], [{ number: 9 }]);
+    const result = await upsertDataPr(client, "o", "r", "main", "Run 2.");
+    expect(result).toEqual({ prNumber: 9, created: false });
+    expect(calls.createPull).toHaveLength(0);
+    expect(
+      (calls.updatePull[0] as { pull_number: number }).pull_number,
+    ).toBe(9);
+  });
+
+  it("branch push clears a protection that rejects only the default branch", () => {
+    const pair = makeClonePair("vibecheck-ladder-");
+    const hook = join(pair.origin, "hooks", "pre-receive");
+    writeFileSync(
+      hook,
+      '#!/bin/sh\nwhile read old new ref; do\n  [ "$ref" = "refs/heads/main" ] && { echo protected >&2; exit 1; }\ndone\nexit 0\n',
+    );
+    execFileSync("chmod", ["+x", hook]);
+
+    writeDataFiles(pair.work, "L");
+    const result = commitDataFiles(pair.work, { branch: "main", retries: 2 });
+    expect(result.pushed).toBe(false);
+    // Rung two succeeds where rung one was rejected.
+    expect(pushDataBranch(pair.work)).toBe(true);
+    const branches = pair.git(pair.origin, ["branch"]);
+    expect(branches).toContain(AUDIT_DATA_BRANCH.split("/")[1]);
   });
 });

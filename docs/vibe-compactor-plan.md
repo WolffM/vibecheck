@@ -1,6 +1,27 @@
-# vibe-compactor — Design Plan v0.3
+# vibe-compactor — Design Plan v0.4
 
-Status: **v0.3 — LOCKED** (2026-08-06) · Owner: @WolffM
+Status: **v0.4 — LOCKED** (2026-08-07) · Owner: @WolffM
+
+**v0.4 changelog** (funded by round-3 field data and an explicit
+maintainer policy decision):
+
+- **§6 data-file delivery reversed to a ladder ending in a living PR.**
+  "No data-file PR mode" was decided when unprotected defaults were the
+  assumption; the maintainer has since protected every default branch as
+  deliberate policy, which makes direct bot commits impossible and a PR
+  the only self-updating channel. Delivery is now: direct push where
+  allowed → **one living data PR** (branch `vibecheck/audit-data`,
+  force-refreshed from the default branch every run, upserted by marker
+  — the PR analog of the living issue, so no per-run PR spam and no
+  races) → apply-run artifact as the last rung. Push/rebase failures are
+  logged, never swallowed.
+- **§6 per-finding evidence packages** (round 3): one
+  `.vibecheck/findings/<slug>.md` per offender/deletion candidate —
+  exact dead symbols with lines, clone ranges with partners, pre-run
+  string-reference verification, symbol maps with suggested first cuts,
+  verdict commands. Regenerated every run; ships via the data channel and
+  the CI outputs artifact. The actionability bar: an agent acts without
+  re-running the investigation.
 
 **v0.3 changelog** (funded by round-1 first-contact data — the four live
 reports, ten filed verdicts, and the manual triage documented in the
@@ -358,12 +379,14 @@ runners' existing soft-skip pattern).
 
 ### Data-file commits
 
-Locally: the CLI updates `ledger.jsonl` + `trends.json` as ordinary files;
-committing them is the user's normal git workflow (the ledger CLI already
-commits locally and never pushes unbidden). In the action: commits to the
-default branch with fetch-rebase-retry; on push rejection (branch
-protection), events attach as a workflow artifact and the report prints
-"apply with `npx vibecheck apply-run <run-id>`." No data-file PR mode.
+Locally: the CLI updates `ledger.jsonl` + `trends.json` + `findings/` as
+ordinary files; committing them is the user's normal git workflow (the
+ledger CLI already commits locally and never pushes unbidden). In the
+action (v0.4 ladder): direct commit to the default branch with
+fetch-rebase-retry; on rejection, the **living data PR** from
+`vibecheck/audit-data` (force-refreshed each run, upserted by marker);
+on branch-push failure, events attach as a workflow artifact and the
+report prints "apply with `npx vibecheck apply-run <run-id>`.".
 
 **Dirty working trees (local runs):** a run on uncommitted changes records
 `dirty: true` in its trends entry; trend comparisons only ever use

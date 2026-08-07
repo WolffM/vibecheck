@@ -10,9 +10,12 @@ import { join, resolve } from "node:path";
 import { Octokit } from "@octokit/rest";
 import {
   applyRunFooter,
+  AUDIT_DATA_BRANCH,
   commitDataFiles,
   publishLivingIssue,
+  pushDataBranch,
   stageRunArtifact,
+  upsertDataPr,
   type IssueClient,
 } from "./github.js";
 
@@ -51,6 +54,23 @@ function makeOctokitClient(token: string): IssueClient {
       } catch {
         // Label already exists.
       }
+    },
+    async listPulls(params) {
+      const response = await octokit.pulls.list({
+        owner: params.owner,
+        repo: params.repo,
+        head: params.head,
+        state: params.state,
+        per_page: 10,
+      });
+      return response.data.map((pr) => ({ number: pr.number }));
+    },
+    async createPull(params) {
+      const response = await octokit.pulls.create(params);
+      return { number: response.data.number };
+    },
+    async updatePull(params) {
+      await octokit.pulls.update(params);
     },
   };
 }
@@ -95,27 +115,45 @@ async function main(): Promise<void> {
       email: "41898282+github-actions[bot]@users.noreply.github.com",
     },
   });
-  console.log(
-    push.pushed
-      ? push.committed
-        ? `Data files pushed to ${branch} (attempt ${push.attempts}).`
-        : "Data files unchanged — nothing to push."
-      : `Data-file push rejected after ${push.attempts} attempts — falling back to artifact.`,
-  );
-
-  let footer = "";
-  const runId = process.env.GITHUB_RUN_ID ?? "local";
-  if (!push.pushed) {
-    const artifactPath = stageRunArtifact(rootPath, runId);
-    footer = applyRunFooter(runId);
-    setOutput("push_rejected", "true");
-    setOutput("artifact_path", artifactPath);
-    console.log(`Run events staged at ${artifactPath}.`);
-  } else {
-    setOutput("push_rejected", "false");
-  }
 
   const client = makeOctokitClient(token);
+  let footer = "";
+  let channel = "push";
+  const runId = process.env.GITHUB_RUN_ID ?? "local";
+
+  if (push.pushed) {
+    console.log(
+      push.committed
+        ? `Data files pushed to ${branch} (attempt ${push.attempts}).`
+        : "Data files unchanged — nothing to publish.",
+    );
+  } else {
+    // Rung two: the living data PR (design v0.4 — protected defaults are
+    // the user's stated policy, so this is the normal path there).
+    console.log(
+      `Direct data push rejected after ${push.attempts} attempts — opening the living data PR.`,
+    );
+    if (pushDataBranch(rootPath)) {
+      const summary = `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
+      const pr = await upsertDataPr(client, owner, repo, branch, summary);
+      channel = "pr";
+      footer = `---\n_Audit data (ledger events, trends, evidence packages) is awaiting merge in #${pr.prNumber}._`;
+      setOutput("data_pr", String(pr.prNumber));
+      console.log(
+        `${pr.created ? "Opened" : "Refreshed"} living data PR #${pr.prNumber}.`,
+      );
+    } else {
+      // Rung three: artifact + apply-run.
+      channel = "artifact";
+      const artifactPath = stageRunArtifact(rootPath, runId);
+      footer = applyRunFooter(runId);
+      setOutput("artifact_path", artifactPath);
+      console.log(`Run events staged at ${artifactPath}.`);
+    }
+  }
+  setOutput("data_channel", channel);
+  setOutput("push_rejected", channel === "push" ? "false" : "true");
+
   const result = await publishLivingIssue(client, owner, repo, markdown, footer);
   console.log(
     `${result.created ? "Created" : "Updated"} living audit issue #${result.issueNumber}.`,

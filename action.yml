@@ -157,7 +157,7 @@ runs:
         retention-days: 30
 
     - name: Upload apply-run artifact
-      if: inputs.mode == 'audit' && steps.audit-publish.outputs.push_rejected == 'true'
+      if: inputs.mode == 'audit' && steps.audit-publish.outputs.data_channel == 'artifact'
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
         name: vibecheck-audit-run-${{ github.run_id }}

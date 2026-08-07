@@ -24,6 +24,9 @@ export const AUDIT_ISSUE_MARKER = "<!-- vibecheck-audit-living-issue -->";
 export const AUDIT_ISSUE_LABEL = "vibecheck-audit";
 const AUDIT_ISSUE_TITLE = "vibeCheck Audit";
 
+export const AUDIT_DATA_BRANCH = "vibecheck/audit-data";
+export const AUDIT_PR_MARKER = "<!-- vibecheck-audit-data-pr -->";
+
 /** The narrow Octokit surface the sink needs — injectable for tests. */
 export interface IssueClient {
   listIssues(params: {
@@ -50,6 +53,26 @@ export interface IssueClient {
     repo: string;
     name: string;
     description: string;
+  }): Promise<void>;
+  listPulls(params: {
+    owner: string;
+    repo: string;
+    head: string;
+    state: "open";
+  }): Promise<{ number: number }[]>;
+  createPull(params: {
+    owner: string;
+    repo: string;
+    title: string;
+    head: string;
+    base: string;
+    body: string;
+  }): Promise<{ number: number }>;
+  updatePull(params: {
+    owner: string;
+    repo: string;
+    pull_number: number;
+    body: string;
   }): Promise<void>;
 }
 
@@ -182,6 +205,82 @@ export function commitDataFiles(
     }
   }
   return { committed: true, pushed: false, attempts: retries };
+}
+
+/**
+ * Rung two of the delivery ladder: force-push the data commit to the
+ * audit-data branch (branch pushes clear protections that block the
+ * default branch). The commit already sits on HEAD; protection rejected
+ * it for the default branch only.
+ */
+export function pushDataBranch(rootPath: string): boolean {
+  try {
+    git(rootPath, [
+      "push",
+      "--force",
+      "origin",
+      `HEAD:refs/heads/${AUDIT_DATA_BRANCH}`,
+    ]);
+    return true;
+  } catch (error) {
+    console.warn(
+      `data-branch push failed: ${(error as Error).message.split("\n").slice(0, 2).join(" | ")}`,
+    );
+    return false;
+  }
+}
+
+export interface DataPrResult {
+  prNumber: number;
+  created: boolean;
+}
+
+/** Create-or-refresh the living data PR from the audit-data branch. */
+export async function upsertDataPr(
+  client: IssueClient,
+  owner: string,
+  repo: string,
+  base: string,
+  summary: string,
+): Promise<DataPrResult> {
+  const body = [
+    AUDIT_PR_MARKER,
+    "",
+    "Audit data from the latest vibeCheck run — machine events for the",
+    "ledger, the trends entry, and regenerated per-finding evidence",
+    "packages. The branch is force-refreshed from the latest default",
+    "branch on every run, so this PR is always current; merge whenever.",
+    "",
+    summary,
+    "",
+    "_If required status checks do not trigger on data-only changes,",
+    "merge with admin rights or adjust the ruleset for `.vibecheck/**`._",
+  ].join("\n");
+
+  const existing = await client.listPulls({
+    owner,
+    repo,
+    head: `${owner}:${AUDIT_DATA_BRANCH}`,
+    state: "open",
+  });
+  if (existing.length > 0) {
+    await client.updatePull({
+      owner,
+      repo,
+      pull_number: existing[0].number,
+      body,
+    });
+    return { prNumber: existing[0].number, created: false };
+  }
+  const created = await client.createPull({
+    owner,
+    repo,
+    title: "vibeCheck: audit data",
+    head: AUDIT_DATA_BRANCH,
+    base,
+    body,
+  });
+  return { prNumber: created.number, created: true };
 }
 
 /**
