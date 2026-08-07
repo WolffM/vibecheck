@@ -50,3 +50,4 @@
 {"id":"01KZANYFV8769ZT5FYVD8768D3","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"arrival:test-fixtures/typescript-errors.ts","score":0,"threshold":1}
 {"id":"01KZANYFV8769ZT5FYVD8768D4","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/bandit-issues.py","score":0,"threshold":0.5}
 {"id":"01KZANYFV8769ZT5FYVD8768D5","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/ruff-issues.py","score":0,"threshold":0.5}
+{"id":"01KZES5QTGZW5WHXG610DJ9P9W","at":"2026-08-07T11:53:38-07:00","kind":"firing","fingerprint":"deadcode:src/audit/gate.ts","score":0.6,"threshold":0.5}
