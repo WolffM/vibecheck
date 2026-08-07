@@ -9,12 +9,14 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { renderAgentBriefing } from "../briefing.js";
 import type { AuditRunResult } from "../index.js";
 import { buildMachineResult, renderAuditReport } from "../report.js";
 
 export interface LocalPublishResult {
   reportPath: string;
   machinePath: string;
+  briefingPath: string;
 }
 
 export function publishLocal(result: AuditRunResult): LocalPublishResult {
@@ -32,5 +34,8 @@ export function publishLocal(result: AuditRunResult): LocalPublishResult {
     "utf-8",
   );
 
-  return { reportPath, machinePath };
+  const briefingPath = join(outDir, "agent-briefing.md");
+  writeFileSync(briefingPath, renderAgentBriefing(result), "utf-8");
+
+  return { reportPath, machinePath, briefingPath };
 }

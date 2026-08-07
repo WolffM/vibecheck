@@ -83,6 +83,7 @@ export function buildDeadcodeLane(
   vulture: VultureResult,
   candidateFiles: string[],
   definitions: Map<string, number>,
+  entryPoints: Set<string> = new Set(),
 ): DeadcodeLaneResult {
   const disclosures: string[] = [];
   const coverage: string[] = [];
@@ -115,9 +116,19 @@ export function buildDeadcodeLane(
 
   const candidates = new Set(candidateFiles);
   const tsjsCandidates = candidateFiles.filter(isTsJsFile);
+  // Declared entry points (package manifests, worker configs, script
+  // tags) are reachable by construction — dead-surface claims on them
+  // are the round-1 published-entry FP class.
   const unusedFiles = new Set(
-    knip.unusedFiles.filter((f) => candidates.has(f)),
+    knip.unusedFiles.filter(
+      (f) => candidates.has(f) && !entryPoints.has(f),
+    ),
   );
+  if (entryPoints.size > 0) {
+    disclosures.push(
+      `${entryPoints.size} declared entry points exempt from dead-surface claims`,
+    );
+  }
   const filesSignalMuted =
     tsjsCandidates.length >= KNIP_FILES_MUTE_MIN_CANDIDATES &&
     unusedFiles.size / tsjsCandidates.length > KNIP_FILES_MUTE_SHARE;
@@ -147,7 +158,11 @@ export function buildDeadcodeLane(
     let deadItems = 0;
     if (tsjs) {
       unusedFile = unusedFiles.has(path) && !filesSignalMuted;
-      deadItems = knip.unusedExports.get(path) ?? 0;
+      // Entry files' exports ARE the published surface — "unused" only
+      // means unimported in-repo.
+      deadItems = entryPoints.has(path)
+        ? 0
+        : (knip.unusedExports.get(path) ?? 0);
       score = unusedFile
         ? 1
         : defs > 0
@@ -185,6 +200,7 @@ export function buildDeadcodeLane(
 export function runDeadcodeLane(
   rootPath: string,
   candidateFiles: string[],
+  entryPoints?: Set<string>,
 ): DeadcodeLaneResult {
   const hasTsJs = candidateFiles.some(isTsJsFile);
   const hasPython = candidateFiles.some(isPythonFile);
@@ -199,5 +215,6 @@ export function runDeadcodeLane(
     vulture,
     candidateFiles,
     countDefinitions(rootPath, candidateFiles),
+    entryPoints,
   );
 }

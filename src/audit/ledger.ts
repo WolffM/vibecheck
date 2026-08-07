@@ -440,6 +440,9 @@ export function computeRunEvents(
   fold: LedgerFold,
   currentScores: Map<string, { score: number; threshold: number }>,
   at: string,
+  /** Lanes with no signal this run (e.g. saturation-muted) — their
+   * absence from currentScores must not mass-stamp `fixed`. */
+  skipLanes: Set<string> = new Set(),
 ): LedgerEvent[] {
   const events: LedgerEvent[] = [];
 
@@ -461,6 +464,7 @@ export function computeRunEvents(
   for (const [fingerprint, state] of fold.firing) {
     if (state.fixedAt) continue;
     const lane = laneOf(fingerprint);
+    if (skipLanes.has(lane)) continue;
     const anchor = LANE_ANCHORS[lane];
     if (anchor === undefined) continue;
     const hysteresis = anchor * FLOOR_STEP_FRACTION;

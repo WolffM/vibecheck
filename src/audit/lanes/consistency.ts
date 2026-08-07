@@ -18,8 +18,8 @@
  * the validation instrument, never outcome fitting.
  */
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
+import { detectEntryPoints } from "../entrypoints.js";
 import { isTestFile } from "../git-arrival.js";
 import { isTsJsFile, type ImportData } from "../import-graph.js";
 
@@ -62,31 +62,6 @@ const ORPHAN_EXEMPT_DIRS =
 const ORPHAN_EXEMPT_NAMES =
   /(^|\/|[-_.])(index|main|cli|app|server|setup|entry)\.[^.]+$|\.config\.[^.]+$|\.d\.ts$|rc\.(js|cjs|mjs)$|(^|\/)\.[^/]+$/;
 
-/** Paths referenced by any package.json (main/bin/exports/scripts). */
-export function collectPackageJsonRefs(
-  rootPath: string,
-  candidateFiles: string[],
-): Set<string> {
-  const refs = new Set<string>();
-  const packageJsons = candidateFiles.filter(
-    (f) => f === "package.json" || f.endsWith("/package.json"),
-  );
-  for (const pkgPath of packageJsons) {
-    let raw: string;
-    try {
-      raw = readFileSync(join(rootPath, pkgPath), "utf-8");
-    } catch {
-      continue;
-    }
-    const pkgDir = dirname(pkgPath) === "." ? "" : dirname(pkgPath) + "/";
-    // Any path-shaped string in the manifest counts as a reference —
-    // main, bin, exports, scripts all mention files this way.
-    for (const match of raw.matchAll(/["']\.?\/?([\w./@-]+\.[cm]?[jt]sx?)["']?/g)) {
-      refs.add(pkgDir + match[1].replace(/^\.\//, ""));
-    }
-  }
-  return refs;
-}
 
 /** Tarjan SCC — cycle members of size ≥2 (self-loops excluded upstream). */
 export function findCycleMembers(
@@ -217,6 +192,7 @@ export function buildConsistencyLane(
   rootPath: string,
   candidateFiles: string[],
   importData: ImportData,
+  entryPoints?: Set<string>,
 ): ConsistencyLaneResult {
   const disclosures: string[] = [
     "orphan + cycle + category signals are TS/JS-only (import-graph jurisdiction); copy artifacts are language-agnostic",
@@ -247,13 +223,14 @@ export function buildConsistencyLane(
       fanIn.set(target, (fanIn.get(target) ?? 0) + 1);
     }
   }
-  const pkgRefs = collectPackageJsonRefs(rootPath, candidateFiles);
+  const declaredEntries =
+    entryPoints ?? detectEntryPoints(rootPath, candidateFiles).entries;
   const orphans = new Set<string>();
   for (const path of codeFiles) {
     if (!isTsJsFile(path) || !importData.graph.has(path)) continue;
     if ((fanIn.get(path) ?? 0) > 0) continue;
     if (ORPHAN_EXEMPT_DIRS.test(path) || ORPHAN_EXEMPT_NAMES.test(path)) continue;
-    if (pkgRefs.has(path)) continue;
+    if (declaredEntries.has(path)) continue;
     orphans.add(path);
   }
 

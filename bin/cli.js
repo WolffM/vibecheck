@@ -41,6 +41,7 @@ Commands:
   floors      Manage attested lane floors (floors reset <lane>)
   apply-run   Apply a CI run's ledger events from an artifact file
   gate        Evaluate the audit activity gate (prints active=true|false)
+  triage      Walk audit findings interactively, filing verdicts + briefing
   detect      Detect repository profile (languages, tools)
   help        Show this help message
 
@@ -116,6 +117,10 @@ switch (command) {
 
   case "gate":
     runScript("audit/gate-cli.ts", args.slice(1));
+    break;
+
+  case "triage":
+    runScript("audit/triage-cli.ts", args.slice(1));
     break;
 
   // Dev-only validation harness (design §10); deliberately not in help.

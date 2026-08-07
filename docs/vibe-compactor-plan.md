@@ -1,6 +1,34 @@
-# vibe-compactor — Design Plan v0.2
+# vibe-compactor — Design Plan v0.3
 
-Status: **v0.2 — LOCKED** (2026-08-06) · Owner: @WolffM
+Status: **v0.3 — LOCKED** (2026-08-06) · Owner: @WolffM
+
+**v0.3 changelog** (funded by round-1 first-contact data — the four live
+reports, ten filed verdicts, and the manual triage documented in the
+round-1 findings report):
+
+- **§4 repo-saturation mute**, generalized from bulk arrival's variance
+  collapse: a lane firing on ≥70% of ≥20 applicable files carries a
+  repo-level fact, not per-file corroboration (round 1 measured arrival
+  at 75–100% on every partner repo — the ≥2-lane gate had silently
+  degraded to a big-file list). Saturated lanes become one loud health
+  headline and leave the gate until they discriminate. Saturation
+  changes are trend breaks; muted lanes never mass-stamp `fixed`.
+- **§3.1 entry-point detection pass**: package manifests (with dist→src
+  back-mapping), worker configs, pm2 ecosystems, HTML script tags feed
+  roots to the orphan and dead-code detectors. Round 1's two systematic
+  FP classes (published entries, executed-not-imported scripts) are
+  detector bugs fixed centrally — the ratchet is reserved for
+  irreducible judgment noise, not known mechanical classes.
+- **§6 triage→handoff surface**: the revealed workflow is
+  human-triages-agent-executes. Every run now emits an agent briefing
+  (`out/agent-briefing.md`) beside the report; `vibecheck triage` walks
+  findings, files verdicts, and regenerates both. Alarm-only intact —
+  the human makes every decision; the tool automates the packaging on
+  both sides of it.
+- **§11/§13 M3 re-scoped**, deletion candidates promoted (see below).
+- Partial fixes acknowledge as **improving** (score down ≥10% from its
+  firing level while still flagged) — the "I fixed it, the report
+  disagrees" frustration pre-empted.
 
 **v0.2 changelog:** §7 trigger redesign — the binary any-commit gate
 becomes the three-path gate (fix-confirmation / volume / staleness),
@@ -548,9 +576,22 @@ subject until after the decisions it informs). Therefore:
   duplication / smells / consistency lanes; **2–3 design-partner repos
   live; exit criterion: at least one unprompted ledger event, or a
   documented pivot conversation about the segment bet (§1).**
-- **M3 — test-quality static tier + binding decisions:** weights fitted
-  (≥5 repos, held-out), independence gates, banded no-override decision,
-  deletion-candidate go/no-go, channel default reviewed.
+- **M3 — loop UX + state-lane refinement (re-scoped v0.3):** center of
+  gravity moves to where round 1 found the differentiated value:
+  consistency/duplication/dead-code refinement (Skylos union, deptry,
+  cargo-shear, similarity-ts, ast-grep rulepack) and the
+  triage→handoff loop. Honest accounting of the original M3 items:
+  the **test-quality static tier is demoted** — the segment saturates
+  test-path signals (round 1: arrival at 75–100% firing everywhere;
+  assertion-free-test detection needs tests to exist); revisit only for
+  repos where arrival is unmuted. **Weight fitting is recorded as
+  underpowered** — four same-owner repos is not five held-out repos;
+  do not launder it. **No-override falsification: insufficient n per
+  its own §10.1 rule** (corners stay recorded-untested). **Deletion
+  candidates are promoted to a real surface** — round 1 produced three
+  verified deletion findings against a predicted-≈empty output; the
+  briefing's deletion-candidates section is the v1 (single-signal,
+  verification steps attached, alarm-only).
 - **M4 — dynamic tier (opt-in).**
 - **M5 — productize** (+ abandonment study if corpus ready; ANALYSIS-PLAN
   committed first).
@@ -583,6 +624,14 @@ subject until after the decisions it informs). Therefore:
 ---
 
 ## 13. Tabled / deferred (with reasons)
+
+**Deletion candidates — un-tabled at v0.3.** The v3–v4 cut assumed
+≈empty output; round 1 produced three manually-verified deletion
+findings (a zero-importer orphan, a dead re-export block, a dead service
+module) plus two vendored-tree exclusions. The agent briefing now
+carries a deletion-candidates section (single strong state signal,
+mandatory verification steps, nothing deleted by the tool). The M3
+go/no-go is superseded by this shipped v1.
 
 - **Churn / hotspot / coupling forensics** — segment-conditional tabling
   (§1): needs windows and message quality the *primary* segment lacks;

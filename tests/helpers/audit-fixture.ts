@@ -137,7 +137,10 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
       ],
       reopened: ["size:src/grew.ts"],
       stampedEvents: 3,
+      improving: { "size:src/dumped.ts": 18 },
     },
+    saturatedLanes: {},
+    entryPointCount: 2,
     trends: {
       entry: {
         at: "2026-08-05T12:00:00Z",

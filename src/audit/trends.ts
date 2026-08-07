@@ -29,6 +29,8 @@ export interface TrendEntry {
   dirty: boolean;
   toolVersions: Record<string, string | null>;
   floors: Record<string, number>;
+  /** Lanes muted by repo saturation at this run (v0.3). */
+  saturated?: string[];
   aggregates: {
     candidateFiles: number;
     perLane: Record<string, LaneAggregate>;
@@ -130,6 +132,13 @@ export function computeDerivative(
     if (from !== to) {
       trendBreaks.push(`floor: ${lane} ${from} → ${to}`);
     }
+  }
+  const fromSat = (baseline.saturated ?? []).join(",");
+  const toSat = (current.saturated ?? []).join(",");
+  if (fromSat !== toSat) {
+    trendBreaks.push(
+      `saturation: [${fromSat || "none"}] → [${toSat || "none"}]`,
+    );
   }
 
   const firingDelta: Record<string, number> = {};

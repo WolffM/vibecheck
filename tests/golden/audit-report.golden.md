@@ -15,7 +15,7 @@ Current stock: 2 worst offenders, 2 gate-passing, 3 candidate files.
 Entry requires ≥2 applicable lanes firing plus margin; 15 is a ceiling, not a quota.
 
 1. `src/dumped.ts` — firing: arrival + size (2 lanes applicable)
-   1483 code lines (tier 2); 79% of 14 commits arrived with no reaching test; largest single-commit arrival 12× the repo's median commit
+   1483 code lines (tier 2); 79% of 14 commits arrived with no reaching test; largest single-commit arrival 12× the repo's median commit; **improving** — size score down 18% since first flagged
 2. `src/app.ts` — firing: arrival + size (2 lanes applicable)
    640 code lines (tier 1); 67% of 9 commits arrived with no reaching test; snapshot churn in 11% of touches
 
@@ -56,6 +56,7 @@ Aging justifications — re-affirm with `vibecheck justify <fingerprint> --reaso
 ## Appendix
 
 - Excluded as generated/vendored: 1 file.
+- Declared entry points detected (exempt from orphan/dead-surface claims): 2.
 - Lanes planned: size, arrival.
 - Machine-readable results: `.vibecheck/out/audit.json`.
 - File verdicts: `vibecheck justify|wontfix|noise <lane>:<path> --reason "..."`.

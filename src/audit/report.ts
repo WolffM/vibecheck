@@ -50,6 +50,18 @@ function healthSection(result: AuditRunResult): string[] {
     );
   }
 
+  for (const [lane, rate] of Object.entries(result.saturatedLanes)) {
+    const laneFact =
+      lane === "arrival"
+        ? "essentially nothing in this repo moves together with a test"
+        : `the whole repo shares this condition`;
+    lines.push(
+      "",
+      `> 🔇 **Lane saturation** — ${lane} fires on ${Math.round(rate * 100)}% of applicable files: ${laneFact}. ` +
+        `That is a repo-level fact, said once here; the lane is muted as per-file corroboration until it discriminates.`,
+    );
+  }
+
   lines.push(
     "",
     `Current stock: ${plural(entry.aggregates.offenders, "worst offender")}, ` +
@@ -117,6 +129,14 @@ function evidenceFor(result: AuditRunResult, path: string): string {
     if (cons.orphan) parts.push("orphaned — nothing imports it");
     if (cons.minorityOf) parts.push(`minority provider (${cons.minorityOf})`);
     if (cons.cycleSize) parts.push(`in a ${cons.cycleSize}-file import cycle`);
+  }
+  // Partial-fix acknowledgment: work on this file is registering even
+  // though the finding still fires.
+  for (const [fingerprint, pct] of Object.entries(result.ledger.improving)) {
+    if (pathOf(fingerprint) === path) {
+      const lane = fingerprint.slice(0, fingerprint.indexOf(":"));
+      parts.push(`**improving** — ${lane} score down ${pct}% since first flagged`);
+    }
   }
   return parts.join("; ");
 }
@@ -364,6 +384,7 @@ export function renderAuditReport(result: AuditRunResult): string {
     "## Appendix",
     "",
     `- Excluded as generated/vendored: ${plural(result.excluded.length, "file")}.`,
+    `- Declared entry points detected (exempt from orphan/dead-surface claims): ${result.entryPointCount}.`,
     `- Lanes planned: ${result.lanesPlanned.join(", ") || "none"}.`,
     `- Machine-readable results: \`.vibecheck/out/audit.json\`.`,
     `- File verdicts: \`vibecheck justify|wontfix|noise <lane>:<path> --reason "..."\`.`,

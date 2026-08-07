@@ -87,6 +87,46 @@ export interface FileScore {
   gatePassed: boolean;
 }
 
+/**
+ * Repo-saturation mute (v0.3, generalized from bulk arrival's variance
+ * collapse): a lane firing on most of a repo's applicable files carries
+ * a repo-level fact, not per-file information — as corroboration it
+ * contributes a constant, silently degrading the ≥2-lane gate to a
+ * ≥1-other-lane gate. Round 1 measured arrival at 75–100% firing on
+ * every partner repo, so the threshold sits below the observed
+ * non-discriminating band. Saturated lanes convert to a health-summary
+ * headline and stop counting toward the gate until they discriminate.
+ */
+export const SATURATION_FIRING_RATE = 0.7;
+export const SATURATION_MIN_APPLICABLE = 20;
+
+/** lane → firing rate, for lanes past the saturation threshold. */
+export function detectSaturatedLanes(
+  laneScores: LaneScore[],
+  floors: Record<string, number> = {},
+): Map<string, number> {
+  const perLane = new Map<string, { applicable: number; firing: number }>();
+  for (const s of laneScores) {
+    if (!s.applicable) continue;
+    const anchor = LANE_ANCHORS[s.lane];
+    if (anchor === undefined) continue;
+    const stats = perLane.get(s.lane) ?? { applicable: 0, firing: 0 };
+    stats.applicable++;
+    if (s.score >= Math.max(anchor, floors[s.lane] ?? 0)) stats.firing++;
+    perLane.set(s.lane, stats);
+  }
+  const saturated = new Map<string, number>();
+  for (const [lane, stats] of perLane) {
+    if (
+      stats.applicable >= SATURATION_MIN_APPLICABLE &&
+      stats.firing / stats.applicable >= SATURATION_FIRING_RATE
+    ) {
+      saturated.set(lane, stats.firing / stats.applicable);
+    }
+  }
+  return saturated;
+}
+
 export interface ScoringOptions {
   /** Per-lane attested floors (ratchet); absent lanes floor at 0. */
   floors?: Record<string, number>;

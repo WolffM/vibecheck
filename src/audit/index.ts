@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { loadVibeCopConfig } from "../core/config-loader.js";
 import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
+import { detectEntryPoints } from "./entrypoints.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
 import {
   collectGitHistory,
@@ -35,6 +36,7 @@ import {
   computeRunEvents,
   floorsForScoring,
   foldLedger,
+  laneOf,
   makeFingerprint,
   readLedger,
   resolveVerdict,
@@ -46,6 +48,7 @@ import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
 import {
   bestFirstTargets,
   computeBlastRadius,
+  detectSaturatedLanes,
   LANE_ANCHORS,
   scoreFiles,
   worstOffenders,
@@ -106,7 +109,14 @@ export interface AuditRunResult {
     reopened: string[];
     /** Machine events (firing/fixed/rename) appended by this run. */
     stampedEvents: number;
+    /** Still-firing fingerprints whose score dropped ≥10% since they
+     * first fired — "improved, still flagged" (partial-fix framing). */
+    improving: Record<string, number>;
   };
+  /** Lanes muted this run by repo saturation (lane → firing rate). */
+  saturatedLanes: Record<string, number>;
+  /** Declared entry points detected (count only; detail in machine artifact). */
+  entryPointCount: number;
   trends: {
     entry: TrendEntry;
     /** Null until a clean ≥21-day-old baseline exists. */
@@ -172,6 +182,8 @@ export async function runAudit(
   const importData = buildImportData(rootPath, kept);
   const importGraph = importData.graph;
 
+  const entryPoints = detectEntryPoints(rootPath, kept);
+
   const lanes: AuditRunResult["lanes"] = {};
   if (config.lanes.size.enabled) {
     lanes.size = runSizeLane(rootPath, kept, config);
@@ -183,7 +195,7 @@ export async function runAudit(
     lanes.arrival = runArrivalLane(rootPath, history, kept, importGraph);
   }
   if (config.lanes.deadcode.enabled) {
-    lanes.deadcode = runDeadcodeLane(rootPath, kept);
+    lanes.deadcode = runDeadcodeLane(rootPath, kept, entryPoints.entries);
   }
   if (config.lanes.duplication.enabled) {
     lanes.duplication = runDuplicationLane(rootPath, kept, codeLines, config);
@@ -192,7 +204,12 @@ export async function runAudit(
     lanes.smells = runSmellsLane(rootPath, kept, codeLines);
   }
   if (config.lanes.consistency.enabled) {
-    lanes.consistency = buildConsistencyLane(rootPath, kept, importData);
+    lanes.consistency = buildConsistencyLane(
+      rootPath,
+      kept,
+      importData,
+      entryPoints.entries,
+    );
   }
 
   const allLaneScores: LaneScore[] = [
@@ -262,9 +279,16 @@ export async function runAudit(
   const floors = floorsForScoring(fold);
   const verdictCtx = { anchorDate, codeLines };
 
+  // Repo-saturation mute (v0.3): a lane at ceiling carries a repo-level
+  // fact, not per-file corroboration. Detected pre-suppression so human
+  // verdicts can't unmute a lane by thinning its firing set.
+  const saturated = detectSaturatedLanes(allLaneScores, floors);
+  const saturatedLanes = new Set(saturated.keys());
+
   const suppressed: ResolvedVerdict[] = [];
   const reopened: string[] = [];
   const laneScores = allLaneScores.filter((score) => {
+    if (saturatedLanes.has(score.lane)) return false;
     const resolved = resolveVerdict(
       fold,
       makeFingerprint(score.lane, score.path),
@@ -301,8 +325,27 @@ export async function runAudit(
         },
       ]),
   );
-  const runEvents = computeRunEvents(fold, currentScores, anchorDate);
+  const runEvents = computeRunEvents(
+    fold,
+    currentScores,
+    anchorDate,
+    saturatedLanes,
+  );
   if (stampLedger && runEvents.length > 0) appendEvents(rootPath, runEvents);
+
+  // Partial-fix acknowledgment: still firing, but meaningfully down from
+  // the score it originally fired at ("improved, still flagged").
+  const improving: Record<string, number> = {};
+  for (const [fingerprint, state] of fold.firing) {
+    if (state.fixedAt || saturatedLanes.has(laneOf(fingerprint))) continue;
+    const current = currentScores.get(fingerprint);
+    if (!current || current.score < current.threshold) continue;
+    if (state.score > 0 && current.score <= state.score * 0.9) {
+      improving[fingerprint] = Math.round(
+        (1 - current.score / state.score) * 100,
+      );
+    }
+  }
 
   const offenders = worstOffenders(fileScores, config.maxReportItems);
   const trendEntry: TrendEntry = {
@@ -311,6 +354,7 @@ export async function runAudit(
     dirty,
     toolVersions: { scc: lanes.size?.toolVersion ?? null },
     floors,
+    saturated: [...saturatedLanes].sort(),
     aggregates: {
       candidateFiles: kept.length,
       perLane: Object.fromEntries(
@@ -358,7 +402,10 @@ export async function runAudit(
       agingJustifications,
       reopened,
       stampedEvents: renameEvents.length + runEvents.length,
+      improving,
     },
+    saturatedLanes: Object.fromEntries(saturated),
+    entryPointCount: entryPoints.entries.size,
     trends: {
       entry: trendEntry,
       derivative,
