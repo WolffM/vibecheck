@@ -57,6 +57,35 @@ describe("detectEntryPoints", () => {
     expect(sources.get("src/server/index.ts")).toBe("package.json");
   });
 
+  it("back-maps nested-package dist exports to their sources", () => {
+    const root = makeRoot({
+      "packages/logger/package.json": JSON.stringify({
+        exports: { "./worker": { default: "./dist/worker.js" } },
+      }),
+    });
+    const files = [
+      "packages/logger/package.json",
+      "packages/logger/src/worker.ts",
+    ];
+    const { entries } = detectEntryPoints(root, files);
+    expect(entries.has("packages/logger/src/worker.ts")).toBe(true);
+  });
+
+  it("reads framework-template references, including ?raw imports", () => {
+    const root = makeRoot({
+      "src/components/MicroFrontend.astro":
+        "---\nimport loader from './mf-loader.js?raw'\n---\n<script src=\"./widget.js\"></script>",
+    });
+    const files = [
+      "src/components/MicroFrontend.astro",
+      "src/components/mf-loader.js",
+      "src/components/widget.js",
+    ];
+    const { entries } = detectEntryPoints(root, files);
+    expect(entries.has("src/components/mf-loader.js")).toBe(true);
+    expect(entries.has("src/components/widget.js")).toBe(true);
+  });
+
   it("finds wrangler mains, pm2 scripts, and HTML script tags", () => {
     const root = makeRoot({
       "workers/api/wrangler.toml": 'name = "api"\nmain = "src/worker.ts"\n',

@@ -9,11 +9,21 @@
     "src/audit/backtest.ts",
     "src/audit/publish/github-cli.ts",
     "src/tools/run-autofix.ts",
-    "scripts/*.ts"
+    "scripts/*.ts",
+    "src/audit/gate-cli.ts",
+    "src/audit/triage-cli.ts"
   ],
-  "project": ["src/**/*.ts", "scripts/**/*.ts"],
-  "ignore": ["tests/**/*.ts", "test-fixtures/**/*.ts"],
-  "ignoreDependencies": ["jscpd"],
+  "project": [
+    "src/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "ignore": [
+    "tests/**/*.ts",
+    "test-fixtures/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "jscpd"
+  ],
   "eslint": false,
   "vitest": false
 }

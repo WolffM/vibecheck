@@ -23,21 +23,31 @@
 import { readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
 
-const BUILD_DIR_PATTERN = /^(?:\.\/)?(dist|build|lib|out|es|esm|cjs)\//;
 
 /** Candidate-set lookup with extension fallbacks for TS sources. */
 function resolveToCandidate(
   path: string,
   candidates: Set<string>,
 ): string | null {
-  const clean = posix.normalize(path.replace(/^\.\//, ""));
+  // Bundler query/hash suffixes (?raw, ?url) are load semantics, not path.
+  const clean = posix
+    .normalize(path.replace(/^\.\//, ""))
+    .replace(/[?#].*$/, "");
   if (candidates.has(clean)) return clean;
   const tries: string[] = [];
-  // dist/x.js → src/x.ts (published-surface back-mapping).
-  if (BUILD_DIR_PATTERN.test(clean)) {
-    const stripped = clean.replace(BUILD_DIR_PATTERN, "");
-    for (const prefix of ["src/", "", "lib/"]) {
-      tries.push(prefix + stripped);
+  // dist/x.js → src/x.ts (published-surface back-mapping), at any depth:
+  // a nested package's "./dist/worker.js" arrives here as
+  // "packages/logger/dist/worker.js".
+  const buildDirAt = clean.match(
+    /(^|\/)(dist|build|lib|out|es|esm|cjs)\//,
+  );
+  if (buildDirAt) {
+    const prefix = clean.slice(0, (buildDirAt.index ?? 0)) + (buildDirAt[1] || "");
+    const stripped = clean.slice(
+      (buildDirAt.index ?? 0) + buildDirAt[0].length,
+    );
+    for (const mid of ["src/", "", "lib/"]) {
+      tries.push(prefix + mid + stripped);
     }
   }
   tries.push(clean);
@@ -165,6 +175,25 @@ export function detectEntryPoints(
     const dir = dirname(configPath) === "." ? "" : dirname(configPath);
     for (const ref of collectPathish(raw)) {
       mark(ref, dir, configPath);
+    }
+  }
+
+  // --- framework templates (.astro/.vue/.svelte) --------------------------
+  // Template files sit outside the TS/JS import graph, so scripts they
+  // pull in (frontmatter imports, ?raw loaders, src attributes) look
+  // orphaned without this pass.
+  for (const templatePath of candidateFiles.filter((f) =>
+    /\.(astro|vue|svelte)$/.test(f),
+  )) {
+    const raw = read(templatePath);
+    if (!raw) continue;
+    const dir = dirname(templatePath) === "." ? "" : dirname(templatePath);
+    for (const match of raw.matchAll(
+      /(?:import\s[^'"]*?from\s*|import\s*\(\s*|src=)["']([^"']+)["']/g,
+    )) {
+      if (match[1].startsWith(".") || match[1].startsWith("/")) {
+        mark(match[1], dir, templatePath);
+      }
     }
   }
 
