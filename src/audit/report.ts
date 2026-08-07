@@ -86,16 +86,25 @@ function evidenceFor(result: AuditRunResult, path: string): string {
   }
   const dead = result.lanes.deadcode?.entries.find((e) => e.path === path);
   if (dead && dead.score > 0) {
+    // knip counts exported names; the definition counter counts export
+    // statements — one `export { a, b, c }` line is 1 vs 3. Show the
+    // ratio only when it parses as one.
+    const ratioMakesSense =
+      dead.definitionCount >= dead.deadItems && dead.definitionCount > 0;
     parts.push(
       dead.unusedFile
         ? "entire file unreferenced (knip)"
-        : `${plural(dead.deadItems, "definition")} of ${dead.definitionCount} believed dead`,
+        : ratioMakesSense
+          ? `${dead.deadItems} of ${plural(dead.definitionCount, "exported item")} flagged dead`
+          : `${plural(dead.deadItems, "exported item")} flagged dead`,
     );
   }
   const dup = result.lanes.duplication?.entries.find((e) => e.path === path);
   if (dup && dup.duplicatedLines > 0) {
     parts.push(
-      `${dup.duplicatedLines} duplicated lines across ${plural(dup.clusterFanOut, "partner file")}`,
+      dup.clusterFanOut === 0
+        ? `${dup.duplicatedLines} lines of internal duplication (repeated blocks within the file)`
+        : `${dup.duplicatedLines} duplicated lines across ${plural(dup.clusterFanOut, "partner file")}`,
     );
   }
   const smell = result.lanes.smells?.entries.find((e) => e.path === path);

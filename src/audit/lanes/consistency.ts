@@ -58,7 +58,7 @@ export function copyArtifactBase(basename: string): string | null {
 }
 
 const ORPHAN_EXEMPT_DIRS =
-  /(^|\/)(bin|scripts|tools|examples|docs|\.github|pages|app|api|routes|migrations|functions|workers|fixtures|test-fixtures|__fixtures__)\//;
+  /(^|\/)(bin|scripts|tools|examples|docs|\.github|pages|app|api|routes|migrations|functions|workers|fixtures|test-fixtures|__fixtures__|public|static)\//;
 const ORPHAN_EXEMPT_NAMES =
   /(^|\/|[-_.])(index|main|cli|app|server|setup|entry)\.[^.]+$|\.config\.[^.]+$|\.d\.ts$|rc\.(js|cjs|mjs)$|(^|\/)\.[^/]+$/;
 
