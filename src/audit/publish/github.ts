@@ -157,7 +157,10 @@ export function commitDataFiles(
     try {
       git(rootPath, ["push", "origin", `HEAD:${options.branch}`]);
       return { committed: true, pushed: true, attempts: attempt };
-    } catch {
+    } catch (error) {
+      console.warn(
+        `data-file push attempt ${attempt} failed: ${(error as Error).message.split("\n").slice(0, 3).join(" | ")}`,
+      );
       try {
         git(rootPath, ["fetch", "origin", options.branch]);
         git(rootPath, [
@@ -165,7 +168,10 @@ export function commitDataFiles(
           "rebase",
           `origin/${options.branch}`,
         ]);
-      } catch {
+      } catch (rebaseError) {
+        console.warn(
+          `data-file rebase failed: ${(rebaseError as Error).message.split("\n").slice(0, 3).join(" | ")}`,
+        );
         try {
           git(rootPath, ["rebase", "--abort"]);
         } catch {
