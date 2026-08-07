@@ -133,16 +133,26 @@ async function main(): Promise<void> {
     console.log(
       `Direct data push rejected after ${push.attempts} attempts — opening the living data PR.`,
     );
+    let prDone = false;
     if (pushDataBranch(rootPath)) {
-      const summary = `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
-      const pr = await upsertDataPr(client, owner, repo, branch, summary);
-      channel = "pr";
-      footer = `---\n_Audit data (ledger events, trends, evidence packages) is awaiting merge in #${pr.prNumber}._`;
-      setOutput("data_pr", String(pr.prNumber));
-      console.log(
-        `${pr.created ? "Opened" : "Refreshed"} living data PR #${pr.prNumber}.`,
-      );
-    } else {
+      try {
+        const summary = `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
+        const pr = await upsertDataPr(client, owner, repo, branch, summary);
+        channel = "pr";
+        footer = `---\n_Audit data (ledger events, trends, evidence packages) is awaiting merge in #${pr.prNumber}._`;
+        setOutput("data_pr", String(pr.prNumber));
+        console.log(
+          `${pr.created ? "Opened" : "Refreshed"} living data PR #${pr.prNumber}.`,
+        );
+        prDone = true;
+      } catch (error) {
+        console.warn(
+          `Data PR failed (${(error as Error).message.split("\n")[0]}) — ` +
+            "the workflow likely needs `pull-requests: write`. Falling back to artifact.",
+        );
+      }
+    }
+    if (!prDone) {
       // Rung three: artifact + apply-run.
       channel = "artifact";
       const artifactPath = stageRunArtifact(rootPath, runId);
