@@ -38,8 +38,12 @@ export function publishLocal(result: AuditRunResult): LocalPublishResult {
     "utf-8",
   );
 
-  const briefingPath = join(outDir, "agent-briefing.md");
-  writeFileSync(briefingPath, renderAgentBriefing(result), "utf-8");
+  // Tracked copy: the data branch is the delivery surface (PRs are
+  // never merged), so the briefing must travel with the data commit.
+  const briefingPath = join(vibecheckDir, "briefing.md");
+  const briefingContent = renderAgentBriefing(result);
+  writeFileSync(briefingPath, briefingContent, "utf-8");
+  writeFileSync(join(outDir, "agent-briefing.md"), briefingContent, "utf-8");
 
   // Per-finding packages: regenerate wholesale so resolved findings'
   // packages vanish with them.

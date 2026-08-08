@@ -19,6 +19,7 @@ import { LEDGER_PATH } from "../ledger.js";
 import { TRENDS_PATH } from "../trends.js";
 
 const FINDINGS_DIR = ".vibecompact/findings";
+const BRIEFING_PATH = ".vibecompact/briefing.md";
 
 export const AUDIT_ISSUE_MARKER = "<!-- vibecompact-living-issue -->";
 /** Legacy marker — issues created before the vibeCompact rename. */
@@ -160,7 +161,7 @@ export function commitDataFiles(
   options: { branch: string; retries?: number; committer?: { name: string; email: string } } ,
 ): DataFileCommitResult {
   const retries = options.retries ?? 3;
-  const paths = [LEDGER_PATH, TRENDS_PATH, FINDINGS_DIR].filter((p) =>
+  const paths = [LEDGER_PATH, TRENDS_PATH, FINDINGS_DIR, BRIEFING_PATH].filter((p) =>
     existsSync(join(rootPath, p)),
   );
   if (paths.length === 0) return { committed: false, pushed: true, attempts: 0 };
