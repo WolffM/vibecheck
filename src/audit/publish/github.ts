@@ -290,6 +290,16 @@ export async function upsertDataPr(
       pull_number: existing[0].number,
       body,
     });
+    try {
+      await client.addLabels({
+        owner,
+        repo,
+        issue_number: existing[0].number,
+        labels: ["do-not-merge", AUDIT_ISSUE_LABEL],
+      });
+    } catch {
+      // Labels are a guard, not a requirement.
+    }
     return { prNumber: existing[0].number, created: false };
   }
   const created = await client.createPull({
