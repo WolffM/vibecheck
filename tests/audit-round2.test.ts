@@ -230,11 +230,11 @@ describe("saturation mute", () => {
 describe("agent briefing", () => {
   it("renders work items with actions, verdict commands, and machine pointer", () => {
     const briefing = renderAgentBriefing(fixtureResult());
-    expect(briefing).toContain("# vibeCheck Audit — agent briefing");
+    expect(briefing).toContain("# vibeCompact — agent briefing");
     expect(briefing).toContain("src/dumped.ts");
     expect(briefing).toContain("split along responsibility boundaries");
     expect(briefing).toContain('vibecheck wontfix|noise|justify "arrival:src/app.ts"');
-    expect(briefing).toContain(".vibecheck/out/audit.json");
+    expect(briefing).toContain(".vibecompact/out/audit.json");
     // Execution order: best-first target (app.ts) before the bigger offender.
     expect(briefing.indexOf("### 1. `src/app.ts`")).toBeGreaterThan(-1);
     expect(briefing.indexOf("src/app.ts")).toBeLessThan(

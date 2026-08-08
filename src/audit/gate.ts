@@ -92,7 +92,7 @@ function collectChanges(
       const match = line.match(/^(\d+|-)\t(\d+|-)\t(.+)$/);
       if (!match) continue;
       const path = match[3].replace(/\\/g, "/");
-      if (path.startsWith(".vibecheck/")) continue;
+      if (path.startsWith(".vibecompact/") || path.startsWith(".vibecheck/")) continue;
       if (isPathExcludedFast(path, configExcludes)) continue;
       files.add(path);
       if (match[1] !== "-") linesTouched += Number(match[1]);

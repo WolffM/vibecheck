@@ -154,7 +154,7 @@ describe("apply-run", () => {
       fingerprint: "arrival:src/naked.ts",
       reason: "from CI",
     };
-    const runsDir = join(repo.root, ".vibecheck", "runs");
+    const runsDir = join(repo.root, ".vibecompact", "runs");
     mkdirSync(runsDir, { recursive: true });
     writeFileSync(join(runsDir, "run-42.jsonl"), JSON.stringify(event) + "\n");
 

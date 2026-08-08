@@ -24,8 +24,8 @@ function entry(overrides: Partial<TrendEntry> & { at: string }): TrendEntry {
     aggregates: {
       candidateFiles: 100,
       perLane: {
-        size: { measured: 90, firing: 4 },
-        arrival: { measured: 40, firing: 6 },
+        size: { filesAssessed: 90, filesFlagged: 4 },
+        arrival: { filesAssessed: 40, filesFlagged: 6 },
       },
       gatePassing: 3,
       offenders: 3,
@@ -72,8 +72,8 @@ describe("computeDerivative", () => {
       aggregates: {
         candidateFiles: 110,
         perLane: {
-          size: { measured: 95, firing: 6 },
-          arrival: { measured: 42, firing: 5 },
+          size: { filesAssessed: 95, filesFlagged: 6 },
+          arrival: { filesAssessed: 42, filesFlagged: 5 },
         },
         gatePassing: 5,
         offenders: 5,
@@ -115,8 +115,8 @@ describe("computeDerivative", () => {
       aggregates: {
         candidateFiles: 100,
         perLane: {
-          size: { measured: 90, firing: 4 },
-          arrival: { measured: 40, firing: 2 },
+          size: { filesAssessed: 90, filesFlagged: 4 },
+          arrival: { filesAssessed: 40, filesFlagged: 2 },
         },
         gatePassing: 1,
         offenders: 1,

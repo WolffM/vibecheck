@@ -18,14 +18,17 @@ import { dirname, join } from "node:path";
 import { LEDGER_PATH } from "../ledger.js";
 import { TRENDS_PATH } from "../trends.js";
 
-const FINDINGS_DIR = ".vibecheck/findings";
+const FINDINGS_DIR = ".vibecompact/findings";
 
-export const AUDIT_ISSUE_MARKER = "<!-- vibecheck-audit-living-issue -->";
-export const AUDIT_ISSUE_LABEL = "vibecheck-audit";
-const AUDIT_ISSUE_TITLE = "vibeCheck Audit";
+export const AUDIT_ISSUE_MARKER = "<!-- vibecompact-living-issue -->";
+/** Legacy marker — issues created before the vibeCompact rename. */
+export const LEGACY_ISSUE_MARKER = "<!-- vibecheck-audit-living-issue -->";
+export const AUDIT_ISSUE_LABEL = "vibecompact";
+export const LEGACY_ISSUE_LABEL = "vibecheck-audit";
+const AUDIT_ISSUE_TITLE = "vibeCompact";
 
-export const AUDIT_DATA_BRANCH = "vibecheck/audit-data";
-export const AUDIT_PR_MARKER = "<!-- vibecheck-audit-data-pr -->";
+export const AUDIT_DATA_BRANCH = "vibecompact/data";
+export const AUDIT_PR_MARKER = "<!-- vibecompact-data-pr -->";
 
 /** The narrow Octokit surface the sink needs — injectable for tests. */
 export interface IssueClient {
@@ -46,6 +49,7 @@ export interface IssueClient {
     owner: string;
     repo: string;
     issue_number: number;
+    title?: string;
     body: string;
   }): Promise<void>;
   ensureLabel(params: {
@@ -91,20 +95,26 @@ export async function publishLivingIssue(
 ): Promise<PublishIssueResult> {
   const body = `${AUDIT_ISSUE_MARKER}\n\n${markdown}${footer ? `\n\n${footer}` : ""}`;
 
-  const existing = (
-    await client.listIssues({
-      owner,
-      repo,
-      labels: AUDIT_ISSUE_LABEL,
-      state: "open",
-    })
-  ).find((issue) => issue.body?.includes(AUDIT_ISSUE_MARKER));
+  // Match the current label first, then the pre-rename one so existing
+  // issues are adopted (and retitled) rather than duplicated.
+  let existing: { number: number; body: string | null } | undefined;
+  for (const label of [AUDIT_ISSUE_LABEL, LEGACY_ISSUE_LABEL]) {
+    existing = (
+      await client.listIssues({ owner, repo, labels: label, state: "open" })
+    ).find(
+      (issue) =>
+        issue.body?.includes(AUDIT_ISSUE_MARKER) ||
+        issue.body?.includes(LEGACY_ISSUE_MARKER),
+    );
+    if (existing) break;
+  }
 
   if (existing) {
     await client.updateIssue({
       owner,
       repo,
       issue_number: existing.number,
+      title: AUDIT_ISSUE_TITLE,
       body,
     });
     return { issueNumber: existing.number, created: false };
@@ -246,15 +256,14 @@ export async function upsertDataPr(
   const body = [
     AUDIT_PR_MARKER,
     "",
-    "Audit data from the latest vibeCheck run — machine events for the",
-    "ledger, the trends entry, and regenerated per-finding evidence",
-    "packages. The branch is force-refreshed from the latest default",
+    "Findings and data from the latest vibeCompact run — evidence",
+    "packages, ledger machine events, and the trends entry. The branch is force-refreshed from the latest default",
     "branch on every run, so this PR is always current; merge whenever.",
     "",
     summary,
     "",
     "_If required status checks do not trigger on data-only changes,",
-    "merge with admin rights or adjust the ruleset for `.vibecheck/**`._",
+    "merge with admin rights or adjust the ruleset for `.vibecompact/**`._",
   ].join("\n");
 
   const existing = await client.listPulls({
@@ -275,7 +284,7 @@ export async function upsertDataPr(
   const created = await client.createPull({
     owner,
     repo,
-    title: "vibeCheck: audit data",
+    title: "vibeCompact: findings & data",
     head: AUDIT_DATA_BRANCH,
     base,
     body,
@@ -289,7 +298,7 @@ export async function upsertDataPr(
  */
 export function stageRunArtifact(rootPath: string, runId: string): string {
   const source = join(rootPath, LEDGER_PATH);
-  const target = join(rootPath, ".vibecheck", "runs", `${runId}.jsonl`);
+  const target = join(rootPath, ".vibecompact", "runs", `${runId}.jsonl`);
   mkdirSync(dirname(target), { recursive: true });
   copyFileSync(source, target);
   return target;
@@ -299,8 +308,8 @@ export function applyRunFooter(runId: string): string {
   return (
     "---\n" +
     `_Data-file push was rejected (branch protection). Apply this run's ` +
-    `ledger events locally: download the \`vibecheck-audit-run-${runId}\` ` +
-    `artifact to \`.vibecheck/runs/${runId}.jsonl\` and run ` +
+    `ledger events locally: download the \`vibecompact-run-${runId}\` ` +
+    `artifact to \`.vibecompact/runs/${runId}.jsonl\` and run ` +
     `\`npx vibecheck apply-run ${runId}\`._`
   );
 }

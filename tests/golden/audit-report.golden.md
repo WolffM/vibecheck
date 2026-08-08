@@ -1,4 +1,4 @@
-# vibeCheck Audit
+# vibeCompact
 
 Anchor: `0123456789ab` (2026-08-05)
 
@@ -16,10 +16,10 @@ Entry requires ≥2 applicable lanes firing plus margin; 15 is a ceiling, not a 
 
 1. `src/dumped.ts` — firing: arrival + size (2 lanes applicable)
    1483 code lines (tier 2); 79% of 14 commits arrived with no reaching test; largest single-commit arrival 12× the repo's median commit; **improving** — size score down 18% since first flagged
-   Full evidence package: `.vibecheck/findings/src__dumped.ts.md`
+   Full evidence package: `.vibecompact/findings/src__dumped.ts.md`
 2. `src/app.ts` — firing: arrival + size (2 lanes applicable)
    640 code lines (tier 1); 67% of 9 commits arrived with no reaching test; snapshot churn in 11% of touches
-   Full evidence package: `.vibecheck/findings/src__app.ts.md`
+   Full evidence package: `.vibecompact/findings/src__app.ts.md`
 
 ## Best first targets
 
@@ -60,5 +60,5 @@ Aging justifications — re-affirm with `vibecheck justify <fingerprint> --reaso
 - Excluded as generated/vendored: 1 file.
 - Declared entry points detected (exempt from orphan/dead-surface claims): 2.
 - Lanes planned: size, arrival.
-- Machine-readable results: `.vibecheck/out/audit.json`.
+- Machine-readable results: `.vibecompact/out/audit.json`.
 - File verdicts: `vibecheck justify|wontfix|noise <lane>:<path> --reason "..."`.

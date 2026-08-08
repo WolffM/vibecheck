@@ -50,5 +50,5 @@ __pycache__/
 .chainlink/
 
 # vibeCheck audit working artifacts (regenerable; ledger + trends stay tracked)
-.vibecheck/audit.md
-.vibecheck/out/
+.vibecompact/audit.md
+.vibecompact/out/

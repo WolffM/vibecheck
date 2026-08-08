@@ -1,7 +1,7 @@
 /**
  * Trends (design §6)
  *
- * .vibecheck/trends.json holds one entry per run: anchor SHA/date, tool
+ * .vibecompact/trends.json holds one entry per run: anchor SHA/date, tool
  * versions, standing floors, per-lane aggregates, dirty flag. The health
  * summary leads with the *derivative*: current run vs the most recent
  * clean entry at least 21 days older. Calibration immunity: floor and
@@ -12,15 +12,30 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-export const TRENDS_PATH = ".vibecheck/trends.json";
+export const TRENDS_PATH = ".vibecompact/trends.json";
 /** Minimum baseline age for derivative comparisons (days). */
 export const TREND_BASELINE_MIN_DAYS = 21;
 /** Ring-buffer cap on stored entries. */
 const MAX_ENTRIES = 500;
 
 export interface LaneAggregate {
-  measured: number;
-  firing: number;
+  /** Files the lane could judge at all. */
+  filesAssessed: number;
+  /** Files at or above the lane's firing threshold. */
+  filesFlagged: number;
+}
+
+/** Pre-rename entries used `measured`/`firing`. */
+interface LegacyLaneAggregate {
+  measured?: number;
+  firing?: number;
+}
+
+function laneAggregate(raw: LaneAggregate & LegacyLaneAggregate): LaneAggregate {
+  return {
+    filesAssessed: raw.filesAssessed ?? raw.measured ?? 0,
+    filesFlagged: raw.filesFlagged ?? raw.firing ?? 0,
+  };
 }
 
 export interface TrendEntry {
@@ -148,8 +163,8 @@ export function computeDerivative(
   ]);
   for (const lane of laneNames) {
     firingDelta[lane] =
-      (current.aggregates.perLane[lane]?.firing ?? 0) -
-      (baseline.aggregates.perLane[lane]?.firing ?? 0);
+      laneAggregate(current.aggregates.perLane[lane] ?? {}).filesFlagged -
+      laneAggregate(baseline.aggregates.perLane[lane] ?? {}).filesFlagged;
   }
 
   // A raised floor hides findings; that hiding is not an improvement.

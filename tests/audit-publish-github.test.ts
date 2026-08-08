@@ -117,12 +117,12 @@ function makeClonePair(prefix: string): FixturePair {
 }
 
 function writeDataFiles(root: string, tag: string): void {
-  mkdirSync(join(root, ".vibecheck"), { recursive: true });
+  mkdirSync(join(root, ".vibecompact"), { recursive: true });
   writeFileSync(
-    join(root, ".vibecheck", "ledger.jsonl"),
+    join(root, ".vibecompact", "ledger.jsonl"),
     `{"id":"01TEST${tag}","at":"2026-08-05T00:00:00Z","kind":"firing","fingerprint":"size:a.ts","score":1,"threshold":1}\n`,
   );
-  writeFileSync(join(root, ".vibecheck", "trends.json"), `[{"tag":"${tag}"}]\n`);
+  writeFileSync(join(root, ".vibecompact", "trends.json"), `[{"tag":"${tag}"}]\n`);
 }
 
 describe("commitDataFiles", () => {
@@ -184,7 +184,7 @@ describe("stageRunArtifact", () => {
     const { work } = makeClonePair("vibecheck-artifact-");
     writeDataFiles(work, "D");
     const path = stageRunArtifact(work, "12345");
-    expect(path).toBe(join(work, ".vibecheck", "runs", "12345.jsonl"));
+    expect(path).toBe(join(work, ".vibecompact", "runs", "12345.jsonl"));
     expect(readFileSync(path, "utf-8")).toContain("01TESTD");
   });
 });

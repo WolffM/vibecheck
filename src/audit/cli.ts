@@ -16,7 +16,7 @@ function printHelp(): void {
   console.log(`
 Usage: vibecheck audit [options]
 
-Runs the code-quality audit and writes .vibecheck/audit.md locally.
+Runs the vibeCompact audit and writes .vibecompact/audit.md locally.
 
 Options:
   --root <path>      Root directory to audit (default: cwd)
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
   }
   const floors = Object.entries(result.ledger.floors);
 
-  console.log(`vibeCheck Audit`);
+  console.log(`vibeCompact`);
   console.log(
     `  Anchor:    ${result.anchorSha?.slice(0, 12) ?? "no git"}` +
       (result.dirty ? " (dirty working tree)" : ""),

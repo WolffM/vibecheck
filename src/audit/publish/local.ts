@@ -1,9 +1,9 @@
 /**
  * Local sink (design §6) — always runs, every environment.
  *
- * Writes .vibecheck/audit.md (the file analog of the living issue,
- * overwritten in place) and .vibecheck/out/audit.json. The starter setup
- * gitignores both (`.vibecheck/audit.md`, `.vibecheck/out/`); the ledger
+ * Writes .vibecompact/audit.md (the file analog of the living issue,
+ * overwritten in place) and .vibecompact/out/audit.json. The starter setup
+ * gitignores both (`.vibecompact/audit.md`, `.vibecompact/out/`); the ledger
  * and trends files stay tracked.
  */
 
@@ -24,7 +24,7 @@ export interface LocalPublishResult {
 }
 
 export function publishLocal(result: AuditRunResult): LocalPublishResult {
-  const vibecheckDir = join(result.rootPath, ".vibecheck");
+  const vibecheckDir = join(result.rootPath, ".vibecompact");
   const outDir = join(vibecheckDir, "out");
   mkdirSync(outDir, { recursive: true });
 

@@ -1,6 +1,24 @@
-# vibe-compactor — Design Plan v0.4
+# vibe-compactor — Design Plan v0.5
 
-Status: **v0.4 — LOCKED** (2026-08-07) · Owner: @WolffM
+Status: **v0.5 — LOCKED** (2026-08-08) · Owner: @WolffM
+
+**v0.5 changelog** (owner decision + round-4 first-contact feedback):
+
+- **User-facing name is `vibeCompact`** — overriding v0.1's "vibeCheck
+  Audit". Field data: the shared brand actively confused the maintainer
+  reading the artifacts ("vibeCheck is a different workflow"). Distinct
+  product, distinct workflow (`vibecompact.yml`), distinct data dir
+  (`.vibecompact/`), distinct labels/branch (`vibecompact/data`).
+  Existing issues are adopted and retitled via legacy markers.
+- **Evidence packages ship for every firing finding**, corroborated or
+  single-lane (capped per lane): the gate ranks the headline, it does
+  not gate what evidence ships — a file with exact clone ranges is
+  actionable regardless of corroboration. Single-lane packages are
+  labeled as such.
+- **The data PR body is the agent briefing** — the human/agent summary
+  with inline findings, not a telemetry description. Trend aggregates
+  renamed to self-describing fields (`filesAssessed`/`filesFlagged`)
+  with backward-compatible reads.
 
 **v0.4 changelog** (funded by round-3 field data and an explicit
 maintainer policy decision):
@@ -59,11 +77,12 @@ engagement asymmetry: re-auditing an untouched repo produces zero new
 bits, while prompt `fixed`-stamping on fix attempts is the loop that
 keeps a maintainer engaged.
 
-**Naming:** `vibe-compactor` is the project name. The user-facing surface is
-**vibeCheck Audit** — action input `mode: audit`, CLI `vibecheck audit` —
-because the product is alarm-only (it compacts nothing) and "compaction"
-collides with LLM context terminology. Project name internal, audit name
-external.
+**Naming (v0.5):** `vibe-compactor` is the project name. The user-facing
+surface is **vibeCompact** — its own workflow, data dir, and PR/issue
+identity, deliberately distinct from the vibeCheck analyze product. The
+v0.1 concern (alarm-only product under a "compact" name) was outweighed
+by field confusion with the vibeCheck brand. Action input remains
+`mode: audit`, CLI `vibecheck audit` (package-internal).
 
 A deterministic, no-LLM audit mode for vibeCheck that scrutinizes structural
 code quality and delivers a prioritized, evidence-backed report to human

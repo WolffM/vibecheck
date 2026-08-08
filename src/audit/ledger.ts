@@ -1,7 +1,7 @@
 /**
  * Decision ledger (design §5)
  *
- * Append-only JSONL at .vibecheck/ledger.jsonl. Every event carries a
+ * Append-only JSONL at .vibecompact/ledger.jsonl. Every event carries a
  * ULID assigned at write time; the fold orders by (at, id) and dedupes on
  * id — a total order deterministic across any merge history (the file
  * merges with `merge=union`, so duplicates and arbitrary interleavings
@@ -34,7 +34,7 @@ export const JUSTIFIED_MAX_AGE_DAYS = 180;
 /** Default growth invalidation for justified verdicts (percent). */
 export const JUSTIFIED_GROWTH_PCT = 20;
 
-export const LEDGER_PATH = ".vibecheck/ledger.jsonl";
+export const LEDGER_PATH = ".vibecompact/ledger.jsonl";
 
 // ============================================================================
 // ULID

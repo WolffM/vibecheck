@@ -143,7 +143,7 @@ export function applyRun(
   runId: string,
   options: VerdictCliOptions & { file?: string } = {},
 ): number {
-  const file = options.file ?? join(rootPath, ".vibecheck", "runs", `${runId}.jsonl`);
+  const file = options.file ?? join(rootPath, ".vibecompact", "runs", `${runId}.jsonl`);
   if (!existsSync(file)) {
     throw new Error(
       `No events file for run ${runId} at ${file}. ` +

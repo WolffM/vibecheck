@@ -162,7 +162,7 @@ function offendersSection(result: AuditRunResult): string[] {
         offender.firingLanes.map((f) => f.lane).join(" + ") +
         ` (${offender.applicableLanes.length} lanes applicable)` +
         `\n   ${evidenceFor(result, offender.path)}` +
-        `\n   Full evidence package: \`.vibecheck/findings/${findingSlug(offender.path)}.md\``,
+        `\n   Full evidence package: \`.vibecompact/findings/${findingSlug(offender.path)}.md\``,
     );
   }
   return lines;
@@ -201,7 +201,7 @@ function laneSection(result: AuditRunResult): string[] {
       lines.push(
         "",
         `${plural(size.entries.length, "file")} measured (scc ${size.toolVersion ?? "unknown"}); ` +
-          `firing: ${entry.aggregates.perLane.size?.firing ?? 0}. ` +
+          `firing: ${entry.aggregates.perLane.size?.filesFlagged ?? 0}. ` +
           `Tiers: ${tiers[0]} investigate / ${tiers[1]} heavily scrutinized / ${tiers[2]} no justification.`,
       );
     }
@@ -217,7 +217,7 @@ function laneSection(result: AuditRunResult): string[] {
       lines.push(
         "",
         `${plural(applicable.length, "file")} with enough history to judge; ` +
-          `firing: ${entry.aggregates.perLane.arrival?.firing ?? 0}.` +
+          `firing: ${entry.aggregates.perLane.arrival?.filesFlagged ?? 0}.` +
           (arrival.bulkMuted ? " Bulk arrival is muted." : ""),
       );
       lines.push("", "Confidence basis:");
@@ -240,7 +240,7 @@ function laneSection(result: AuditRunResult): string[] {
         `${plural(deadcode.entries.length, "file")} assessed (${deadcode.coverage.join(", ")}); ` +
           `${flagged.length} carry dead-surface findings, ` +
           `${wholeFiles.length} flagged entirely unreferenced. ` +
-          `Firing: ${entry.aggregates.perLane.deadcode?.firing ?? 0}. Alarm-only — nothing is deleted on your behalf.`,
+          `Firing: ${entry.aggregates.perLane.deadcode?.filesFlagged ?? 0}. Alarm-only — nothing is deleted on your behalf.`,
       );
       for (const note of deadcode.disclosures) lines.push(`- ${note}`);
     }
@@ -260,7 +260,7 @@ function laneSection(result: AuditRunResult): string[] {
         "",
         `${plural(duplication.entries.length, "file")} carry clones (${dupLines} duplicated lines repo-wide, ` +
           `min block ${result.config.lanes.duplication.minLines} lines). ` +
-          `Firing: ${entry.aggregates.perLane.duplication?.firing ?? 0}.`,
+          `Firing: ${entry.aggregates.perLane.duplication?.filesFlagged ?? 0}.`,
       );
     }
   }
@@ -274,7 +274,7 @@ function laneSection(result: AuditRunResult): string[] {
       lines.push(
         "",
         `Repo is ${smells.typedPercent}% typed (type-coverage). ` +
-          `Firing: ${entry.aggregates.perLane.smells?.firing ?? 0} (low-weighted lane).`,
+          `Firing: ${entry.aggregates.perLane.smells?.filesFlagged ?? 0} (low-weighted lane).`,
       );
       for (const note of smells.disclosures) lines.push(`- ${note}`);
     }
@@ -287,7 +287,7 @@ function laneSection(result: AuditRunResult): string[] {
     lines.push(
       "",
       `${flagged.length} of ${plural(consistency.entries.length, "file")} carry consistency findings. ` +
-        `Firing: ${entry.aggregates.perLane.consistency?.firing ?? 0}.`,
+        `Firing: ${entry.aggregates.perLane.consistency?.filesFlagged ?? 0}.`,
     );
     if (consistency.categoryFindings.length > 0) {
       lines.push("", "Multiple providers of one concern (context, per package):");
@@ -376,7 +376,7 @@ function ledgerSection(result: AuditRunResult): string[] {
 
 export function renderAuditReport(result: AuditRunResult): string {
   const header = [
-    "# vibeCheck Audit",
+    "# vibeCompact",
     "",
     `Anchor: \`${result.anchorSha?.slice(0, 12) ?? "no git"}\` (${result.trends.entry.at.slice(0, 10)})` +
       (result.dirty ? " · dirty working tree" : ""),
@@ -388,7 +388,7 @@ export function renderAuditReport(result: AuditRunResult): string {
     `- Excluded as generated/vendored: ${plural(result.excluded.length, "file")}.`,
     `- Declared entry points detected (exempt from orphan/dead-surface claims): ${result.entryPointCount}.`,
     `- Lanes planned: ${result.lanesPlanned.join(", ") || "none"}.`,
-    `- Machine-readable results: \`.vibecheck/out/audit.json\`.`,
+    `- Machine-readable results: \`.vibecompact/out/audit.json\`.`,
     `- File verdicts: \`vibecheck justify|wontfix|noise <lane>:<path> --reason "..."\`.`,
   ];
 
@@ -404,7 +404,7 @@ export function renderAuditReport(result: AuditRunResult): string {
   return sections.map((s) => s.join("\n")).join("\n\n") + "\n";
 }
 
-/** Trimmed machine payload for .vibecheck/out/audit.json — no history dump. */
+/** Trimmed machine payload for .vibecompact/out/audit.json — no history dump. */
 export function buildMachineResult(result: AuditRunResult): object {
   return {
     anchorSha: result.anchorSha,

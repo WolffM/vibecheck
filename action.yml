@@ -149,18 +149,18 @@ runs:
       if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: vibecheck-audit-outputs-${{ github.run_id }}
+        name: vibecompact-outputs-${{ github.run_id }}
         path: |
-          ${{ github.workspace }}/.vibecheck/audit.md
-          ${{ github.workspace }}/.vibecheck/out/
-          ${{ github.workspace }}/.vibecheck/findings/
+          ${{ github.workspace }}/.vibecompact/audit.md
+          ${{ github.workspace }}/.vibecompact/out/
+          ${{ github.workspace }}/.vibecompact/findings/
         retention-days: 30
 
     - name: Upload apply-run artifact
       if: inputs.mode == 'audit' && steps.audit-publish.outputs.data_channel == 'artifact'
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       with:
-        name: vibecheck-audit-run-${{ github.run_id }}
+        name: vibecompact-run-${{ github.run_id }}
         path: ${{ steps.audit-publish.outputs.artifact_path }}
 
     - name: Detect JS/TS files

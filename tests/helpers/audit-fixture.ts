@@ -151,8 +151,8 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
         aggregates: {
           candidateFiles: 3,
           perLane: {
-            size: { measured: 3, firing: 2 },
-            arrival: { measured: 2, firing: 2 },
+            size: { filesAssessed: 3, filesFlagged: 2 },
+            arrival: { filesAssessed: 2, filesFlagged: 2 },
           },
           gatePassing: 2,
           offenders: 2,

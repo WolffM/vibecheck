@@ -1,6 +1,6 @@
 /**
  * Action-side publish entry: living issue + data-file push. Runs after
- * `vibecheck audit` produced .vibecheck/audit.md in the workspace.
+ * `vibecheck audit` produced .vibecompact/audit.md in the workspace.
  * Local runs never execute this — the local sink is the core.
  */
 
@@ -95,7 +95,7 @@ async function main(): Promise<void> {
   }
   const [owner, repo] = fullRepo.split("/");
 
-  const reportPath = join(rootPath, ".vibecheck", "audit.md");
+  const reportPath = join(rootPath, ".vibecompact", "audit.md");
   if (!existsSync(reportPath)) {
     throw new Error(
       `${reportPath} not found — run \`vibecheck audit\` before publishing.`,
@@ -136,8 +136,11 @@ async function main(): Promise<void> {
     let prDone = false;
     if (pushDataBranch(rootPath)) {
       try {
-        const summary = `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
-        const pr = await upsertDataPr(client, owner, repo, branch, summary);
+        const briefingPath = join(rootPath, ".vibecompact", "out", "agent-briefing.md");
+        const briefing = existsSync(briefingPath)
+          ? readFileSync(briefingPath, "utf-8")
+          : `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
+        const pr = await upsertDataPr(client, owner, repo, branch, briefing);
         channel = "pr";
         footer = `---\n_Audit data (ledger events, trends, evidence packages) is awaiting merge in #${pr.prNumber}._`;
         setOutput("data_pr", String(pr.prNumber));

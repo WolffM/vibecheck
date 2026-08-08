@@ -68,13 +68,13 @@ async function main(): Promise<void> {
   rl.close();
 
   if (filed > 0) {
-    console.log(`\n${filed} verdict(s) appended to .vibecheck/ledger.jsonl.`);
+    console.log(`\n${filed} verdict(s) appended to .vibecompact/ledger.jsonl.`);
     console.log("Re-running audit to fold them in...");
     const refreshed = await runAudit({ rootPath });
     const { reportPath } = publishLocal(refreshed);
     console.log(
       `Report + agent briefing refreshed (${reportPath}). ` +
-        "Commit .vibecheck/ledger.jsonl to make the verdicts durable.",
+        "Commit .vibecompact/ledger.jsonl to make the verdicts durable.",
     );
   } else {
     publishLocal(result);

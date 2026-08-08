@@ -361,10 +361,10 @@ export async function runAudit(
         lanesPlanned.map((lane) => [
           lane,
           {
-            measured: allLaneScores.filter(
+            filesAssessed: allLaneScores.filter(
               (s) => s.lane === lane && s.applicable,
             ).length,
-            firing: fileScores.filter((f) =>
+            filesFlagged: fileScores.filter((f) =>
               f.firingLanes.some((fl) => fl.lane === lane),
             ).length,
           },

@@ -1,4 +1,4 @@
-name: vibeCheck Audit
+name: vibeCompact
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run vibeCheck Audit
+      - name: Run vibeCompact
         uses: ./
         with:
           mode: audit

@@ -43,8 +43,8 @@ describe("publishLocal", () => {
     const root = mkdtempSync(join(tmpdir(), "vibecheck-publish-"));
     cleanups.push(root);
     const { reportPath, machinePath } = publishLocal(fixtureResult(root));
-    expect(reportPath).toBe(join(root, ".vibecheck", "audit.md"));
-    expect(readFileSync(reportPath, "utf-8")).toContain("# vibeCheck Audit");
+    expect(reportPath).toBe(join(root, ".vibecompact", "audit.md"));
+    expect(readFileSync(reportPath, "utf-8")).toContain("# vibeCompact");
     const machine = JSON.parse(readFileSync(machinePath, "utf-8"));
     expect(machine.worstOffenders).toEqual(["src/dumped.ts", "src/app.ts"]);
     expect(machine.anchorSha).toMatch(/^0123/);

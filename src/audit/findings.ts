@@ -1,7 +1,7 @@
 /**
  * Per-finding packages (round 3 delivery redesign)
  *
- * One markdown file per active finding under `.vibecheck/findings/`,
+ * One markdown file per active finding under `.vibecompact/findings/`,
  * shipped with the data-file commit so every problem carries its full
  * context in-repo: exact dead symbols with lines, exact clone ranges and
  * partners, pre-run string-reference verification, and a symbol map with
@@ -170,13 +170,17 @@ function laneDetail(
 function offenderPackage(
   result: AuditRunResult,
   offender: FileScore,
-  rank: number,
+  rank: number | null,
   refs: Map<string, StringReference[]>,
 ): string {
+  const standing =
+    rank !== null
+      ? `Corroborated finding, rank ${rank}`
+      : "Single-lane finding (below the corroboration gate — one signal, weigh accordingly)";
   const lines = [
     `# ${offender.path}`,
     "",
-    `Worst-offender rank ${rank} · firing: ${offender.firingLanes.map((f) => f.lane).join(" + ")} · ${offender.applicableLanes.length} lanes applicable · anchor \`${result.anchorSha?.slice(0, 12)}\``,
+    `${standing} · firing: ${offender.firingLanes.map((f) => f.lane).join(" + ")} · ${offender.applicableLanes.length} lanes applicable · anchor \`${result.anchorSha?.slice(0, 12)}\``,
   ];
   for (const firing of offender.firingLanes) {
     lines.push(...laneDetail(result, offender.path, firing.lane));
@@ -260,6 +264,34 @@ export function renderFindingPackages(
     packages.set(
       `${findingSlug(offender.path)}.md`,
       offenderPackage(result, offender, index + 1, refs),
+    );
+  }
+
+  // Single-lane firing findings get packages too (round 5): the gate
+  // governs the corroborated headline, not what evidence ships — a file
+  // with exact clone ranges is actionable regardless of corroboration.
+  // Capped per lane by score to keep the set readable.
+  const capPerLane = result.config.maxReportItems;
+  const perLaneCount = new Map<string, number>();
+  const singles = result.fileScores
+    .filter(
+      (f) =>
+        f.firingLanes.length >= 1 &&
+        !result.worstOffenders.some((o) => o.path === f.path),
+    )
+    .sort(
+      (a, b) =>
+        b.weightedScore - a.weightedScore ||
+        (a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
+    );
+  for (const single of singles) {
+    const lane = single.firingLanes[0]?.lane ?? "";
+    const count = perLaneCount.get(lane) ?? 0;
+    if (count >= capPerLane) continue;
+    perLaneCount.set(lane, count + 1);
+    packages.set(
+      `${findingSlug(single.path)}.md`,
+      offenderPackage(result, single, null, refs),
     );
   }
   for (const deletion of deletions) {

@@ -40,6 +40,7 @@ const EXCLUDED_DIRS = new Set([
   "__snapshots__",
   "migrations",
   ".vibecheck",
+  ".vibecompact",
   // Fixture dirs are test assets — often deliberately-bad code — and
   // belong with snapshot dirs, not in any lane.
   "fixtures",

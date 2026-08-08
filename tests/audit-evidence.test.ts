@@ -112,7 +112,7 @@ describe("renderFindingPackages", () => {
     const packages = renderFindingPackages(result);
     expect([...packages.keys()]).toContain("src__dumped.ts.md");
     const pkg = packages.get("src__dumped.ts.md") as string;
-    expect(pkg).toContain("Worst-offender rank 1");
+    expect(pkg).toContain("Corroborated finding, rank 1");
     // Symbol map with a concrete first cut.
     expect(pkg).toContain("`huge`");
     expect(pkg).toContain("Suggested first cut: extract `huge`");
