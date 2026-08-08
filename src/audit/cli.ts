@@ -70,7 +70,11 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { reportPath } = publishLocal(result);
+  // CI writes tracked copies for the data-branch commit; local runs
+  // keep generated output under gitignored out/.
+  const { reportPath } = publishLocal(result, {
+    trackedCopies: Boolean(process.env.GITHUB_ACTIONS),
+  });
 
   const laneBits: string[] = [];
   for (const lane of result.lanesPlanned) {

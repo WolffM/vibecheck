@@ -8,6 +8,8 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { Octokit } from "@octokit/rest";
+import { readDataBranchLedger } from "../data-branch.js";
+import { writeUnionLedger } from "../ledger.js";
 import {
   applyRunFooter,
   AUDIT_DATA_BRANCH,
@@ -54,6 +56,9 @@ function makeOctokitClient(token: string): IssueClient {
       } catch {
         // Label already exists.
       }
+    },
+    async addLabels(params) {
+      await octokit.issues.addLabels(params);
     },
     async listPulls(params) {
       const response = await octokit.pulls.list({
@@ -107,6 +112,10 @@ async function main(): Promise<void> {
     cwd: rootPath,
     encoding: "utf-8",
   }).trim();
+
+  // The data branch is force-refreshed each run; without this union the
+  // push would drop machine events that only ever lived on the branch.
+  writeUnionLedger(rootPath, readDataBranchLedger(rootPath));
 
   const push = commitDataFiles(rootPath, {
     branch,

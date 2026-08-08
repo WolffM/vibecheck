@@ -29,6 +29,7 @@ function fakeClient(
     create: [],
     update: [],
     label: [],
+    addLabels: [],
     createPull: [],
     updatePull: [],
   };
@@ -45,6 +46,9 @@ function fakeClient(
     },
     async ensureLabel(params) {
       calls.label.push(params);
+    },
+    async addLabels(params) {
+      calls.addLabels.push(params);
     },
     async listPulls() {
       return openPulls;

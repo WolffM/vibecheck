@@ -42,6 +42,7 @@ Commands:
   apply-run   Apply a CI run's ledger events from an artifact file
   gate        Evaluate the audit activity gate (prints active=true|false)
   triage      Walk audit findings interactively, filing verdicts + briefing
+  skill       Emit the vibeCompact agent skill (skill emit [--dir <dir>])
   detect      Detect repository profile (languages, tools)
   help        Show this help message
 
@@ -121,6 +122,10 @@ switch (command) {
 
   case "triage":
     runScript("audit/triage-cli.ts", args.slice(1));
+    break;
+
+  case "skill":
+    runScript("audit/skill-cli.ts", args.slice(1));
     break;
 
   // Dev-only validation harness (design §10); deliberately not in help.

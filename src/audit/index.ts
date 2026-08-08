@@ -15,6 +15,11 @@ import { resolveAuditConfig, type ResolvedAuditConfig } from "./config.js";
 import { detectEntryPoints } from "./entrypoints.js";
 import { applyExclusions, type Exclusion } from "./exclusions.js";
 import {
+  fetchDataBranch,
+  mergeDataBranchTrends,
+  readDataBranchLedger,
+} from "./data-branch.js";
+import {
   collectGitHistory,
   collectRenames,
   type GitHistory,
@@ -264,7 +269,14 @@ export async function runAudit(
 
   // Ledger: rename migration first, then verdicts/floors from the fold.
   const anchorDate = history?.anchorDate ?? new Date(0).toISOString();
-  let fold = foldLedger(readLedger(rootPath));
+  // Union of main's ledger and the data branch's (never-merged) copy —
+  // ULID dedup makes the overlap harmless, and without the branch copy
+  // the firing/fixed machine has amnesia every run.
+  fetchDataBranch(rootPath);
+  let fold = foldLedger([
+    ...readLedger(rootPath),
+    ...readDataBranchLedger(rootPath),
+  ]);
   const renameEvents = computeRenameEvents(
     fold,
     collectRenames(rootPath),
@@ -378,7 +390,7 @@ export async function runAudit(
       ),
     },
   };
-  const priorTrends = readTrends(rootPath);
+  const priorTrends = mergeDataBranchTrends(rootPath, readTrends(rootPath));
   const derivative = computeDerivative(priorTrends, trendEntry);
   if (stampLedger) appendTrendEntry(rootPath, trendEntry);
 

@@ -23,7 +23,18 @@ export interface LocalPublishResult {
   findingCount: number;
 }
 
-export function publishLocal(result: AuditRunResult): LocalPublishResult {
+export interface LocalPublishOptions {
+  /** Write tracked copies (findings/, briefing.md) into the working
+   * tree — the CI data-branch path only. Local runs keep generated
+   * output under gitignored out/ so a routine `git add -A` never
+   * commits regenerated files to the default branch. */
+  trackedCopies?: boolean;
+}
+
+export function publishLocal(
+  result: AuditRunResult,
+  options: LocalPublishOptions = {},
+): LocalPublishResult {
   const vibecheckDir = join(result.rootPath, ".vibecompact");
   const outDir = join(vibecheckDir, "out");
   mkdirSync(outDir, { recursive: true });
@@ -38,21 +49,27 @@ export function publishLocal(result: AuditRunResult): LocalPublishResult {
     "utf-8",
   );
 
-  // Tracked copy: the data branch is the delivery surface (PRs are
-  // never merged), so the briefing must travel with the data commit.
-  const briefingPath = join(vibecheckDir, "briefing.md");
   const briefingContent = renderAgentBriefing(result);
-  writeFileSync(briefingPath, briefingContent, "utf-8");
   writeFileSync(join(outDir, "agent-briefing.md"), briefingContent, "utf-8");
 
   // Per-finding packages: regenerate wholesale so resolved findings'
-  // packages vanish with them.
-  const findingsDir = join(vibecheckDir, "findings");
-  rmSync(findingsDir, { recursive: true, force: true });
+  // packages vanish with them. Tracked copies (data-branch delivery)
+  // only on the CI publish path.
   const packages = renderFindingPackages(result);
+  const findingsDir = options.trackedCopies
+    ? join(vibecheckDir, "findings")
+    : join(outDir, "findings");
+  rmSync(join(vibecheckDir, "findings"), { recursive: true, force: true });
+  rmSync(join(outDir, "findings"), { recursive: true, force: true });
   mkdirSync(findingsDir, { recursive: true });
   for (const [name, content] of packages) {
     writeFileSync(join(findingsDir, name), content, "utf-8");
+  }
+  const briefingPath = options.trackedCopies
+    ? join(vibecheckDir, "briefing.md")
+    : join(outDir, "agent-briefing.md");
+  if (options.trackedCopies) {
+    writeFileSync(briefingPath, briefingContent, "utf-8");
   }
 
   return {

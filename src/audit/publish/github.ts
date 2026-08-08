@@ -59,6 +59,12 @@ export interface IssueClient {
     name: string;
     description: string;
   }): Promise<void>;
+  addLabels(params: {
+    owner: string;
+    repo: string;
+    issue_number: number;
+    labels: string[];
+  }): Promise<void>;
   listPulls(params: {
     owner: string;
     repo: string;
@@ -294,6 +300,24 @@ export async function upsertDataPr(
     base,
     body,
   });
+  // Affordance guard: a permanently-open PR reads as "merge me" to
+  // humans, bots, and agents alike.
+  try {
+    await client.ensureLabel({
+      owner,
+      repo,
+      name: "do-not-merge",
+      description: "Instruction-delivery PR — intentionally never merged",
+    });
+    await client.addLabels({
+      owner,
+      repo,
+      issue_number: created.number,
+      labels: ["do-not-merge", AUDIT_ISSUE_LABEL],
+    });
+  } catch {
+    // Labels are a guard, not a requirement.
+  }
   return { prNumber: created.number, created: true };
 }
 

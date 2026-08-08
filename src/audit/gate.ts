@@ -27,6 +27,11 @@
  */
 
 import { execFileSync } from "node:child_process";
+import {
+  fetchDataBranch,
+  mergeDataBranchTrends,
+  readDataBranchLedger,
+} from "./data-branch.js";
 import { isPathExcludedFast } from "./exclusions.js";
 import { foldLedger, pathOf, readLedger } from "./ledger.js";
 import { readTrends } from "./trends.js";
@@ -106,7 +111,10 @@ export function evaluateGate(
   rootPath: string,
   config: ResolvedAuditConfig,
 ): GateDecision {
-  const trends = readTrends(rootPath);
+  // Machine state lives on the data branch (the data PR never merges);
+  // fold it in or fix-confirmation and staleness starve.
+  fetchDataBranch(rootPath);
+  const trends = mergeDataBranchTrends(rootPath, readTrends(rootPath));
   const lastClean = [...trends].reverse().find((entry) => !entry.dirty);
   if (!lastClean || lastClean.sha === "no-git") {
     return {
@@ -126,7 +134,10 @@ export function evaluateGate(
   }
 
   // 1. fix-confirmation: changed files ∩ actively-firing files.
-  const fold = foldLedger(readLedger(rootPath));
+  const fold = foldLedger([
+    ...readLedger(rootPath),
+    ...readDataBranchLedger(rootPath),
+  ]);
   const firingPaths = new Set(
     [...fold.firing.values()]
       .filter((state) => !state.fixedAt)

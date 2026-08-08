@@ -15,7 +15,13 @@
  */
 
 import { randomBytes } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, join } from "node:path";
 import { LANE_ANCHORS } from "./scoring.js";
 
@@ -179,6 +185,37 @@ export function readLedger(rootPath: string): LedgerEvent[] {
     }
   }
   return events;
+}
+
+/**
+ * Rewrite the ledger file as the ordered, deduped union of its current
+ * content and `extra`. Used by the CI publish path so the force-pushed
+ * data branch never drops machine events that only ever lived there.
+ */
+export function writeUnionLedger(
+  rootPath: string,
+  extra: LedgerEvent[],
+): number {
+  const events = [...readLedger(rootPath), ...extra];
+  const seen = new Set<string>();
+  const ordered = events
+    .sort((a, b) => {
+      if (a.at !== b.at) return a.at < b.at ? -1 : 1;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    })
+    .filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+  const file = join(rootPath, LEDGER_PATH);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    ordered.map((e) => JSON.stringify(e)).join("\n") + "\n",
+    "utf-8",
+  );
+  return ordered.length;
 }
 
 export function appendEvents(rootPath: string, events: LedgerEvent[]): void {

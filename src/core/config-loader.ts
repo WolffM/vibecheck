@@ -72,6 +72,20 @@ export function loadVibeCopConfig(
   rootPath: string,
   configPath: string = "vibecheck",
 ): VibeCopConfig {
+  // vibeCompact repos may configure via vibecompact.json; it wins when
+  // present so audit-only repos need only one consistent prefix.
+  if (configPath === "vibecheck") {
+    const compactPath = join(rootPath, "vibecompact.json");
+    if (existsSync(compactPath)) {
+      try {
+        const content = readFileSync(compactPath, "utf-8");
+        console.log(`Loaded config from ${compactPath}`);
+        return JSON.parse(content);
+      } catch (error) {
+        console.warn(`Failed to parse ${compactPath}: ${error}`);
+      }
+    }
+  }
   // Try JSON first, then YAML
   const baseName = configPath.replace(/\.(json|yml|yaml)$/, "");
   const jsonPath = join(rootPath, `${baseName}.json`);
