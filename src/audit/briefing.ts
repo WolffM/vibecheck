@@ -13,6 +13,7 @@
  */
 
 import { findingSlug } from "./evidence.js";
+import { selectPackagedFindings } from "./findings.js";
 import type { AuditRunResult } from "./index.js";
 import type { FileScore } from "./scoring.js";
 
@@ -119,7 +120,10 @@ export function renderAgentBriefing(result: AuditRunResult): string {
     ),
   ];
   if (ordered.length > 0) {
-    lines.push("", "## Work items (execution order: smallest blast radius first)");
+    lines.push(
+      "",
+      "## Corroborated work items (execution order: smallest blast radius first)",
+    );
     for (const [index, offender] of ordered.entries()) {
       lines.push(
         "",
@@ -147,7 +151,49 @@ export function renderAgentBriefing(result: AuditRunResult): string {
       lines.push(`- If wrong or accepted: \`${verdictCommands(offender)[0]}\``);
     }
   } else {
-    lines.push("", "## Work items", "", "None — nothing passes the gate.");
+    lines.push(
+      "",
+      "## Corroborated work items",
+      "",
+      "None pass the ≥2-lane gate this run.",
+    );
+  }
+
+  const { singles } = selectPackagedFindings(result);
+  if (singles.length > 0) {
+    lines.push(
+      "",
+      "## Single-lane findings (one signal each — weigh accordingly)",
+      "",
+      "Each has a full evidence package in `.vibecompact/findings/`.",
+      "",
+    );
+    for (const single of singles) {
+      const lane = single.firingLanes[0]?.lane ?? "?";
+      const dead = result.lanes.deadcode?.entries.find(
+        (e) => e.path === single.path,
+      );
+      const dup = result.lanes.duplication?.entries.find(
+        (e) => e.path === single.path,
+      );
+      const sizeEntry = result.lanes.size?.entries.find(
+        (e) => e.path === single.path,
+      );
+      let detail = "";
+      if (lane === "deadcode" && dead) {
+        detail =
+          dead.deadDetail.length > 0
+            ? `dead: ${dead.deadDetail.slice(0, 3).map((d) => d.name).join(", ")}${dead.deadDetail.length > 3 ? ` +${dead.deadDetail.length - 3}` : ""}`
+            : "entire file unreferenced";
+      } else if (lane === "duplication" && dup) {
+        detail = `${dup.duplicatedLines} duplicated lines` + (dup.clusterFanOut > 0 ? ` across ${dup.clusterFanOut} partner(s)` : " (internal)");
+      } else if (lane === "size" && sizeEntry) {
+        detail = `${sizeEntry.codeLines} code lines (tier ${sizeEntry.tier})`;
+      }
+      lines.push(
+        `- \`${single.path}\` — ${lane}${detail ? `: ${detail}` : ""} → \`.vibecompact/findings/${findingSlug(single.path)}.md\``,
+      );
+    }
   }
 
   const deletions = deletionCandidates(result);

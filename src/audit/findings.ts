@@ -236,6 +236,40 @@ function deletionPackage(
   return lines.join("\n") + "\n";
 }
 
+export interface PackagedFindings {
+  corroborated: FileScore[];
+  /** Single-lane firing files, capped per lane by weighted score. */
+  singles: FileScore[];
+}
+
+/** The one selection both the packages and the briefing render from. */
+export function selectPackagedFindings(
+  result: AuditRunResult,
+): PackagedFindings {
+  const capPerLane = result.config.maxReportItems;
+  const perLaneCount = new Map<string, number>();
+  const singles: FileScore[] = [];
+  const candidates = result.fileScores
+    .filter(
+      (f) =>
+        f.firingLanes.length >= 1 &&
+        !result.worstOffenders.some((o) => o.path === f.path),
+    )
+    .sort(
+      (a, b) =>
+        b.weightedScore - a.weightedScore ||
+        (a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
+    );
+  for (const single of candidates) {
+    const lane = single.firingLanes[0]?.lane ?? "";
+    const count = perLaneCount.get(lane) ?? 0;
+    if (count >= capPerLane) continue;
+    perLaneCount.set(lane, count + 1);
+    singles.push(single);
+  }
+  return { corroborated: [...result.worstOffenders], singles };
+}
+
 /** filename (without dir) → package content. */
 export function renderFindingPackages(
   result: AuditRunResult,
@@ -270,25 +304,7 @@ export function renderFindingPackages(
   // Single-lane firing findings get packages too (round 5): the gate
   // governs the corroborated headline, not what evidence ships — a file
   // with exact clone ranges is actionable regardless of corroboration.
-  // Capped per lane by score to keep the set readable.
-  const capPerLane = result.config.maxReportItems;
-  const perLaneCount = new Map<string, number>();
-  const singles = result.fileScores
-    .filter(
-      (f) =>
-        f.firingLanes.length >= 1 &&
-        !result.worstOffenders.some((o) => o.path === f.path),
-    )
-    .sort(
-      (a, b) =>
-        b.weightedScore - a.weightedScore ||
-        (a.path < b.path ? -1 : a.path > b.path ? 1 : 0),
-    );
-  for (const single of singles) {
-    const lane = single.firingLanes[0]?.lane ?? "";
-    const count = perLaneCount.get(lane) ?? 0;
-    if (count >= capPerLane) continue;
-    perLaneCount.set(lane, count + 1);
+  for (const single of selectPackagedFindings(result).singles) {
     packages.set(
       `${findingSlug(single.path)}.md`,
       offenderPackage(result, single, null, refs),
