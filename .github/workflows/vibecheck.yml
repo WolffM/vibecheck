@@ -15,7 +15,7 @@ jobs:
   # Stage 1: Setup and Detect Languages
   setup:
     name: 🔧 Setup
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }}
     outputs:
       has_js: ${{ steps.detect.outputs.has_js }}
       has_python: ${{ steps.detect.outputs.has_python }}
@@ -66,7 +66,7 @@ jobs:
   analyze:
     name: 🔍 Static Analysis
     needs: setup
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -97,7 +97,7 @@ jobs:
   summary:
     name: 📊 Summary
     needs: analyze
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }}
     if: always()
     steps:
       - name: Download results
