@@ -1,6 +1,14 @@
 packages:
   - .
 
+# Allow esbuild (transitive dep of the toolchain) to run its postinstall — it
+# just fetches its native binary. pnpm 11 HARD-FAILS on an ignored build script
+# (`ERR_PNPM_IGNORED_BUILDS`) where pnpm 9 only warned, so this became required
+# when this repo moved to 11.5.0. Same shape as hadoku-conjure's.
+# pnpm >=11.5 reads allowBuilds; onlyBuiltDependencies kept for older pnpm.
+allowBuilds:
+  esbuild: true
+
 # Supply-chain: external packages must be 7 days old before they resolve. Malicious npm
 # releases are near-always caught within hours (Shai-Hulud ~12h, debug/chalk ~2.5h), so we
 # let the ecosystem find them first. @wolffm/* is EXEMPT (verified): it is the cross-ecosystem
