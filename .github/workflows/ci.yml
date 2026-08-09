@@ -21,16 +21,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          dest: ${{ runner.temp }}/pnpm-${{ github.run_id }}
-
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 20
-          cache: pnpm
+
+      # pnpm via corepack, pinned by the `packageManager` field in package.json.
+      # Replaces pnpm/action-setup, whose self-installer shares one directory
+      # across every runner instance on the host and dies with
+      # `ENOENT ... uv_cwd` when concurrent jobs race it.
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.5.0 --activate
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
