@@ -79,10 +79,14 @@ Documentation: https://github.com/WolffM/vibecheck
 `);
 }
 
+// Resolve tsx against this package, not the cwd — the CLI runs from
+// arbitrary target repos that don't have tsx installed.
+const tsxImport = import.meta.resolve("tsx");
+
 function runScript(scriptPath, scriptArgs = []) {
   const fullPath = join(srcDir, scriptPath);
 
-  const child = spawn("node", ["--import", "tsx", fullPath, ...scriptArgs], {
+  const child = spawn("node", ["--import", tsxImport, fullPath, ...scriptArgs], {
     stdio: "inherit",
     env: process.env,
   });
