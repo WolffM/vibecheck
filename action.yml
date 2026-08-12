@@ -337,7 +337,7 @@ runs:
         echo "Installing PMD..."
         PMD_VERSION="7.0.0"
         curl -L "https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip" -o pmd.zip
-        unzip -q pmd.zip -d /tmp
+        unzip -qo pmd.zip -d /tmp
         echo "/tmp/pmd-bin-${PMD_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Install SpotBugs (if Java detected)
@@ -404,7 +404,7 @@ runs:
         echo "Installing detekt CLI..."
         DETEKT_VERSION="1.23.7"
         curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o /tmp/detekt.zip
-        unzip -q /tmp/detekt.zip -d /tmp/detekt
+        unzip -qo /tmp/detekt.zip -d /tmp/detekt
         echo "/tmp/detekt/detekt-cli-${DETEKT_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Detect Rust files
