@@ -227,7 +227,10 @@ runs:
           echo "::warning::opengrep install failed, security scanning will be skipped"
         fi
 
-        # Community security rules (fork of the pre-relicense semgrep ruleset)
+        # Community security rules (fork of the pre-relicense semgrep ruleset).
+        # git clone refuses an existing directory, and RUNNER_TEMP is only
+        # guaranteed fresh on hosted runners.
+        rm -rf "$RUNNER_TEMP/opengrep-rules"
         if git clone --depth 1 https://github.com/opengrep/opengrep-rules.git "$RUNNER_TEMP/opengrep-rules"; then
           echo "VIBECHECK_OPENGREP_RULES=$RUNNER_TEMP/opengrep-rules" >> "$GITHUB_ENV"
         else
@@ -336,8 +339,11 @@ runs:
       run: |
         echo "Installing PMD..."
         PMD_VERSION="7.0.0"
-        curl -L "https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip" -o pmd.zip
-        unzip -qo pmd.zip -d /tmp
+        # Download to RUNNER_TEMP, never the workspace: a stray archive in
+        # the checkout gets scanned by the analysis tools and flips the
+        # audit's git-status dirty detection.
+        curl -L "https://github.com/pmd/pmd/releases/download/pmd_releases%2F${PMD_VERSION}/pmd-dist-${PMD_VERSION}-bin.zip" -o "$RUNNER_TEMP/pmd.zip"
+        unzip -qo "$RUNNER_TEMP/pmd.zip" -d /tmp
         echo "/tmp/pmd-bin-${PMD_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Install SpotBugs (if Java detected)
@@ -346,8 +352,8 @@ runs:
       run: |
         echo "Installing SpotBugs..."
         SPOTBUGS_VERSION="4.8.3"
-        curl -L "https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.tgz" -o spotbugs.tgz
-        tar -xzf spotbugs.tgz -C /tmp
+        curl -L "https://github.com/spotbugs/spotbugs/releases/download/${SPOTBUGS_VERSION}/spotbugs-${SPOTBUGS_VERSION}.tgz" -o "$RUNNER_TEMP/spotbugs.tgz"
+        tar -xzf "$RUNNER_TEMP/spotbugs.tgz" -C /tmp
         echo "/tmp/spotbugs-${SPOTBUGS_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Compile Java files for SpotBugs (if Java detected)
@@ -403,8 +409,8 @@ runs:
       run: |
         echo "Installing detekt CLI..."
         DETEKT_VERSION="1.23.7"
-        curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o /tmp/detekt.zip
-        unzip -qo /tmp/detekt.zip -d /tmp/detekt
+        curl -sSL "https://github.com/detekt/detekt/releases/download/v${DETEKT_VERSION}/detekt-cli-${DETEKT_VERSION}.zip" -o "$RUNNER_TEMP/detekt.zip"
+        unzip -qo "$RUNNER_TEMP/detekt.zip" -d /tmp/detekt
         echo "/tmp/detekt/detekt-cli-${DETEKT_VERSION}/bin" >> $GITHUB_PATH
 
     - name: Detect Rust files
