@@ -7,6 +7,7 @@
  */
 
 import type { ResolvedAuditConfig } from "../config.js";
+import { countDocstringLines } from "../runners/py-docstrings.js";
 import { runScc, type SccResult } from "../runners/scc.js";
 
 /**
@@ -59,7 +60,14 @@ export type SizeTier = 0 | 1 | 2 | 3;
 export interface SizeLaneEntry {
   path: string;
   language: string;
+  /** Logic lines: scc code lines, minus docstring extents for Python. */
   codeLines: number;
+  /**
+   * Unadjusted scc code count, present only where an adjustment landed.
+   * scc counts Python docstrings — and blank lines inside them — as
+   * code, which penalizes exactly the documentation a repo may require.
+   */
+  rawCodeLines?: number;
   complexity: number;
   tier: SizeTier;
   /**
@@ -78,6 +86,8 @@ export interface SizeLaneResult {
   toolVersion: string | null;
   /** Present when the lane could not run or ran degraded. */
   disclosure?: string;
+  /** Measurement notes for an available lane (e.g. docstring handling). */
+  notes: string[];
   entries: SizeLaneEntry[];
 }
 
@@ -97,6 +107,8 @@ export function buildSizeLane(
   scc: SccResult,
   candidateFiles: string[],
   config: ResolvedAuditConfig,
+  /** Docstring extents per Python file; null = python3 unavailable. */
+  docstringLines: Map<string, number> | null = new Map(),
 ): SizeLaneResult {
   if (!scc.available) {
     return {
@@ -105,31 +117,54 @@ export function buildSizeLane(
       toolVersion: scc.version,
       disclosure:
         "scc not available — size lane skipped; install scc (https://github.com/boyter/scc) to enable it",
+      notes: [],
       entries: [],
     };
   }
 
   const candidates = new Set(candidateFiles);
   const tiers = config.sizeTiers;
+  let adjustedCount = 0;
   const entries: SizeLaneEntry[] = scc.files
     .filter((f) => candidates.has(f.path) && !isDataLanguage(f.language))
     .map((f) => {
       const multiplier = sizeMultiplier(f.language);
+      // scc counts Python docstrings as code (only `#` is a comment to
+      // it); tier on the logic count so documentation is never the
+      // offense (pygmalion beta finding 4).
+      const docstrings = docstringLines?.get(f.path) ?? 0;
+      const codeLines =
+        docstrings > 0 ? Math.max(0, f.codeLines - docstrings) : f.codeLines;
+      if (docstrings > 0) adjustedCount++;
       return {
         path: f.path,
         language: f.language,
-        codeLines: f.codeLines,
+        codeLines,
+        ...(docstrings > 0 ? { rawCodeLines: f.codeLines } : {}),
         complexity: f.complexity,
-        tier: assignTier(f.codeLines, multiplier, tiers),
-        score: f.codeLines / (tiers[0] * multiplier),
+        tier: assignTier(codeLines, multiplier, tiers),
+        score: codeLines / (tiers[0] * multiplier),
         cohesionModifier: 1 as const,
       };
     });
+
+  const hasPython = entries.some((e) => e.language === "Python");
+  const notes: string[] = [];
+  if (docstringLines === null && hasPython) {
+    notes.push(
+      "python3 unavailable — Python counts include docstrings (scc counts them as code); tiers may overstate",
+    );
+  } else if (adjustedCount > 0) {
+    notes.push(
+      `Python code lines exclude docstrings (ast-exact, ${adjustedCount} file${adjustedCount === 1 ? "" : "s"} adjusted); raw scc counts in machine data`,
+    );
+  }
 
   return {
     lane: "size",
     available: true,
     toolVersion: scc.version,
+    notes,
     entries,
   };
 }
@@ -139,5 +174,11 @@ export function runSizeLane(
   candidateFiles: string[],
   config: ResolvedAuditConfig,
 ): SizeLaneResult {
-  return buildSizeLane(runScc(rootPath), candidateFiles, config);
+  const pyFiles = candidateFiles.filter((f) => f.endsWith(".py"));
+  return buildSizeLane(
+    runScc(rootPath),
+    candidateFiles,
+    config,
+    countDocstringLines(rootPath, pyFiles),
+  );
 }

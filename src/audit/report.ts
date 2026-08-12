@@ -15,6 +15,11 @@ function pct(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
 
+/** Files firing on exactly one lane — corroboration never got a chance. */
+function singleLaneFirings(result: AuditRunResult): number {
+  return result.fileScores.filter((f) => f.firingLanes.length === 1).length;
+}
+
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
@@ -51,6 +56,19 @@ function healthSection(result: AuditRunResult): string[] {
     );
   }
 
+  if (result.coverageGaps.length > 0) {
+    const blocked = singleLaneFirings(result);
+    lines.push(
+      "",
+      `> ⚠ **Coverage warning** — ${result.coverageGaps.length} of ${result.lanesPlanned.length} planned lanes unavailable or degraded this run:`,
+      ...result.coverageGaps.map((g) => `> - ${g.lane}: ${g.note}`),
+      `> The ≥2-lane corroboration gate cannot be evaluated at full strength. An empty offender list below is a coverage statement, not a health claim.` +
+        (blocked > 0
+          ? ` ${plural(blocked, "file")} fired on a single lane and could not be corroborated.`
+          : ""),
+    );
+  }
+
   for (const [lane, rate] of Object.entries(result.saturatedLanes)) {
     const laneFact =
       lane === "arrival"
@@ -68,6 +86,9 @@ function healthSection(result: AuditRunResult): string[] {
     `Current stock: ${plural(entry.aggregates.offenders, "worst offender")}, ` +
       `${entry.aggregates.gatePassing} gate-passing, ` +
       `${entry.aggregates.candidateFiles} candidate files.` +
+      (result.coverageGaps.length > 0
+        ? " _(reduced lane coverage this run — see warning above)_"
+        : "") +
       (entry.dirty ? " _(dirty working tree — excluded from trend baselines)_" : ""),
   );
   return lines;
@@ -145,10 +166,21 @@ function evidenceFor(result: AuditRunResult, path: string): string {
 function offendersSection(result: AuditRunResult): string[] {
   const lines: string[] = ["## Worst offenders"];
   if (result.worstOffenders.length === 0) {
-    lines.push(
-      "",
-      "None. No file passes the ≥2-applicable-lanes gate and the entry threshold.",
-    );
+    if (result.coverageGaps.length > 0) {
+      const blocked = singleLaneFirings(result);
+      lines.push(
+        "",
+        `Not evaluable at full strength — ${result.coverageGaps.length} of ${result.lanesPlanned.length} planned lanes unavailable or degraded (see Health). ` +
+          (blocked > 0
+            ? `${plural(blocked, "single-lane firing")} could not seek corroboration; they ship as single-lane findings, not as health.`
+            : "No lane fired on any file, but that is with reduced coverage."),
+      );
+    } else {
+      lines.push(
+        "",
+        "None. No file passes the ≥2-applicable-lanes gate and the entry threshold.",
+      );
+    }
     return lines;
   }
   lines.push(
@@ -204,6 +236,7 @@ function laneSection(result: AuditRunResult): string[] {
           `firing: ${entry.aggregates.perLane.size?.filesFlagged ?? 0}. ` +
           `Tiers: ${tiers[0]} investigate / ${tiers[1]} heavily scrutinized / ${tiers[2]} no justification.`,
       );
+      for (const note of size.notes) lines.push(`- ${note}`);
     }
   }
 
@@ -386,6 +419,7 @@ export function renderAuditReport(result: AuditRunResult): string {
     "## Appendix",
     "",
     `- Excluded as generated/vendored: ${plural(result.excluded.length, "file")}.`,
+    `- JS/TS project roots (knip/type-coverage cwd): ${result.jsRoots.length > 0 ? result.jsRoots.map((r) => `\`${r}\``).join(", ") : "none found"}.`,
     `- Declared entry points detected (exempt from orphan/dead-surface claims): ${result.entryPointCount}.`,
     `- Lanes planned: ${result.lanesPlanned.join(", ") || "none"}.`,
     `- Machine-readable results: \`.vibecompact/out/audit.json\`.`,
@@ -404,8 +438,17 @@ export function renderAuditReport(result: AuditRunResult): string {
   return sections.map((s) => s.join("\n")).join("\n\n") + "\n";
 }
 
-/** Trimmed machine payload for .vibecompact/out/audit.json — no history dump. */
+/**
+ * Trimmed machine payload for .vibecompact/out/audit.json — no history dump.
+ * Every lane the summary quotes counts for must ship its entries here:
+ * signal-bearing entries in full, zero-signal ones as an assessed count
+ * (pygmalion beta finding 3 — counts without evidence are unactionable).
+ */
 export function buildMachineResult(result: AuditRunResult): object {
+  const deadcode = result.lanes.deadcode;
+  const duplication = result.lanes.duplication;
+  const smells = result.lanes.smells;
+  const consistency = result.lanes.consistency;
   return {
     anchorSha: result.anchorSha,
     anchorDate: result.trends.entry.at,
@@ -423,6 +466,43 @@ export function buildMachineResult(result: AuditRunResult): object {
           }
         : undefined,
       arrival: result.lanes.arrival,
+      deadcode: deadcode
+        ? {
+            available: deadcode.available,
+            disclosures: deadcode.disclosures,
+            filesSignalMuted: deadcode.filesSignalMuted,
+            coverage: deadcode.coverage,
+            assessedCount: deadcode.entries.length,
+            entries: deadcode.entries.filter(
+              (e) => e.score > 0 || e.unusedFile || e.deadItems > 0,
+            ),
+          }
+        : undefined,
+      duplication: duplication
+        ? {
+            available: duplication.available,
+            disclosure: duplication.disclosure,
+            entries: duplication.entries,
+          }
+        : undefined,
+      smells: smells
+        ? {
+            available: smells.available,
+            disclosures: smells.disclosures,
+            typedPercent: smells.typedPercent,
+            assessedCount: smells.entries.length,
+            entries: smells.entries.filter((e) => e.anyCount > 0),
+          }
+        : undefined,
+      consistency: consistency
+        ? {
+            available: true,
+            disclosures: consistency.disclosures,
+            categoryFindings: consistency.categoryFindings,
+            assessedCount: consistency.entries.length,
+            entries: consistency.entries.filter((e) => e.score > 0),
+          }
+        : undefined,
     },
     fileScores: result.fileScores,
     worstOffenders: result.worstOffenders.map((o) => o.path),

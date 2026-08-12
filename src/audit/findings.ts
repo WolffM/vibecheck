@@ -13,6 +13,7 @@
  */
 
 import {
+  extractNestedSymbols,
   extractSymbolMap,
   findingSlug,
   largestSymbols,
@@ -59,11 +60,13 @@ function laneDetail(
       if (!entry) break;
       lines.push(
         "",
-        `### size — ${entry.codeLines} code lines (tier ${entry.tier})`,
+        `### size — ${entry.codeLines} code lines (tier ${entry.tier})` +
+          (entry.rawCodeLines !== undefined
+            ? ` · ${entry.rawCodeLines} raw scc lines (docstrings excluded from the tiered count)`
+            : ""),
       );
-      const symbols = largestSymbols(
-        extractSymbolMap(result.rootPath, path),
-      );
+      const fullMap = extractSymbolMap(result.rootPath, path);
+      const symbols = largestSymbols(fullMap);
       if (symbols.length > 0) {
         lines.push(
           "",
@@ -75,9 +78,44 @@ function laneDetail(
             (s) =>
               `| \`${s.name}\` | ${s.kind} | ${s.lines} | ${s.start}–${s.end} |`,
           ),
-          "",
-          `Suggested first cut: extract \`${symbols[0].name}\` (${symbols[0].lines} lines) into its own module, with a test first.`,
         );
+        // A symbol that IS most of the file makes "extract it" a no-op —
+        // the new module would be as big as the problem. The useful cut
+        // is inside it (pygmalion beta finding 6).
+        const fileLines = fullMap[fullMap.length - 1].end;
+        const dominant =
+          fileLines > 0 && symbols[0].lines / fileLines >= 0.6;
+        if (dominant) {
+          const inner = extractNestedSymbols(result.rootPath, path, symbols[0]);
+          lines.push(
+            "",
+            `\`${symbols[0].name}\` alone is ${Math.round((symbols[0].lines / fileLines) * 100)}% of the file — moving it to its own module would relocate the problem, not reduce it. Cut inside it instead:`,
+          );
+          if (inner.length >= 2) {
+            const top = [...inner].sort((a, b) => b.lines - a.lines).slice(0, 8);
+            lines.push(
+              "",
+              `| section inside \`${symbols[0].name}\` | kind | lines | span |`,
+              "|---|---|---|---|",
+              ...top.map(
+                (s) =>
+                  `| \`${s.name}\` | ${s.kind} | ${s.lines} | ${s.start}–${s.end} |`,
+              ),
+              "",
+              `Suggested first cut: group these ${inner.length} inner sections by responsibility and extract one group at a time, with a test first.`,
+            );
+          } else {
+            lines.push(
+              "",
+              `Suggested first cut: split \`${symbols[0].name}\` at its internal boundaries (blocks, route groups, phases) rather than extracting it whole, with a test first.`,
+            );
+          }
+        } else {
+          lines.push(
+            "",
+            `Suggested first cut: extract \`${symbols[0].name}\` (${symbols[0].lines} lines) into its own module, with a test first.`,
+          );
+        }
       }
       break;
     }

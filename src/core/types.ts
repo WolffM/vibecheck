@@ -217,6 +217,12 @@ export interface AuditConfig {
   size_tiers?: number[];
   /** Extra excluded path prefixes (e.g. "backend/custom_nodes"). */
   exclude?: string[];
+  /**
+   * Directories holding the JS/TS project(s) knip and type-coverage
+   * should run from (e.g. ["frontend"]). Defaults to auto-discovery of
+   * tracked package.json locations when the repo root has none.
+   */
+  js_roots?: string[];
   lanes?: AuditLanesConfig;
 }
 

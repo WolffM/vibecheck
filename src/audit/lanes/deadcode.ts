@@ -213,11 +213,12 @@ export function runDeadcodeLane(
   rootPath: string,
   candidateFiles: string[],
   entryPoints?: Set<string>,
+  jsRoots: string[] = ["."],
 ): DeadcodeLaneResult {
   const hasTsJs = candidateFiles.some(isTsJsFile);
   const hasPython = candidateFiles.some(isPythonFile);
   const knip = hasTsJs
-    ? runKnip(rootPath)
+    ? runKnip(rootPath, jsRoots)
     : { available: false, unusedFiles: [], unusedExports: new Map() };
   const vulture = hasPython
     ? runVulture(rootPath)

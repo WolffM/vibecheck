@@ -54,6 +54,9 @@ function untestedFixture() {
   const repo = makeRepo("vibecheck-cli-");
   repo.commit("initial", {
     "src/naked.ts": "export const naked = 0;\n",
+    // Test infrastructure must exist for the file's language family or
+    // arrival abstains repo-wide; this test never reaches naked.ts.
+    "tests/other.test.ts": "export const t = 1;\n",
     // The suppression loop only needs the arrival lane; the tool-backed
     // lanes would have npx fetching knip/jscpd inside a bare temp repo
     // on CI (slow, networked, and irrelevant here).

@@ -58,6 +58,19 @@ function isCodeFile(path: string): boolean {
   return CODE_EXTENSIONS.has(ext);
 }
 
+/**
+ * Language family for the no-test-infrastructure abstention. "no test
+ * reaches this file" only discriminates when tests for the file's
+ * language exist at all; a subtree with no test runner is a repo-level
+ * fact, not N per-file findings (pygmalion beta finding 5).
+ */
+export function arrivalLanguageFamily(path: string): string {
+  if (isTsJsFile(path)) return "TS/JS";
+  const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
+  if (ext === "py") return "Python";
+  return ext;
+}
+
 export interface ArrivalLaneEntry {
   path: string;
   /** Non-merge commits touching the file inside the window. */
@@ -137,6 +150,15 @@ export function buildArrivalLane(
 
   const perFile = buildFileHistories(commits);
   const candidates = new Set(candidateFiles);
+
+  // Language families that have any test file at all in the current
+  // tree. A family with none cannot be discriminated by test co-change:
+  // its files abstain, and the fact is disclosed once at repo level.
+  const testedFamilies = new Set(
+    candidateFiles.filter(isTestFile).map(arrivalLanguageFamily),
+  );
+  const untestableByFamily = new Map<string, number>();
+
   const entries: ArrivalLaneEntry[] = [];
   let graphCount = 0;
   let commitCount = 0;
@@ -145,8 +167,14 @@ export function buildArrivalLane(
     if (!candidates.has(path)) continue;
     if (!isCodeFile(path) || isTestFile(path) || isSnapshotFile(path)) continue;
 
+    const family = arrivalLanguageFamily(path);
+    const familyHasTests = testedFamilies.has(family);
+    if (!familyHasTests) {
+      untestableByFamily.set(family, (untestableByFamily.get(family) ?? 0) + 1);
+    }
+
     const touches = fileCommits.length;
-    const applicable = touches >= ARRIVAL_MIN_TOUCHES;
+    const applicable = familyHasTests && touches >= ARRIVAL_MIN_TOUCHES;
     const graphMode = isTsJsFile(path) && testReach.size > 0;
     if (graphMode) graphCount++;
     else commitCount++;
@@ -191,6 +219,11 @@ export function buildArrivalLane(
     });
   }
 
+  for (const [family, count] of [...untestableByFamily.entries()].sort()) {
+    disclosures.push(
+      `${family}: no test files exist anywhere in the repo — arrival abstains for ${count} ${family} file${count === 1 ? "" : "s"} (repo-level fact: that subtree has no test infrastructure, not a per-file finding)`,
+    );
+  }
   if (commitCount > 0) {
     disclosures.push(
       `test co-change: ${graphCount} files graph-joined, ${commitCount} on commit granularity (demoted confidence)`,

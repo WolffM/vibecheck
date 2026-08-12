@@ -232,4 +232,35 @@ describe("arrival lane — degradation", () => {
     expect(result.available).toBe(false);
     expect(result.disclosures.join(" ")).toMatch(/no git history/);
   });
+
+  it("abstains for a language family with no test infrastructure", () => {
+    // Python side has tests; the TS/JS subtree has none at all. "No
+    // reaching test" is then a repo-level fact about the subtree, not a
+    // per-file finding on whichever files happened to churn.
+    const repo = makeRepo("vibecheck-arr-notests-");
+    repo.commit("initial", {
+      "frontend/src/App.tsx": "export const a = 0;\n",
+      "api/server.py": "x = 0\n",
+      "tests/test_api.py": "def test_x():\n    pass\n",
+    });
+    for (let round = 1; round <= 3; round++) {
+      repo.commit(`grow ${round}`, {
+        "frontend/src/App.tsx": `export const a = ${round};\n`,
+        "api/server.py": `x = ${round}\n`,
+      });
+    }
+    const history = collectGitHistory(repo.root);
+    const result = runArrivalLane(repo.root, history, repo.tracked());
+
+    const app = result.entries.find((e) => e.path === "frontend/src/App.tsx");
+    expect(app?.applicable).toBe(false);
+    expect(app?.score).toBe(0);
+    const server = result.entries.find((e) => e.path === "api/server.py");
+    expect(server?.applicable).toBe(true);
+    const note = result.disclosures.find((d) =>
+      d.includes("no test files exist anywhere"),
+    );
+    expect(note).toContain("TS/JS");
+    expect(note).toContain("repo-level fact");
+  });
 });

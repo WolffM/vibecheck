@@ -112,6 +112,12 @@ export function renderAgentBriefing(result: AuditRunResult): string {
       `- Trust note: the ${lane} lane is repo-saturated (${Math.round(rate * 100)}% firing) and muted from corroboration this run.`,
     );
   }
+  if (result.coverageGaps.length > 0) {
+    lines.push(
+      `- Coverage warning: ${result.coverageGaps.length} of ${result.lanesPlanned.length} planned lanes unavailable or degraded (${result.coverageGaps.map((g) => g.lane).join(", ")}). ` +
+        "Corroboration was weakened this run — an empty corroborated section is a coverage statement, and single-lane findings deserve more weight than usual.",
+    );
+  }
 
   const ordered = [
     ...result.bestFirstTargets,

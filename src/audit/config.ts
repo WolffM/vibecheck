@@ -24,6 +24,8 @@ export interface ResolvedAuditConfig {
   sizeTiers: [number, number, number];
   /** Extra excluded path prefixes, normalized without trailing slash. */
   exclude: string[];
+  /** JS/TS project roots for knip/type-coverage; [] = auto-discover. */
+  jsRoots: string[];
   lanes: {
     size: ResolvedLaneConfig;
     arrival: ResolvedLaneConfig;
@@ -41,6 +43,7 @@ export const DEFAULT_AUDIT_CONFIG: ResolvedAuditConfig = {
   maxReportItems: 15,
   sizeTiers: [500, 1000, 2000],
   exclude: [],
+  jsRoots: [],
   lanes: {
     size: { enabled: true },
     arrival: { enabled: true },
@@ -77,6 +80,9 @@ export function resolveAuditConfig(raw?: AuditConfig): ResolvedAuditConfig {
     maxReportItems: raw?.max_report_items ?? d.maxReportItems,
     sizeTiers: resolveSizeTiers(raw?.size_tiers),
     exclude: (raw?.exclude ?? []).map((p) =>
+      p.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, ""),
+    ),
+    jsRoots: (raw?.js_roots ?? []).map((p) =>
       p.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, ""),
     ),
     lanes: {

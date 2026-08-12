@@ -58,6 +58,7 @@ Aging justifications — re-affirm with `vibecheck justify <fingerprint> --reaso
 ## Appendix
 
 - Excluded as generated/vendored: 1 file.
+- JS/TS project roots (knip/type-coverage cwd): `.`.
 - Declared entry points detected (exempt from orphan/dead-surface claims): 2.
 - Lanes planned: size, arrival.
 - Machine-readable results: `.vibecompact/out/audit.json`.

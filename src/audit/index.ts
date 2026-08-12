@@ -50,6 +50,7 @@ import {
 } from "./ledger.js";
 import { runArrivalLane, type ArrivalLaneResult } from "./lanes/arrival.js";
 import { runSizeLane, type SizeLaneResult } from "./lanes/size.js";
+import { discoverJsRoots } from "./roots.js";
 import {
   bestFirstTargets,
   computeBlastRadius,
@@ -85,6 +86,8 @@ export interface AuditRunResult {
   /** True when the working tree has uncommitted changes (trends: dirty entry). */
   dirty: boolean;
   lanesPlanned: string[];
+  /** JS/TS project roots knip/type-coverage ran from ("." = repo root). */
+  jsRoots: string[];
   /** Tracked files that survived the exclusion pre-pass (design §3). */
   candidateFiles: string[];
   excluded: Exclusion[];
@@ -120,6 +123,13 @@ export interface AuditRunResult {
   };
   /** Lanes muted this run by repo saturation (lane → firing rate). */
   saturatedLanes: Record<string, number>;
+  /**
+   * Planned lanes that could not run (tool unavailable) or ran with a
+   * language blind spot this run. A non-empty list means the ≥2-lane
+   * corroboration gate is weakened — "0 offenders" is then a coverage
+   * statement, not a health claim (pygmalion beta finding 1).
+   */
+  coverageGaps: { lane: string; note: string }[];
   /** Declared entry points detected (count only; detail in machine artifact). */
   entryPointCount: number;
   trends: {
@@ -188,6 +198,10 @@ export async function runAudit(
   const importGraph = importData.graph;
 
   const entryPoints = detectEntryPoints(rootPath, kept);
+  // Where the JS/TS project(s) actually live — the repo root only when a
+  // package.json sits there (pygmalion beta finding 2: a Python root
+  // with a frontend/ subproject left knip and type-coverage blind).
+  const jsRoots = discoverJsRoots(kept, config.jsRoots);
 
   const lanes: AuditRunResult["lanes"] = {};
   if (config.lanes.size.enabled) {
@@ -200,13 +214,13 @@ export async function runAudit(
     lanes.arrival = runArrivalLane(rootPath, history, kept, importGraph);
   }
   if (config.lanes.deadcode.enabled) {
-    lanes.deadcode = runDeadcodeLane(rootPath, kept, entryPoints.entries);
+    lanes.deadcode = runDeadcodeLane(rootPath, kept, entryPoints.entries, jsRoots);
   }
   if (config.lanes.duplication.enabled) {
     lanes.duplication = runDuplicationLane(rootPath, kept, codeLines, config);
   }
   if (config.lanes.smells.enabled) {
-    lanes.smells = runSmellsLane(rootPath, kept, codeLines);
+    lanes.smells = runSmellsLane(rootPath, kept, codeLines, jsRoots);
   }
   if (config.lanes.consistency.enabled) {
     lanes.consistency = buildConsistencyLane(
@@ -215,6 +229,45 @@ export async function runAudit(
       importData,
       entryPoints.entries,
     );
+  }
+
+  // Coverage gaps: a lane that could not run (or ran blind to one of the
+  // repo's languages) weakens the corroboration gate for every file it
+  // would have covered. Detected here, surfaced in the health headline.
+  const coverageGaps: { lane: string; note: string }[] = [];
+  if (lanes.size && !lanes.size.available) {
+    coverageGaps.push({ lane: "size", note: lanes.size.disclosure ?? "unavailable" });
+  }
+  if (lanes.arrival && !lanes.arrival.available) {
+    coverageGaps.push({
+      lane: "arrival",
+      note: lanes.arrival.disclosures.join("; ") || "unavailable",
+    });
+  }
+  if (lanes.deadcode) {
+    const blindSpots = lanes.deadcode.disclosures.filter((d) =>
+      d.includes("unavailable"),
+    );
+    if (!lanes.deadcode.available) {
+      coverageGaps.push({
+        lane: "deadcode",
+        note: lanes.deadcode.disclosures.join("; ") || "unavailable",
+      });
+    } else if (blindSpots.length > 0) {
+      coverageGaps.push({ lane: "deadcode", note: blindSpots.join("; ") });
+    }
+  }
+  if (lanes.duplication && !lanes.duplication.available) {
+    coverageGaps.push({
+      lane: "duplication",
+      note: lanes.duplication.disclosure ?? "unavailable",
+    });
+  }
+  if (lanes.smells && !lanes.smells.available) {
+    coverageGaps.push({
+      lane: "smells",
+      note: lanes.smells.disclosures.join("; ") || "unavailable",
+    });
   }
 
   const allLaneScores: LaneScore[] = [
@@ -400,6 +453,7 @@ export async function runAudit(
     anchorSha: sha,
     dirty,
     lanesPlanned: [...lanesPlanned],
+    jsRoots,
     candidateFiles: kept,
     excluded,
     history,
@@ -417,6 +471,7 @@ export async function runAudit(
       improving,
     },
     saturatedLanes: Object.fromEntries(saturated),
+    coverageGaps,
     entryPointCount: entryPoints.entries.size,
     trends: {
       entry: trendEntry,

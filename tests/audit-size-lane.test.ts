@@ -98,4 +98,39 @@ describe("buildSizeLane", () => {
     expect(result.entries).toEqual([]);
     expect(result.disclosure).toMatch(/scc not available/);
   });
+
+  it("subtracts Python docstring extents and tiers on the logic count", () => {
+    // Python multiplier 0.8 → tier boundaries 400/800/1600. 900 raw is
+    // tier 2; 300 lines of actual logic is tier 0.
+    const result = buildSizeLane(
+      scc([
+        metrics("doc.py", "Python", 900),
+        metrics("plain.py", "Python", 200),
+      ]),
+      ["doc.py", "plain.py"],
+      config,
+      new Map([["doc.py", 600]]),
+    );
+    const doc = result.entries.find((e) => e.path === "doc.py");
+    expect(doc?.codeLines).toBe(300);
+    expect(doc?.rawCodeLines).toBe(900);
+    expect(doc?.tier).toBe(0);
+    expect(doc?.score).toBeCloseTo(300 / 400);
+    const plain = result.entries.find((e) => e.path === "plain.py");
+    expect(plain?.codeLines).toBe(200);
+    expect(plain?.rawCodeLines).toBeUndefined();
+    expect(result.notes.some((n) => n.includes("exclude docstrings"))).toBe(true);
+  });
+
+  it("keeps raw counts and discloses when python3 is unavailable", () => {
+    const result = buildSizeLane(
+      scc([metrics("a.py", "Python", 500)]),
+      ["a.py"],
+      config,
+      null,
+    );
+    expect(result.entries[0].codeLines).toBe(500);
+    expect(result.entries[0].rawCodeLines).toBeUndefined();
+    expect(result.notes.some((n) => n.includes("python3 unavailable"))).toBe(true);
+  });
 });

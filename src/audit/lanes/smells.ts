@@ -47,7 +47,7 @@ export function buildSmellsLane(
       lane: "smells",
       available: false,
       disclosures: [
-        "type-coverage unavailable (no tsconfig.json, or typescript not resolvable) — smells lane skipped",
+        "type-coverage unavailable (no tsconfig.json at any JS project root, or typescript not resolvable) — smells lane skipped",
       ],
       typedPercent: null,
       entries: [],
@@ -83,6 +83,11 @@ export function runSmellsLane(
   rootPath: string,
   candidateFiles: string[],
   codeLines: Map<string, number>,
+  jsRoots: string[] = ["."],
 ): SmellsLaneResult {
-  return buildSmellsLane(runTypeCoverage(rootPath), candidateFiles, codeLines);
+  return buildSmellsLane(
+    runTypeCoverage(rootPath, jsRoots),
+    candidateFiles,
+    codeLines,
+  );
 }

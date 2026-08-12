@@ -8,6 +8,7 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
     anchorSha: "0123456789abcdef0123456789abcdef01234567",
     dirty: false,
     lanesPlanned: ["size", "arrival"],
+    jsRoots: ["."],
     candidateFiles: ["src/app.ts", "src/dumped.ts", "src/small.ts"],
     excluded: [{ path: "pnpm-lock.yaml", reason: "path-convention" }],
     history: null,
@@ -16,6 +17,7 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
         lane: "size",
         available: true,
         toolVersion: "3.7.0",
+        notes: [],
         entries: [
           {
             path: "src/dumped.ts",
@@ -140,6 +142,7 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
       improving: { "size:src/dumped.ts": 18 },
     },
     saturatedLanes: {},
+    coverageGaps: [],
     entryPointCount: 2,
     trends: {
       entry: {

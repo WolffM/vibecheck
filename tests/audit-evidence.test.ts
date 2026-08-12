@@ -113,11 +113,62 @@ describe("renderFindingPackages", () => {
     expect([...packages.keys()]).toContain("src__dumped.ts.md");
     const pkg = packages.get("src__dumped.ts.md") as string;
     expect(pkg).toContain("Corroborated finding, rank 1");
-    // Symbol map with a concrete first cut.
+    // `huge` IS the file — extract-it-whole would be a no-op, so the
+    // advice must point inside the symbol instead.
     expect(pkg).toContain("`huge`");
-    expect(pkg).toContain("Suggested first cut: extract `huge`");
+    expect(pkg).toContain("moving it to its own module would relocate the problem");
+    expect(pkg).not.toContain("Suggested first cut: extract `huge`");
     // Verdict commands attached.
     expect(pkg).toContain('vibecheck wontfix|noise|justify "size:src/dumped.ts"');
+  });
+
+  it("suggests extracting the largest symbol when no symbol dominates", () => {
+    const block = (name: string) =>
+      `export function ${name}() {\n` +
+      Array.from({ length: 15 }, (_, i) => `  const v${i} = ${i};`).join("\n") +
+      "\n}\n";
+    const result = fixtureResult(
+      makeRoot({
+        "src/dumped.ts": block("alpha") + block("beta") + block("gamma"),
+      }),
+    );
+    const pkg = renderFindingPackages(result).get("src__dumped.ts.md") as string;
+    expect(pkg).toContain("Suggested first cut: extract `alpha`");
+  });
+
+  it("lists the sections inside a dominant symbol as the cut points", () => {
+    const inner = (name: string) =>
+      `    def ${name}():\n` +
+      Array.from({ length: 12 }, (_, i) => `        y${i} = ${i}`).join("\n") +
+      "\n";
+    const result = fixtureResult(
+      makeRoot({
+        "src/dumped.ts": "", // path must exist for the size entry lookup
+        "src/mono.py":
+          "def build_app():\n" + inner("routes_a") + inner("routes_b") + inner("routes_c"),
+      }),
+    );
+    result.lanes.size?.entries.push({
+      path: "src/mono.py",
+      language: "Python",
+      codeLines: 40,
+      complexity: 3,
+      tier: 1,
+      score: 1.1,
+      cohesionModifier: 1,
+    });
+    result.worstOffenders.push({
+      path: "src/mono.py",
+      applicableLanes: ["size"],
+      firingLanes: [{ lane: "size", score: 1.1, threshold: 1 }],
+      suppressedByFloor: [],
+      weightedScore: 2.3,
+      gatePassed: false,
+    });
+    const pkg = renderFindingPackages(result).get("src__mono.py.md") as string;
+    expect(pkg).toContain("section inside `build_app`");
+    expect(pkg).toContain("`routes_a`");
+    expect(pkg).toContain("group these 3 inner sections by responsibility");
   });
 
   it("gives deletion candidates a verification result, not an instruction", () => {

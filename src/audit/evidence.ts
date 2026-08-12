@@ -118,7 +118,7 @@ export function extractSymbolMap(
   }
   const isPython = file.endsWith(".py");
   const pattern = isPython ? PY_SYMBOL : TSJS_SYMBOL;
-  const lines = source.split("\n");
+  const lines = splitLines(source);
   const starts: { name: string; kind: string; start: number }[] = [];
   for (let i = 0; i < lines.length; i++) {
     const match = lines[i].match(pattern);
@@ -134,6 +134,65 @@ export function extractSymbolMap(
       ...starts[i],
       end,
       lines: end - starts[i].start + 1,
+    });
+  }
+  return symbols;
+}
+
+/** Line array for span math — a trailing newline is not a line. */
+function splitLines(source: string): string[] {
+  const lines = source.split("\n");
+  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+  return lines;
+}
+
+const NESTED_TSJS_SYMBOL =
+  /^\s+(?:export\s+)?(async\s+function|function|class)\s+([\w$]+)/;
+const NESTED_PY_SYMBOL = /^\s+(async\s+def|def|class)\s+([\w]+)/;
+
+/**
+ * Named symbols nested one level inside a span — the cut points when a
+ * single symbol IS the file and "extract it" would be a no-op. Shallowest
+ * indentation wins: deeper nesting belongs to those sections, not the
+ * split decision.
+ */
+export function extractNestedSymbols(
+  rootPath: string,
+  file: string,
+  span: { start: number; end: number },
+): SymbolSpan[] {
+  let source: string;
+  try {
+    source = readFileSync(join(rootPath, file), "utf-8");
+  } catch {
+    return [];
+  }
+  const pattern = file.endsWith(".py") ? NESTED_PY_SYMBOL : NESTED_TSJS_SYMBOL;
+  const lines = splitLines(source);
+  const starts: { name: string; kind: string; start: number; indent: number }[] =
+    [];
+  for (let i = span.start; i < Math.min(span.end, lines.length); i++) {
+    const match = lines[i].match(pattern);
+    if (!match) continue;
+    starts.push({
+      kind: match[1],
+      name: match[2],
+      start: i + 1,
+      indent: lines[i].length - lines[i].trimStart().length,
+    });
+  }
+  if (starts.length === 0) return [];
+  const minIndent = Math.min(...starts.map((s) => s.indent));
+  const shallow = starts.filter((s) => s.indent === minIndent);
+  const symbols: SymbolSpan[] = [];
+  for (let i = 0; i < shallow.length; i++) {
+    const end = i + 1 < shallow.length ? shallow[i + 1].start - 1 : span.end;
+    symbols.push({
+      name: shallow[i].name,
+      kind: shallow[i].kind,
+      start: shallow[i].start,
+      end,
+      lines: end - shallow[i].start + 1,
     });
   }
   return symbols;
