@@ -86,7 +86,7 @@ runs:
       run: |
         PNPM_PREFIX="$RUNNER_TEMP/pnpm-home"
         mkdir -p "$PNPM_PREFIX"
-        npm install -g --prefix "$PNPM_PREFIX" pnpm@9
+        npm install -g --prefix "$PNPM_PREFIX" pnpm@11
         echo "$PNPM_PREFIX/bin" >> $GITHUB_PATH
 
     - name: Install vibeCheck dependencies
