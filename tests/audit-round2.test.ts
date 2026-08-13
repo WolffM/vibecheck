@@ -171,6 +171,24 @@ describe("detectEntryPoints — execution surfaces (round 7)", () => {
     expect(sources.get("themes/dev/editor.js")).toBe("themes/dev/build.js");
   });
 
+  it("marks the producer of a consumed generated artifact", () => {
+    // build.js writes editor.bundle.js (gitignored); editor.html loads
+    // it. The producer is reachable through the artifact.
+    const root = makeRoot({
+      "themes/dev/build.js":
+        "import { writeFileSync } from 'fs'\nwriteFileSync('editor.bundle.js', bundle)\n",
+      "themes/dev/editor.html": '<script src="editor.bundle.js"></script>\n',
+      "src/prose.ts": "// editor.bundle.js is mentioned but never quoted-as-string\n",
+    });
+    const files = ["themes/dev/build.js", "themes/dev/editor.html", "src/prose.ts"];
+    const { entries, sources } = detectEntryPoints(root, files);
+    expect(entries).toContain("themes/dev/build.js");
+    expect(entries).not.toContain("src/prose.ts");
+    expect(sources.get("themes/dev/build.js")).toBe(
+      "producer of editor.bundle.js (consumed by themes/dev/editor.html)",
+    );
+  });
+
   it("propagates entry status through re-export chains", () => {
     const root = makeRoot({
       "package.json": JSON.stringify({

@@ -27,6 +27,11 @@
  *    process spawns load files no import graph sees.
  *  - Re-exports from entry files, transitively: a published barrel's
  *    `export { x } from "./impl"` makes impl.ts published surface too.
+ *  - Generated-artifact producers: when a script tag or config main
+ *    references a file that is NOT tracked (a build product), the
+ *    tracked code file that names that artifact is its producer and is
+ *    reachable through it (round-7: build.js → editor.bundle.js →
+ *    editor.html).
  */
 
 import { readFileSync } from "node:fs";
@@ -113,7 +118,15 @@ export function detectEntryPoints(
       return null;
     }
   };
-  const mark = (raw: string, baseDir: string, source: string): void => {
+  // Basename → consumer, for trusted consumption points that reference
+  // an untracked (generated) file; resolved to producers at the end.
+  const unresolvedArtifacts = new Map<string, string>();
+  const mark = (
+    raw: string,
+    baseDir: string,
+    source: string,
+    trackArtifact = false,
+  ): void => {
     if (/^(https?:)?\/\//.test(raw)) return;
     const relToBase =
       baseDir && !raw.startsWith("/")
@@ -126,6 +139,10 @@ export function detectEntryPoints(
         if (!sources.has(hit)) sources.set(hit, source);
         return;
       }
+    }
+    if (trackArtifact && /\.[cm]?jsx?$/.test(raw)) {
+      const base = raw.slice(raw.lastIndexOf("/") + 1);
+      if (!unresolvedArtifacts.has(base)) unresolvedArtifacts.set(base, source);
     }
   };
 
@@ -212,9 +229,9 @@ export function detectEntryPoints(
     if (!raw) continue;
     const dir = dirname(htmlPath) === "." ? "" : dirname(htmlPath);
     for (const match of raw.matchAll(/<script[^>]+src=["']([^"']+)["']/g)) {
-      mark(match[1], dir, htmlPath);
+      mark(match[1], dir, htmlPath, true);
       // Vite-style roots often serve from public/ or src/ siblings.
-      mark(match[1].replace(/^\//, ""), "", htmlPath);
+      mark(match[1].replace(/^\//, ""), "", htmlPath, true);
     }
   }
 
@@ -309,6 +326,29 @@ export function detectEntryPoints(
     }
     if (added.length === 0) break;
     for (const path of added) entries.add(path);
+  }
+
+  // --- generated-artifact producers ---------------------------------------
+  // A consumed-but-untracked script is a build product; the tracked code
+  // file that names it (quoted) is its producer, reachable through the
+  // consumer. Quoted-name precision keeps prose mentions out.
+  if (unresolvedArtifacts.size > 0) {
+    for (const codePath of candidateFiles.filter((f) =>
+      /\.([cm]?[jt]sx?|py)$/.test(f),
+    )) {
+      if (entries.has(codePath)) continue;
+      const raw = read(codePath);
+      if (!raw) continue;
+      for (const [base, consumer] of unresolvedArtifacts) {
+        if (raw.includes(`'${base}'`) || raw.includes(`"${base}"`) || raw.includes(`\`${base}\``)) {
+          entries.add(codePath);
+          if (!sources.has(codePath)) {
+            sources.set(codePath, `producer of ${base} (consumed by ${consumer})`);
+          }
+          break;
+        }
+      }
+    }
   }
 
   return { entries, sources };

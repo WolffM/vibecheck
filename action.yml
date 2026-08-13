@@ -128,6 +128,38 @@ runs:
           pip install --quiet vulture==2.16 || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
         fi
 
+    - name: Install target JS dependencies (audit)
+      if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
+      shell: bash
+      continue-on-error: true
+      run: |
+        # knip needs resolvable plugins and type-coverage needs the
+        # repo's tsconfig `extends` chain — both fail against a bare
+        # checkout, degrading two lanes with disclosure. Best-effort
+        # install at every first-level JS project root; the audit
+        # discloses whatever still isn't resolvable.
+        cd "${{ github.workspace }}"
+        for dir in . */; do
+          dir="${dir%/}"
+          [ -f "$dir/package.json" ] || continue
+          echo "Installing JS dependencies in $dir"
+          (
+            cd "$dir"
+            if [ -f pnpm-lock.yaml ]; then
+              pnpm install --frozen-lockfile || pnpm install || true
+            elif [ -f yarn.lock ]; then
+              yarn install --frozen-lockfile || yarn install || true
+            elif [ -f package-lock.json ]; then
+              npm ci || npm install || true
+            else
+              npm install || true
+            fi
+          )
+        done
+        # Non-frozen fallbacks may rewrite lockfiles; restore tracked
+        # files so the audit's dirty-tree detection stays truthful.
+        git checkout -- . 2>/dev/null || true
+
     - name: Run audit
       if: inputs.mode == 'audit' && steps.audit-gate.outputs.active == 'true'
       shell: bash
