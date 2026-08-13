@@ -137,7 +137,10 @@ runs:
         # interpreter installs somewhere python3 can't import from — the
         # install "succeeds" and the lane still degrades. PEP 668 hosts
         # need --break-system-packages for a user install.
-        if find "${{ github.workspace }}" -name "*.py" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -1 | grep -q .; then
+        # -print -quit, never `| head`: under pipefail, head's early exit
+        # kills find with SIGPIPE and the whole install block silently
+        # skips — the root cause of vulture's on-again-off-again absence.
+        if [ -n "$(find "${{ github.workspace }}" -name "*.py" -not -path "*/node_modules/*" -not -path "*/.git/*" -print -quit)" ]; then
           python3 -m pip install --quiet --user vulture==2.16 \
             || python3 -m pip install --quiet --user --break-system-packages vulture==2.16 \
             || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
