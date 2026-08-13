@@ -141,6 +141,11 @@ runs:
           python3 -m pip install --quiet --user vulture==2.16 \
             || python3 -m pip install --quiet --user --break-system-packages vulture==2.16 \
             || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
+          # Verify importability with the interpreter the audit will use;
+          # a green install that python3 cannot import is a lane outage.
+          python3 -m vulture --version \
+            && python3 -c "import sys; print('vulture OK under', sys.executable)" \
+            || echo "::warning::vulture not importable by $(command -v python3) after install"
         fi
 
     - name: Install target JS dependencies (audit)

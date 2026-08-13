@@ -69,6 +69,9 @@ export function runTypeCoverage(
       "node",
       [bin, "-p", projectPath, "--detail"],
       {
+        // type-coverage matches files relative to the cwd; anywhere else
+        // (e.g. the action checkout in CI) it silently scans 0 files.
+        cwd: projectPath,
         encoding: "utf-8",
         maxBuffer: 256 * 1024 * 1024,
         timeout: 10 * 60 * 1000,
@@ -76,6 +79,8 @@ export function runTypeCoverage(
     );
     const stdout = run.stdout ?? "";
     const summary = stdout.match(/\((\d+) \/ (\d+)\) [\d.]+%/);
+    // "0 / 0" (no percent printed) means the project matched no files —
+    // a misconfiguration, never a 100%-typed success.
     if (run.error || !summary) {
       // Never fail silently — the disclosure says "unavailable" and the
       // log must say why (round-8: CI degradation was undiagnosable).
