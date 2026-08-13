@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import {
   buildDeadcodeLane,
+  classifyInternalUse,
   countDefinitions,
   KNIP_FILES_MUTE_SHARE,
   SINGLE_SOURCE_DEMOTION,
@@ -142,5 +143,53 @@ describe("buildDeadcodeLane", () => {
   it("degrades entirely when no tool covers the repo", () => {
     const result = buildDeadcodeLane(noKnip, noVulture, ["lib/c.rs"], new Map());
     expect(result.available).toBe(false);
+  });
+});
+
+describe("dead-export vs dead-symbol classification", () => {
+  const source = [
+    "export function storePhoto(x: number) {",   // 1: exported, used below
+    "  return x;",
+    "}",
+    "export const ORPHAN_LIMIT = 3;",            // 4: exported, never used
+    "export { helper };",                        // 5: re-export line only
+    "function helper() {",
+    "  return storePhoto(1);",                   // 7: internal use of storePhoto
+    "}",
+  ].join("\n");
+
+  it("marks internally-used exports as un-export, unused as delete", () => {
+    expect(classifyInternalUse(source, "storePhoto", 1)).toBe(true);
+    expect(classifyInternalUse(source, "ORPHAN_LIMIT", 4)).toBe(false);
+    // A bare `export { helper }` line is not a use, but the definition
+    // and call are on other lines.
+    expect(classifyInternalUse(source, "default", 1)).toBeUndefined();
+  });
+
+  it("threads the classification into lane entries", () => {
+    const knip: KnipResult = {
+      available: true,
+      unusedFiles: [],
+      unusedExports: new Map([
+        [
+          "src/photos.ts",
+          [
+            { name: "storePhoto", line: 1, kind: "export" },
+            { name: "ORPHAN_LIMIT", line: 4, kind: "export" },
+          ],
+        ],
+      ]),
+    };
+    const result = buildDeadcodeLane(
+      knip,
+      noVulture,
+      ["src/photos.ts"],
+      new Map([["src/photos.ts", 3]]),
+      new Set(),
+      (path) => (path === "src/photos.ts" ? source : null),
+    );
+    const detail = result.entries[0].deadDetail;
+    expect(detail.find((d) => d.name === "storePhoto")?.internalUse).toBe(true);
+    expect(detail.find((d) => d.name === "ORPHAN_LIMIT")?.internalUse).toBe(false);
   });
 });

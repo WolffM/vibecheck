@@ -22,7 +22,36 @@ import {
 } from "./evidence.js";
 import type { AuditRunResult } from "./index.js";
 import { deletionCandidates } from "./briefing.js";
+import { laneOf, pathOf, type VerdictEvent } from "./ledger.js";
 import type { FileScore } from "./scoring.js";
+
+function parentDir(path: string): string {
+  const idx = path.lastIndexOf("/");
+  return idx === -1 ? "" : path.slice(0, idx);
+}
+
+/**
+ * Standing verdicts on the same lane for sibling files (same directory).
+ * A pattern the maintainer has already adjudicated five times should be
+ * quoted, not rediscovered — the noise ratchet exists precisely so the
+ * sixth identical case doesn't cost another investigation (round-7: pm2
+ * wrappers and template scaffolding re-fired past their precedents).
+ */
+export function siblingPrecedents(
+  result: AuditRunResult,
+  path: string,
+  lane: string,
+): VerdictEvent[] {
+  const dir = parentDir(path);
+  return result.ledger.verdicts
+    .filter(
+      (v) =>
+        laneOf(v.fingerprint) === lane &&
+        pathOf(v.fingerprint) !== path &&
+        parentDir(pathOf(v.fingerprint)) === dir,
+    )
+    .sort((a, b) => (a.at < b.at ? 1 : -1));
+}
 
 function verificationSection(
   path: string,
@@ -122,23 +151,50 @@ function laneDetail(
     case "deadcode": {
       const entry = result.lanes.deadcode?.entries.find((e) => e.path === path);
       if (!entry) break;
+      // knip counts exported names; the definition counter counts export
+      // statements — show the ratio only when it parses as one (the
+      // round-7 "11 of 3 exported items" counter).
+      const ratioMakesSense =
+        entry.definitionCount >= entry.deadItems && entry.definitionCount > 0;
       lines.push(
         "",
         entry.unusedFile
           ? "### deadcode — entire file unreferenced (knip)"
-          : `### deadcode — ${entry.deadItems} of ${entry.definitionCount} exported items unconsumed`,
+          : ratioMakesSense
+            ? `### deadcode — ${entry.deadItems} of ${entry.definitionCount} exported items unconsumed`
+            : `### deadcode — ${entry.deadItems} exported item${entry.deadItems === 1 ? "" : "s"} unconsumed`,
       );
       if (entry.deadDetail.length > 0) {
+        const action = (d: { internalUse?: boolean }) =>
+          d.internalUse === true
+            ? "un-export — used inside this file"
+            : d.internalUse === false
+              ? "delete after verification"
+              : "";
+        const hasActions = entry.deadDetail.some(
+          (d) => d.internalUse !== undefined,
+        );
         lines.push(
           "",
-          "| item | line |",
-          "|---|---|",
+          hasActions ? "| item | line | action |" : "| item | line |",
+          hasActions ? "|---|---|---|" : "|---|---|",
           ...entry.deadDetail
             .slice(0, 20)
-            .map((d) => `| \`${d.name}\` | ${d.line || "?"} |`),
+            .map((d) =>
+              hasActions
+                ? `| \`${d.name}\` | ${d.line || "?"} | ${action(d)} |`
+                : `| \`${d.name}\` | ${d.line || "?"} |`,
+            ),
         );
         if (entry.deadDetail.length > 20) {
-          lines.push(`| …${entry.deadDetail.length - 20} more | |`);
+          const more = entry.deadDetail.length - 20;
+          lines.push(hasActions ? `| …${more} more | | |` : `| …${more} more | |`);
+        }
+        if (entry.deadDetail.some((d) => d.internalUse === true)) {
+          lines.push(
+            "",
+            "Items marked *un-export* are live code — only their `export` keyword is unconsumed. Remove the keyword; deleting the symbol would break this file.",
+          );
         }
       }
       break;
@@ -205,11 +261,30 @@ function laneDetail(
   return lines;
 }
 
+function deletionActionSection(
+  path: string,
+  refs: Map<string, StringReference[]>,
+): string[] {
+  return [
+    "",
+    "### Action",
+    "",
+    refs.get(path)?.length === 0
+      ? "Delete the file; CI plus one manual smoke of any runtime loaders is the remaining check."
+      : "Resolve the references above first; if they are the loading mechanism, file a noise verdict instead:",
+    "",
+    "```",
+    `vibecheck noise "consistency:${path}" --reason "..."`,
+    "```",
+  ];
+}
+
 function offenderPackage(
   result: AuditRunResult,
   offender: FileScore,
   rank: number | null,
   refs: Map<string, StringReference[]>,
+  deletionReason?: string,
 ): string {
   const standing =
     rank !== null
@@ -218,7 +293,8 @@ function offenderPackage(
   const lines = [
     `# ${offender.path}`,
     "",
-    `${standing} · firing: ${offender.firingLanes.map((f) => f.lane).join(" + ")} · ${offender.applicableLanes.length} lanes applicable · anchor \`${result.anchorSha?.slice(0, 12)}\``,
+    `${standing} · firing: ${offender.firingLanes.map((f) => f.lane).join(" + ")} · ${offender.applicableLanes.length} lanes applicable · anchor \`${result.anchorSha?.slice(0, 12)}\`` +
+      (deletionReason ? ` · deletion candidate (${deletionReason})` : ""),
   ];
   for (const firing of offender.firingLanes) {
     lines.push(...laneDetail(result, offender.path, firing.lane));
@@ -226,8 +302,34 @@ function offenderPackage(
   const consistency = result.lanes.consistency?.entries.find(
     (e) => e.path === offender.path,
   );
-  if (consistency?.orphan) {
+  // One package per file: a deletion candidate that also fires as a
+  // finding gets its verification + action here, not a duplicate
+  // DELETE__ file (round-7: the two copies drifted-by-repetition).
+  if (deletionReason || consistency?.orphan) {
     lines.push(...verificationSection(offender.path, refs.get(offender.path)));
+  }
+  if (deletionReason) {
+    lines.push(...deletionActionSection(offender.path, refs));
+  }
+  const precedents = [
+    ...new Map(
+      offender.firingLanes
+        .flatMap((f) => siblingPrecedents(result, offender.path, f.lane))
+        .map((v) => [v.fingerprint, v] as const),
+    ).values(),
+  ].slice(0, 5);
+  if (precedents.length > 0) {
+    lines.push(
+      "",
+      "### Precedent — sibling verdicts in this directory",
+      "",
+      ...precedents.map(
+        (v) =>
+          `- \`${v.verdict}\` on \`${v.fingerprint}\` (${v.at.slice(0, 10)}): "${v.reason}"`,
+      ),
+      "",
+      "If this finding matches the same pattern, propose the same verdict instead of re-investigating.",
+    );
   }
   lines.push(
     "",
@@ -259,18 +361,7 @@ function deletionPackage(
     lines.push(...laneDetail(result, path, "deadcode"));
   }
   lines.push(...verificationSection(path, refs.get(path)));
-  lines.push(
-    "",
-    "### Action",
-    "",
-    refs.get(path)?.length === 0
-      ? "Delete the file; CI plus one manual smoke of any runtime loaders is the remaining check."
-      : "Resolve the references above first; if they are the loading mechanism, file a noise verdict instead:",
-    "",
-    "```",
-    `vibecheck noise "consistency:${path}" --reason "..."`,
-    "```",
-  );
+  lines.push(...deletionActionSection(path, refs));
   return lines.join("\n") + "\n";
 }
 
@@ -278,6 +369,9 @@ export interface PackagedFindings {
   corroborated: FileScore[];
   /** Single-lane firing files, capped per lane by weighted score. */
   singles: FileScore[];
+  /** Firings the per-lane cap cut, lane → count. Never truncate silently
+   * (round-7: dropped size firings read as "covered everything"). */
+  droppedByLane: Map<string, number>;
 }
 
 /** The one selection both the packages and the briefing render from. */
@@ -287,6 +381,7 @@ export function selectPackagedFindings(
   const capPerLane = result.config.maxReportItems;
   const perLaneCount = new Map<string, number>();
   const singles: FileScore[] = [];
+  const droppedByLane = new Map<string, number>();
   const candidates = result.fileScores
     .filter(
       (f) =>
@@ -301,11 +396,14 @@ export function selectPackagedFindings(
   for (const single of candidates) {
     const lane = single.firingLanes[0]?.lane ?? "";
     const count = perLaneCount.get(lane) ?? 0;
-    if (count >= capPerLane) continue;
+    if (count >= capPerLane) {
+      droppedByLane.set(lane, (droppedByLane.get(lane) ?? 0) + 1);
+      continue;
+    }
     perLaneCount.set(lane, count + 1);
     singles.push(single);
   }
-  return { corroborated: [...result.worstOffenders], singles };
+  return { corroborated: [...result.worstOffenders], singles, droppedByLane };
 }
 
 /** filename (without dir) → package content. */
@@ -332,11 +430,21 @@ export function renderFindingPackages(
     scanTargets,
   );
 
+  const deletionReasons = new Map(deletions.map((d) => [d.path, d.reason]));
+  const packagedPaths = new Set<string>();
+
   for (const [index, offender] of result.worstOffenders.entries()) {
     packages.set(
       `${findingSlug(offender.path)}.md`,
-      offenderPackage(result, offender, index + 1, refs),
+      offenderPackage(
+        result,
+        offender,
+        index + 1,
+        refs,
+        deletionReasons.get(offender.path),
+      ),
     );
+    packagedPaths.add(offender.path);
   }
 
   // Single-lane firing findings get packages too (round 5): the gate
@@ -345,17 +453,18 @@ export function renderFindingPackages(
   for (const single of selectPackagedFindings(result).singles) {
     packages.set(
       `${findingSlug(single.path)}.md`,
-      offenderPackage(result, single, null, refs),
+      offenderPackage(result, single, null, refs, deletionReasons.get(single.path)),
     );
+    packagedPaths.add(single.path);
   }
+  // DELETE__ packages only for deletion candidates with no finding
+  // package of their own — one file per path, never two copies.
   for (const deletion of deletions) {
-    const name = `DELETE__${findingSlug(deletion.path)}.md`;
-    if (![...packages.keys()].includes(name)) {
-      packages.set(
-        name,
-        deletionPackage(result, deletion.path, deletion.reason, refs),
-      );
-    }
+    if (packagedPaths.has(deletion.path)) continue;
+    packages.set(
+      `DELETE__${findingSlug(deletion.path)}.md`,
+      deletionPackage(result, deletion.path, deletion.reason, refs),
+    );
   }
   return packages;
 }

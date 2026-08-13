@@ -108,6 +108,98 @@ describe("detectEntryPoints", () => {
   });
 });
 
+describe("detectEntryPoints — execution surfaces (round 7)", () => {
+  it("marks scripts invoked from workflows, systemd units, and Procfile", () => {
+    const root = makeRoot({
+      ".github/workflows/deploy.yml":
+        "jobs:\n  x:\n    steps:\n      - run: node services/pm2/setup-logrotate.mjs\n",
+      "units/runner.service":
+        "[Service]\nExecStart=/usr/bin/python3 scripts/wrapper.py --loop\n",
+      "Procfile": "web: node server/boot.js\n",
+    });
+    const files = [
+      ".github/workflows/deploy.yml",
+      "units/runner.service",
+      "Procfile",
+      "services/pm2/setup-logrotate.mjs",
+      "scripts/wrapper.py",
+      "server/boot.js",
+      "src/unrelated.ts",
+    ];
+    const { entries, sources } = detectEntryPoints(root, files);
+    expect(entries).toContain("services/pm2/setup-logrotate.mjs");
+    expect(entries).toContain("scripts/wrapper.py");
+    expect(entries).toContain("server/boot.js");
+    expect(entries).not.toContain("src/unrelated.ts");
+    expect(sources.get("services/pm2/setup-logrotate.mjs")).toBe(
+      ".github/workflows/deploy.yml",
+    );
+  });
+
+  it("marks documented run commands in markdown, not every mentioned path", () => {
+    const root = makeRoot({
+      "themes/README.md":
+        "Edit themes by running:\n\n```\nnode themes/dev/build.js\n```\n\nSee also src/mentioned.ts for context.\n",
+    });
+    const files = ["themes/README.md", "themes/dev/build.js", "src/mentioned.ts"];
+    const { entries } = detectEntryPoints(root, files);
+    expect(entries).toContain("themes/dev/build.js");
+    expect(entries).not.toContain("src/mentioned.ts");
+  });
+
+  it("marks script paths passed to calls inside code files", () => {
+    const root = makeRoot({
+      "themes/dev/build.js":
+        "const read = (f) => f;\nconst bundle = read('editor.js') + read('config.js');\n",
+      "src/spawner.ts":
+        'import { spawnSync } from "node:child_process";\nspawnSync("python3", ["tools/gen.py"]);\n// see docs/notes.ts for background\n',
+    });
+    const files = [
+      "themes/dev/build.js",
+      "themes/dev/editor.js",
+      "themes/dev/config.js",
+      "src/spawner.ts",
+      "tools/gen.py",
+      "docs/notes.ts",
+    ];
+    const { entries, sources } = detectEntryPoints(root, files);
+    expect(entries).toContain("themes/dev/editor.js");
+    expect(entries).toContain("themes/dev/config.js");
+    expect(entries).toContain("tools/gen.py");
+    // A path in a comment is not a call argument.
+    expect(entries).not.toContain("docs/notes.ts");
+    expect(sources.get("themes/dev/editor.js")).toBe("themes/dev/build.js");
+  });
+
+  it("propagates entry status through re-export chains", () => {
+    const root = makeRoot({
+      "package.json": JSON.stringify({
+        exports: { "./api": "./dist/server/index.js" },
+      }),
+      "src/server/index.ts":
+        'export { plan } from "./planning";\nexport * from "../domain/utils/lifecycle";\n',
+      "src/server/planning.ts": "export const plan = 1;\n",
+      "src/domain/utils/lifecycle.ts":
+        "export const COMPLETED_WINDOW_MS = 1;\nexport const isRecentlyCompleted = () => true;\n",
+    });
+    const files = [
+      "package.json",
+      "src/server/index.ts",
+      "src/server/planning.ts",
+      "src/domain/utils/lifecycle.ts",
+      "src/orphan.ts",
+    ];
+    const { entries, sources } = detectEntryPoints(root, files);
+    expect(entries).toContain("src/server/index.ts");
+    expect(entries).toContain("src/server/planning.ts");
+    expect(entries).toContain("src/domain/utils/lifecycle.ts");
+    expect(entries).not.toContain("src/orphan.ts");
+    expect(sources.get("src/domain/utils/lifecycle.ts")).toBe(
+      "re-export of src/server/index.ts",
+    );
+  });
+});
+
 describe("deadcode entry-point awareness", () => {
   it("never claims a declared entry's surface is dead", () => {
     const result = buildDeadcodeLane(
@@ -239,6 +331,44 @@ describe("agent briefing", () => {
     expect(briefing.indexOf("### 1. `src/app.ts`")).toBeGreaterThan(-1);
     expect(briefing.indexOf("src/app.ts")).toBeLessThan(
       briefing.indexOf("### 2. `src/dumped.ts`"),
+    );
+  });
+
+  it("discloses per-lane caps instead of dropping firings silently", () => {
+    const result = fixtureResult();
+    result.config = { ...result.config, maxReportItems: 2 };
+    result.worstOffenders = [];
+    result.bestFirstTargets = [];
+    result.fileScores = Array.from({ length: 5 }, (_, i) => ({
+      path: `src/big${i}.ts`,
+      applicableLanes: ["size"],
+      firingLanes: [{ lane: "size", score: 1.5 + i * 0.1, threshold: 1 }],
+      suppressedByFloor: [],
+      weightedScore: 1.5 + i * 0.1,
+      gatePassed: false,
+    }));
+    const briefing = renderAgentBriefing(result);
+    expect(briefing).toContain("Cap: 3 more single-lane firings not packaged");
+    expect(briefing).toContain("size +3");
+  });
+
+  it("only promises a verification step when deletion packages carry one", () => {
+    const noDeletions = renderAgentBriefing(fixtureResult());
+    expect(noDeletions).toContain("verifying reachability yourself");
+    expect(noDeletions).not.toContain("pre-run verification section");
+
+    const withDeletion = fixtureResult();
+    withDeletion.lanes.consistency = {
+      lane: "consistency",
+      available: true,
+      disclosures: [],
+      categoryFindings: [],
+      entries: [
+        { path: "src/lonely.ts", applicable: true, orphan: true, score: 0.8 },
+      ],
+    };
+    expect(renderAgentBriefing(withDeletion)).toContain(
+      "pre-run verification section",
     );
   });
 

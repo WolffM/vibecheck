@@ -46,6 +46,46 @@ describe("stringReferenceScan", () => {
     ]);
   });
 
+  it("does not count a bare quoted stem as a reference", () => {
+    // Round-7: `"build": "vite build"` was reported as a reference to
+    // themes/dev/build.js. npm script names are not module specifiers.
+    const root = makeRoot({
+      "themes/dev/build.js": "console.log('bundling');\n",
+      "package.json": '{ "scripts": { "build": "vite build" } }\n',
+      "src/uses.ts": 'import bundle from "../themes/dev/build";\n',
+    });
+    const refs = stringReferenceScan(
+      root,
+      ["themes/dev/build.js", "package.json", "src/uses.ts"],
+      ["themes/dev/build.js"],
+    );
+    const files = (refs.get("themes/dev/build.js") ?? []).map((r) => r.file);
+    expect(files).toContain("src/uses.ts");
+    expect(files).not.toContain("package.json");
+  });
+
+  it("finds references between two scan targets", () => {
+    // Round-7: build.js reads editor.js; both were deletion candidates,
+    // and the scan skipped targets as source files — blinding each to
+    // the other's loading mechanism.
+    const root = makeRoot({
+      "themes/dev/build.js": "const src = read('editor.js');\n",
+      "themes/dev/editor.js": "export const editor = 1;\n",
+    });
+    const refs = stringReferenceScan(
+      root,
+      ["themes/dev/build.js", "themes/dev/editor.js"],
+      ["themes/dev/build.js", "themes/dev/editor.js"],
+    );
+    expect(refs.get("themes/dev/editor.js")).toEqual([
+      {
+        file: "themes/dev/build.js",
+        line: 1,
+        text: "const src = read('editor.js');",
+      },
+    ]);
+  });
+
   it("reports clean when nothing references the target", () => {
     const root = makeRoot({
       "src/lonely.ts": "export const x = 1;\n",
@@ -190,5 +230,55 @@ describe("renderFindingPackages", () => {
     const pkg = packages.get("DELETE__src__lonely.ts.md") as string;
     expect(pkg).toContain("String-reference scan: **clean**");
     expect(pkg).toContain("Delete the file");
+  });
+
+  it("merges a deletion candidate into its finding package instead of duplicating", () => {
+    const root = makeRoot({
+      "src/lonely.ts": "export const x = 1;\n",
+    });
+    const result = fixtureResult(root);
+    result.candidateFiles = ["src/lonely.ts"];
+    result.lanes.consistency = {
+      lane: "consistency",
+      available: true,
+      disclosures: [],
+      categoryFindings: [],
+      entries: [
+        { path: "src/lonely.ts", applicable: true, orphan: true, score: 0.8 },
+      ],
+    };
+    result.fileScores = [
+      {
+        path: "src/lonely.ts",
+        applicableLanes: ["consistency"],
+        firingLanes: [{ lane: "consistency", score: 0.8, threshold: 0.7 }],
+        suppressedByFloor: [],
+        weightedScore: 1.14,
+        gatePassed: false,
+      },
+    ];
+    const packages = renderFindingPackages(result);
+    expect(packages.has("DELETE__src__lonely.ts.md")).toBe(false);
+    const pkg = packages.get("src__lonely.ts.md") as string;
+    expect(pkg).toContain("deletion candidate (orphaned");
+    expect(pkg).toContain("String-reference scan: **clean**");
+    expect(pkg).toContain("### Action");
+  });
+
+  it("quotes sibling verdict precedents in the package", () => {
+    const result = fixtureResult(makeRoot({ "src/dumped.ts": "export const a = 1;\n" }));
+    result.ledger.verdicts = [
+      {
+        id: "01BBBBBBBBBBBBBBBBBBBBBBBB",
+        at: "2026-08-08T12:00:00Z",
+        verdict: "noise",
+        fingerprint: "size:src/sibling.ts",
+        reason: "generated table — size is by design",
+      },
+    ];
+    const pkg = renderFindingPackages(result).get("src__dumped.ts.md") as string;
+    expect(pkg).toContain("### Precedent — sibling verdicts in this directory");
+    expect(pkg).toContain('`noise` on `size:src/sibling.ts`');
+    expect(pkg).toContain("generated table — size is by design");
   });
 });

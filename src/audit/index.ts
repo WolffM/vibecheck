@@ -113,6 +113,10 @@ export interface AuditRunResult {
     suppressed: ResolvedVerdict[];
     /** Justifications past their age expiry — refresh-and-quote list. */
     agingJustifications: VerdictEvent[];
+    /** Every standing human verdict (latest per fingerprint) — precedent
+     * lookup for sibling findings, so adjudicated patterns aren't
+     * re-litigated file by file (round-7). */
+    verdicts: VerdictEvent[];
     /** Fingerprints hard-reopened by growth invalidation. */
     reopened: string[];
     /** Machine events (firing/fixed/rename) appended by this run. */
@@ -466,6 +470,7 @@ export async function runAudit(
       floors,
       suppressed,
       agingJustifications,
+      verdicts: [...fold.verdicts.values()],
       reopened,
       stampedEvents: renameEvents.length + runEvents.length,
       improving,

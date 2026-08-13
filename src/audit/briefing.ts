@@ -13,9 +13,24 @@
  */
 
 import { findingSlug } from "./evidence.js";
-import { selectPackagedFindings } from "./findings.js";
+import { selectPackagedFindings, siblingPrecedents } from "./findings.js";
 import type { AuditRunResult } from "./index.js";
 import type { FileScore } from "./scoring.js";
+
+function precedentNote(
+  result: AuditRunResult,
+  path: string,
+  lanes: string[],
+): string {
+  const count = new Set(
+    lanes.flatMap((lane) =>
+      siblingPrecedents(result, path, lane).map((v) => v.fingerprint),
+    ),
+  ).size;
+  return count > 0
+    ? ` · precedent: ${count} sibling verdict${count === 1 ? "" : "s"} (see package)`
+    : "";
+}
 
 function laneAction(
   result: AuditRunResult,
@@ -29,9 +44,18 @@ function laneAction(
       return "add at least one test whose import path reaches this file before changing it further";
     case "deadcode": {
       const entry = result.lanes.deadcode?.entries.find((e) => e.path === path);
-      return entry?.unusedFile
-        ? "verify unreferenced repo-wide (string imports, dynamic loading), then delete the file"
-        : "verify each flagged export is unconsumed, then delete it";
+      if (entry?.unusedFile) {
+        return "verify unreferenced repo-wide (string imports, dynamic loading), then delete the file";
+      }
+      const internal = entry?.deadDetail.some((d) => d.internalUse === true);
+      const dead = entry?.deadDetail.some((d) => d.internalUse === false);
+      if (internal && dead) {
+        return "un-export the items marked as internally used; delete the rest after verifying no dynamic consumers";
+      }
+      if (internal) {
+        return "un-export the flagged items — they are used inside the file; only the export keyword is unconsumed";
+      }
+      return "verify each flagged export is unconsumed, then delete it";
     }
     case "duplication":
       return "extract the shared block into one module (clone partners in audit.json)";
@@ -94,6 +118,7 @@ export function deletionCandidates(
 }
 
 export function renderAgentBriefing(result: AuditRunResult): string {
+  const deletions = deletionCandidates(result);
   const lines: string[] = [
     "# vibeCompact — agent briefing",
     "",
@@ -104,7 +129,12 @@ export function renderAgentBriefing(result: AuditRunResult): string {
     "",
     "- Fixes need no ceremony: land a commit touching a flagged file and the next audit stamps it `fixed` automatically. Partial progress shows as **improving**.",
     "- Findings you judge wrong get verdicts, not workarounds — the commands are attached to each finding. Verdicts are maintainer decisions; confirm with the human before filing one.",
-    "- Do not delete anything without the verification step listed on the finding.",
+    // Only promise a verification section when packages actually carry
+    // one (round-7: this line pointed at nothing on runs with no
+    // deletion candidates).
+    deletions.length > 0
+      ? "- Do not delete anything without resolving the pre-run verification section on its deletion package."
+      : "- Do not delete anything without verifying reachability yourself first: string references, dynamic imports, runner and workflow configs.",
   ];
 
   for (const [lane, rate] of Object.entries(result.saturatedLanes)) {
@@ -165,7 +195,7 @@ export function renderAgentBriefing(result: AuditRunResult): string {
     );
   }
 
-  const { singles } = selectPackagedFindings(result);
+  const { singles, droppedByLane } = selectPackagedFindings(result);
   if (singles.length > 0) {
     lines.push(
       "",
@@ -187,9 +217,15 @@ export function renderAgentBriefing(result: AuditRunResult): string {
       );
       let detail = "";
       if (lane === "deadcode" && dead) {
+        // "unconsumed exports", never "dead" — round-7 found ~40% of
+        // these are live symbols whose export keyword is the only dead
+        // part, and the "dead:" label induced deletion advice.
+        const label = dead.deadDetail.some((d) => d.internalUse === true)
+          ? "unconsumed exports (some used internally — un-export, don't delete)"
+          : "unconsumed exports";
         detail =
           dead.deadDetail.length > 0
-            ? `dead: ${dead.deadDetail.slice(0, 3).map((d) => d.name).join(", ")}${dead.deadDetail.length > 3 ? ` +${dead.deadDetail.length - 3}` : ""}`
+            ? `${label}: ${dead.deadDetail.slice(0, 3).map((d) => d.name).join(", ")}${dead.deadDetail.length > 3 ? ` +${dead.deadDetail.length - 3}` : ""}`
             : "entire file unreferenced";
       } else if (lane === "duplication" && dup) {
         detail = `${dup.duplicatedLines} duplicated lines` + (dup.clusterFanOut > 0 ? ` across ${dup.clusterFanOut} partner(s)` : " (internal)");
@@ -197,12 +233,19 @@ export function renderAgentBriefing(result: AuditRunResult): string {
         detail = `${sizeEntry.codeLines} code lines (tier ${sizeEntry.tier})`;
       }
       lines.push(
-        `- \`${single.path}\` — ${lane}${detail ? `: ${detail}` : ""} → \`.vibecompact/findings/${findingSlug(single.path)}.md\``,
+        `- \`${single.path}\` — ${lane}${detail ? `: ${detail}` : ""}${precedentNote(result, single.path, [lane])} → \`.vibecompact/findings/${findingSlug(single.path)}.md\``,
+      );
+    }
+    const dropped = [...droppedByLane.entries()].sort();
+    if (dropped.length > 0) {
+      const total = dropped.reduce((sum, [, n]) => sum + n, 0);
+      lines.push(
+        "",
+        `_Cap: ${total} more single-lane firing${total === 1 ? "" : "s"} not packaged this run (per-lane cap ${result.config.maxReportItems}: ${dropped.map(([lane, n]) => `${lane} +${n}`).join(", ")}). They still fire in the machine data._`,
       );
     }
   }
 
-  const deletions = deletionCandidates(result);
   if (deletions.length > 0) {
     lines.push(
       "",
@@ -212,7 +255,9 @@ export function renderAgentBriefing(result: AuditRunResult): string {
       "",
     );
     for (const d of deletions) {
-      lines.push(`- \`${d.path}\` — ${d.reason}`);
+      lines.push(
+        `- \`${d.path}\` — ${d.reason}${precedentNote(result, d.path, ["consistency", "deadcode"])}`,
+      );
     }
   }
 
@@ -220,7 +265,7 @@ export function renderAgentBriefing(result: AuditRunResult): string {
     "",
     "## Machine data",
     "",
-    "`.vibecompact/out/audit.json` carries full lane entries, clone partners, scores, and ledger state.",
+    "Full lane entries, clone partners, scores, and ledger state: `.vibecompact/audit.json` on the data branch, `.vibecompact/out/audit.json` in a local run.",
   );
   return lines.join("\n") + "\n";
 }

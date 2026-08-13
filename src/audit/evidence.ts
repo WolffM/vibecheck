@@ -39,8 +39,11 @@ export function stringReferenceScan(
   capPerTarget = 5,
 ): Map<string, StringReference[]> {
   // Two needles per target: the full basename ("editor.js" — high
-  // precision), and the stem only when bounded like a module specifier
-  // (`'./editor'`, `/editor"`) — a bare stem like "editor" matches prose.
+  // precision), and the stem only inside a quoted path with a slash
+  // before it (`'./editor'`, `"lib/editor"`) — a bare quoted stem like
+  // `"build"` is an npm script name, not a module specifier, and
+  // matching it produced fake references (round-7: `"vite build"`
+  // counted as a hit for build.js).
   const needles = new Map<string, { base: string; stemPattern: RegExp | null }>();
   for (const target of targets) {
     const base = target.slice(target.lastIndexOf("/") + 1);
@@ -50,7 +53,7 @@ export function stringReferenceScan(
       base,
       stemPattern:
         stem.length >= 3 && stem !== base
-          ? new RegExp(`[/'"\`]${escaped}['"\`]`)
+          ? new RegExp(`['"\`][\\w.@-]*(?:/[\\w.@-]+)*/${escaped}['"\`]|['"\`]\\.{1,2}/${escaped}['"\`]`)
           : null,
     });
   }
@@ -58,7 +61,9 @@ export function stringReferenceScan(
   for (const target of targets) hits.set(target, []);
 
   for (const file of candidateFiles) {
-    if (targets.includes(file)) continue;
+    // A target may be referenced by another target (round-7: build.js
+    // reads editor.js, both deletion candidates) — only self-references
+    // are excluded, per pair, below.
     let source: string;
     try {
       source = readFileSync(join(rootPath, file), "utf-8");

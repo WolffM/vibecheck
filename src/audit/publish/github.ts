@@ -20,6 +20,7 @@ import { TRENDS_PATH } from "../trends.js";
 
 const FINDINGS_DIR = ".vibecompact/findings";
 const BRIEFING_PATH = ".vibecompact/briefing.md";
+const MACHINE_PATH = ".vibecompact/audit.json";
 
 export const AUDIT_ISSUE_MARKER = "<!-- vibecompact-living-issue -->";
 /** Legacy marker — issues created before the vibeCompact rename. */
@@ -167,9 +168,13 @@ export function commitDataFiles(
   options: { branch: string; retries?: number; committer?: { name: string; email: string } } ,
 ): DataFileCommitResult {
   const retries = options.retries ?? 3;
-  const paths = [LEDGER_PATH, TRENDS_PATH, FINDINGS_DIR, BRIEFING_PATH].filter((p) =>
-    existsSync(join(rootPath, p)),
-  );
+  const paths = [
+    LEDGER_PATH,
+    TRENDS_PATH,
+    FINDINGS_DIR,
+    BRIEFING_PATH,
+    MACHINE_PATH,
+  ].filter((p) => existsSync(join(rootPath, p)));
   if (paths.length === 0) return { committed: false, pushed: true, attempts: 0 };
 
   // -A so packages deleted by regeneration are staged as deletions too.

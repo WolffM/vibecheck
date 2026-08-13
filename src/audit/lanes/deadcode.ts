@@ -34,8 +34,15 @@ export interface DeadcodeLaneEntry {
   unusedFile: boolean;
   deadItems: number;
   definitionCount: number;
-  /** The actual dead surface: names + lines (knip) or descriptions (vulture). */
-  deadDetail: { name: string; line: number }[];
+  /**
+   * The actual dead surface: names + lines (knip) or descriptions
+   * (vulture). `internalUse` distinguishes a dead EXPORT on live code
+   * (the symbol is used inside the file — the fix is un-exporting) from
+   * a dead SYMBOL (no internal use found — deletable after
+   * verification). Round-7: conflating the two had briefings advising
+   * deletion of route handlers their own file was calling.
+   */
+  deadDetail: { name: string; line: number; internalUse?: boolean }[];
   score: number;
 }
 
@@ -51,6 +58,32 @@ export interface DeadcodeLaneResult {
 
 function isPythonFile(path: string): boolean {
   return path.endsWith(".py");
+}
+
+/**
+ * Does the file use `name` anywhere besides its declaration line and
+ * bare re-export statements? Word-boundary occurrences in comments or
+ * strings can overcount — that errs toward "un-export", the safe
+ * direction (un-exporting live code is harmless; deleting it is not).
+ */
+export function classifyInternalUse(
+  source: string,
+  name: string,
+  declLine: number,
+): boolean | undefined {
+  // `default` and other non-identifiers can't be word-matched.
+  if (!/^[A-Za-z_$][\w$]*$/.test(name) || name === "default") return undefined;
+  const re = new RegExp(`\\b${name.replace(/\$/g, "\\$")}\\b`);
+  const lines = source.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    if (i + 1 === declLine) continue;
+    const line = lines[i];
+    if (!re.test(line)) continue;
+    // An `export { a, b }` / `export type { a }` line consumes nothing.
+    if (/^\s*export\s+(type\s+)?\{/.test(line)) continue;
+    return true;
+  }
+  return false;
 }
 
 /** Exported/defined surface per file — the share denominator. */
@@ -86,6 +119,8 @@ export function buildDeadcodeLane(
   candidateFiles: string[],
   definitions: Map<string, number>,
   entryPoints: Set<string> = new Set(),
+  /** Source reader for internal-use classification; null reads skip it. */
+  readSource: (path: string) => string | null = () => null,
 ): DeadcodeLaneResult {
   const disclosures: string[] = [];
   const coverage: string[] = [];
@@ -170,7 +205,14 @@ export function buildDeadcodeLane(
       const exports: DeadExport[] = entryPoints.has(path)
         ? []
         : (knip.unusedExports.get(path) ?? []);
-      deadDetail = exports.map((e) => ({ name: e.name, line: e.line }));
+      const source = exports.length > 0 ? readSource(path) : null;
+      deadDetail = exports.map((e) => ({
+        name: e.name,
+        line: e.line,
+        ...(source !== null
+          ? { internalUse: classifyInternalUse(source, e.name, e.line) }
+          : {}),
+      }));
       score = unusedFile
         ? 1
         : defs > 0
@@ -229,5 +271,12 @@ export function runDeadcodeLane(
     candidateFiles,
     countDefinitions(rootPath, candidateFiles),
     entryPoints,
+    (path) => {
+      try {
+        return readFileSync(join(rootPath, path), "utf-8");
+      } catch {
+        return null;
+      }
+    },
   );
 }

@@ -18,6 +18,15 @@
  *    *.config.{js,cjs,mjs}: path-like script references.
  *  - HTML files: <script src>, resolved relative to the HTML file and
  *    against the repo root.
+ *  - CI/service execution (round-7): GitHub workflow YAML, systemd
+ *    units, Procfile, Dockerfile — script-path tokens are invocations.
+ *  - Documented run commands in markdown (`node scripts/x.mjs`) — a
+ *    README-documented workflow is a consumer.
+ *  - Script paths passed to calls inside code files (`read('editor.js')`,
+ *    `spawn("python3", ["tools/gen.py"])`) — hand-rolled bundlers and
+ *    process spawns load files no import graph sees.
+ *  - Re-exports from entry files, transitively: a published barrel's
+ *    `export { x } from "./impl"` makes impl.ts published surface too.
  */
 
 import { readFileSync } from "node:fs";
@@ -207,6 +216,99 @@ export function detectEntryPoints(
       // Vite-style roots often serve from public/ or src/ siblings.
       mark(match[1].replace(/^\//, ""), "", htmlPath);
     }
+  }
+
+  // --- CI / service execution surfaces ------------------------------------
+  // Workflow YAML, systemd units, Procfile, Dockerfile: a script-path
+  // token in any of these is an invocation. Tokens are matched bare
+  // (workflow `run: node scripts/x.mjs` quotes nothing).
+  const SCRIPT_TOKEN = /(?:^|[\s='"("`])((?:\.{0,2}\/)?[\w@.-]+(?:\/[\w@.-]+)+\.(?:[cm]?[jt]sx?|py|sh))(?=$|[\s'")`;])/gm;
+  for (const execPath of candidateFiles.filter((f) =>
+    /(^|\/)\.github\/workflows\/[^/]+\.ya?ml$|\.(service|timer)$|(^|\/)(Procfile|Dockerfile[^/]*)$/.test(
+      f,
+    ),
+  )) {
+    const raw = read(execPath);
+    if (!raw) continue;
+    const dir = dirname(execPath) === "." ? "" : dirname(execPath);
+    for (const match of raw.matchAll(SCRIPT_TOKEN)) {
+      mark(match[1], "", execPath);
+      mark(match[1], dir, execPath);
+    }
+  }
+
+  // --- documented run commands in markdown --------------------------------
+  // Only command-shaped lines count — marking every path a doc mentions
+  // would exempt half the repo.
+  for (const mdPath of candidateFiles.filter((f) => /\.(md|mdx)$/i.test(f))) {
+    const raw = read(mdPath);
+    if (!raw) continue;
+    for (const match of raw.matchAll(
+      /(?:^|[\s`$])(?:node|python3?|npx|pnpm|yarn|bun|deno|bash|sh|tsx)\s+(?:[-\w]+\s+)*((?:\.{0,2}\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|sh))/gm,
+    )) {
+      mark(match[1], "", mdPath);
+      mark(match[1], dirname(mdPath) === "." ? "" : dirname(mdPath), mdPath);
+    }
+  }
+
+  // --- script paths passed to calls in code files -------------------------
+  // `read('editor.js')`, `spawnSync("python3", ["tools/gen.py"])`,
+  // `new Worker("./worker.js")`: runtime loading the import graph cannot
+  // see. Restricted to quoted script paths inside a call's argument list
+  // so prose and dead strings don't become roots.
+  const CALLED_PATH = /[\w$.]+\s*\([^()]*?["'`]((?:\.{0,2}\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|sh))["'`]/g;
+  for (const codePath of candidateFiles.filter((f) =>
+    /\.([cm]?[jt]sx?|py)$/.test(f),
+  )) {
+    const raw = read(codePath);
+    if (!raw) continue;
+    const dir = dirname(codePath) === "." ? "" : dirname(codePath);
+    for (const match of raw.matchAll(CALLED_PATH)) {
+      // Own-name mentions aren't consumption.
+      if (match[1].endsWith(codePath.slice(codePath.lastIndexOf("/") + 1)) &&
+          resolveToCandidate(match[1], new Set([codePath])) === codePath) {
+        continue;
+      }
+      mark(match[1], dir, codePath);
+    }
+  }
+
+  // --- re-export propagation from entry files -----------------------------
+  // A published barrel's `export ... from "./impl"` makes impl part of
+  // the published surface: dead-surface claims one hop deeper are the
+  // same FP class the entry exemption exists for. Fixpoint with a hop
+  // cap; entry files whose re-export targets are already entries stop
+  // the walk.
+  const RE_EXPORT = /export\s+(?:\*(?:\s+as\s+[\w$]+)?|type\s*\{[^}]*\}|\{[^}]*\})\s+from\s+["']([^"']+)["']/g;
+  for (let hop = 0; hop < 4; hop++) {
+    const added: string[] = [];
+    for (const entry of [...entries]) {
+      if (!/\.[cm]?[jt]sx?$/.test(entry)) continue;
+      const raw = read(entry);
+      if (!raw) continue;
+      const dir = dirname(entry) === "." ? "" : dirname(entry);
+      for (const match of raw.matchAll(RE_EXPORT)) {
+        const spec = match[1];
+        if (!spec.startsWith(".")) continue;
+        const base = posix.normalize(posix.join(dir, spec));
+        for (const attempt of /\.[\w]+$/.test(base)
+          ? [base]
+          : [
+              `${base}.ts`, `${base}.tsx`, `${base}.mts`, `${base}.cts`,
+              `${base}.js`, `${base}.mjs`, `${base}.cjs`, `${base}.jsx`,
+              `${base}/index.ts`, `${base}/index.js`,
+            ]) {
+          const hit = resolveToCandidate(attempt, candidates);
+          if (hit && !entries.has(hit)) {
+            added.push(hit);
+            if (!sources.has(hit)) sources.set(hit, `re-export of ${entry}`);
+          }
+          if (hit) break;
+        }
+      }
+    }
+    if (added.length === 0) break;
+    for (const path of added) entries.add(path);
   }
 
   return { entries, sources };

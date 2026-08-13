@@ -129,8 +129,8 @@ function evidenceFor(result: AuditRunResult, path: string): string {
       dead.unusedFile
         ? "entire file unreferenced (knip)"
         : ratioMakesSense
-          ? `${dead.deadItems} of ${plural(dead.definitionCount, "exported item")} flagged dead`
-          : `${plural(dead.deadItems, "exported item")} flagged dead`,
+          ? `${dead.deadItems} of ${plural(dead.definitionCount, "exported item")} unconsumed`
+          : `${plural(dead.deadItems, "exported item")} unconsumed`,
     );
   }
   const dup = result.lanes.duplication?.entries.find((e) => e.path === path);

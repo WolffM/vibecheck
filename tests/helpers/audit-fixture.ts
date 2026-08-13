@@ -137,6 +137,15 @@ export function fixtureResult(rootPath = "/tmp/fixture"): AuditRunResult {
           reason: "Single cohesive hashing module",
         },
       ],
+      verdicts: [
+        {
+          id: "01AAAAAAAAAAAAAAAAAAAAAAAA",
+          at: "2026-01-15T12:00:00Z",
+          verdict: "justified",
+          fingerprint: "size:src/hashing.ts",
+          reason: "Single cohesive hashing module",
+        },
+      ],
       reopened: ["size:src/grew.ts"],
       stampedEvents: 3,
       improving: { "size:src/dumped.ts": 18 },

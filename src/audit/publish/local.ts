@@ -43,11 +43,14 @@ export function publishLocal(
   writeFileSync(reportPath, renderAuditReport(result), "utf-8");
 
   const machinePath = join(outDir, "audit.json");
-  writeFileSync(
-    machinePath,
-    JSON.stringify(buildMachineResult(result), null, 2) + "\n",
-    "utf-8",
-  );
+  const machineJson = JSON.stringify(buildMachineResult(result), null, 2) + "\n";
+  writeFileSync(machinePath, machineJson, "utf-8");
+  if (options.trackedCopies) {
+    // The briefing points agents at the machine data; the data branch
+    // must actually carry it (round-7: the pointer was broken on every
+    // branch surface).
+    writeFileSync(join(vibecheckDir, "audit.json"), machineJson, "utf-8");
+  }
 
   const briefingContent = renderAgentBriefing(result);
   writeFileSync(join(outDir, "agent-briefing.md"), briefingContent, "utf-8");
