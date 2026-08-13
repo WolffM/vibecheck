@@ -79,11 +79,18 @@ export function runTypeCoverage(
     if (run.error || !summary) {
       // Never fail silently — the disclosure says "unavailable" and the
       // log must say why (round-8: CI degradation was undiagnosable).
+      const tail = (text: string | null | undefined) =>
+        (text ?? "").trim().split("\n").slice(-2).join(" | ");
       console.warn(
         `type-coverage failed at ${root}: ` +
-          (run.error?.message ??
-            (run.stderr ?? "").trim().split("\n").slice(-3).join(" | ") ??
-            "no summary line in output"),
+          [
+            run.error?.message,
+            `status ${run.status}`,
+            tail(run.stderr) && `stderr: ${tail(run.stderr)}`,
+            tail(stdout) && `stdout: ${tail(stdout)}`,
+          ]
+            .filter(Boolean)
+            .join(" · "),
       );
       continue;
     }

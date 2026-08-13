@@ -133,8 +133,14 @@ runs:
           echo "::warning::scc install failed; the size lane will be skipped with disclosure"
         fi
         # Python dead-code coverage (soft-fail; lane discloses absence).
+        # python3 -m pip, never bare pip: a PATH'd pip from another
+        # interpreter installs somewhere python3 can't import from — the
+        # install "succeeds" and the lane still degrades. PEP 668 hosts
+        # need --break-system-packages for a user install.
         if find "${{ github.workspace }}" -name "*.py" -not -path "*/node_modules/*" -not -path "*/.git/*" | head -1 | grep -q .; then
-          pip install --quiet vulture==2.16 || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
+          python3 -m pip install --quiet --user vulture==2.16 \
+            || python3 -m pip install --quiet --user --break-system-packages vulture==2.16 \
+            || echo "::warning::vulture install failed; Python dead code will be skipped with disclosure"
         fi
 
     - name: Install target JS dependencies (audit)
