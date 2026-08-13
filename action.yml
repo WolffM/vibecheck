@@ -75,10 +75,19 @@ runs:
       with:
         node-version: "20"
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@eae0cfeb286e66ffb5155f1a79b90583a127a68b # v2.4.1
-      with:
-        version: 9
+    # NOT pnpm/action-setup: its install dir is per-$HOME, and self-hosted
+    # hosts running several runners under one user race on it when jobs
+    # start together (the daily cron does exactly that) — observed as
+    # ENOENT/ENOTEMPTY store corruption across four repos at once. A
+    # job-isolated prefix under RUNNER_TEMP cannot race; npm's own cache
+    # is content-addressed and concurrency-safe.
+    - name: Setup pnpm (job-isolated)
+      shell: bash
+      run: |
+        PNPM_PREFIX="$RUNNER_TEMP/pnpm-home"
+        mkdir -p "$PNPM_PREFIX"
+        npm install -g --prefix "$PNPM_PREFIX" pnpm@9
+        echo "$PNPM_PREFIX/bin" >> $GITHUB_PATH
 
     - name: Install vibeCheck dependencies
       shell: bash
