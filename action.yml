@@ -73,7 +73,7 @@ runs:
     - name: Setup Node.js
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
-        node-version: "20"
+        node-version: "22"
 
     # NOT pnpm/action-setup: its install dir is per-$HOME, and self-hosted
     # hosts running several runners under one user race on it when jobs
