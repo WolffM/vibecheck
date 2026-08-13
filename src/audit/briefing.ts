@@ -142,6 +142,11 @@ export function renderAgentBriefing(result: AuditRunResult): string {
       `- Trust note: the ${lane} lane is repo-saturated (${Math.round(rate * 100)}% firing) and muted from corroboration this run.`,
     );
   }
+  for (const pair of (result.lanes.duplication?.dirPairs ?? []).slice(0, 3)) {
+    lines.push(
+      `- Structure drift: \`${pair.dirA}/\` ↔ \`${pair.dirB}/\` share ${pair.lines} duplicated lines (${pair.filePairs} file pair${pair.filePairs === 1 ? "" : "s"}) — one reads as a drifted copy of the other. Reconcile the pair; per-file fixes will not close it.`,
+    );
+  }
   if (result.coverageGaps.length > 0) {
     lines.push(
       `- Coverage warning: ${result.coverageGaps.length} of ${result.lanesPlanned.length} planned lanes unavailable or degraded (${result.coverageGaps.map((g) => g.lane).join(", ")}). ` +

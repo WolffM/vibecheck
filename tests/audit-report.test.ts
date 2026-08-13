@@ -98,6 +98,7 @@ describe("renderAuditReport", () => {
     result.lanes.duplication = {
       lane: "duplication",
       available: true,
+      dirPairs: [],
       entries: [
         {
           path: "src/a.ts",

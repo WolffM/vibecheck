@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildDuplicationLane } from "../src/audit/lanes/duplication.js";
+import { renderAgentBriefing } from "../src/audit/briefing.js";
+import {
+  buildDuplicationLane,
+  computeDirPairs,
+} from "../src/audit/lanes/duplication.js";
+import { renderAuditReport } from "../src/audit/report.js";
 import type { JscpdResult } from "../src/audit/runners/jscpd.js";
+import { fixtureResult } from "./helpers/audit-fixture.js";
 
 function clones(pairs: JscpdResult["clones"]): JscpdResult {
   return { available: true, clones: pairs };
@@ -117,5 +123,78 @@ describe("buildDuplicationLane", () => {
     );
     expect(result.available).toBe(false);
     expect(result.disclosure).toMatch(/jscpd not available/);
+  });
+});
+
+describe("dir-pair clone concentration", () => {
+  const codeLines = new Map([["templates/alpha/src/index.ts", 400]]);
+  const files = [
+    "templates/alpha/src/index.ts",
+    "templates/alpha/src/api.ts",
+    "templates/beta/src/index.ts",
+    "templates/beta/src/api.ts",
+    "src/other.ts",
+  ];
+  const pair = (fileA: string, fileB: string, lines: number, startA = 1) => ({
+    fileA,
+    startA,
+    endA: startA + lines - 1,
+    fileB,
+    startB: 1,
+    endB: lines,
+    lines,
+  });
+
+  it("aggregates cross-directory clones into a drifted-pair signal", () => {
+    const result = computeDirPairs(
+      [
+        pair("templates/alpha/src/index.ts", "templates/beta/src/index.ts", 120),
+        pair("templates/alpha/src/api.ts", "templates/beta/src/api.ts", 90, 10),
+      ],
+      new Set(files),
+    );
+    expect(result).toEqual([
+      {
+        dirA: "templates/alpha/src",
+        dirB: "templates/beta/src",
+        lines: 210,
+        blocks: 2,
+        filePairs: 2,
+      },
+    ]);
+  });
+
+  it("ignores same-directory and below-threshold pairs", () => {
+    const result = computeDirPairs(
+      [
+        // Same dir: the per-file finding's story, not structure.
+        pair("templates/alpha/src/index.ts", "templates/alpha/src/api.ts", 500),
+        // Cross-dir but small.
+        pair("templates/alpha/src/index.ts", "src/other.ts", 40),
+      ],
+      new Set(files),
+    );
+    expect(result).toEqual([]);
+  });
+
+  it("ships the signal on the lane result and renders it as health notes", () => {
+    const lane = buildDuplicationLane(
+      clones([
+        pair("templates/alpha/src/index.ts", "templates/beta/src/index.ts", 200),
+      ]),
+      files,
+      codeLines,
+    );
+    expect(lane.dirPairs).toHaveLength(1);
+
+    const result = fixtureResult();
+    result.lanes.duplication = lane;
+    const report = renderAuditReport(result);
+    expect(report).toContain("**Structure drift**");
+    expect(report).toContain("`templates/alpha/src/` ↔ `templates/beta/src/`");
+    expect(report).toContain("200 duplicated lines");
+    const briefing = renderAgentBriefing(result);
+    expect(briefing).toContain("Structure drift:");
+    expect(briefing).toContain("reads as a drifted copy");
   });
 });

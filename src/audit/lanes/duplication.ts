@@ -32,11 +32,31 @@ export interface DuplicationLaneEntry {
   score: number;
 }
 
+/**
+ * Cross-directory clone concentration: when two directories share this
+ * many cloned lines, one reads as a drifted copy of the other — a
+ * structure-level fact said once at repo level, not a style opinion
+ * (folder taste stays out of scope; consequences don't). Hand-set
+ * behavioral constant (§10.1).
+ */
+export const DIR_PAIR_MIN_LINES = 150;
+
+export interface DirPairConcentration {
+  dirA: string;
+  dirB: string;
+  /** Cloned lines shared between the two directories (A-side extent). */
+  lines: number;
+  blocks: number;
+  filePairs: number;
+}
+
 export interface DuplicationLaneResult {
   lane: "duplication";
   available: boolean;
   disclosure?: string;
   entries: DuplicationLaneEntry[];
+  /** Directory pairs above DIR_PAIR_MIN_LINES, worst first. */
+  dirPairs: DirPairConcentration[];
 }
 
 function mergedCoverage(intervals: [number, number][]): number {
@@ -56,6 +76,64 @@ function mergedCoverage(intervals: [number, number][]): number {
   return total;
 }
 
+function parentDir(path: string): string {
+  const idx = path.lastIndexOf("/");
+  return idx === -1 ? "." : path.slice(0, idx);
+}
+
+/** Aggregate clone pairs by (unordered) directory pair, exact counts. */
+export function computeDirPairs(
+  clones: JscpdResult["clones"],
+  candidates: Set<string>,
+  minLines = DIR_PAIR_MIN_LINES,
+): DirPairConcentration[] {
+  const acc = new Map<
+    string,
+    {
+      dirA: string;
+      dirB: string;
+      lines: number;
+      blocks: number;
+      filePairs: Set<string>;
+    }
+  >();
+  for (const clone of clones) {
+    if (!candidates.has(clone.fileA) || !candidates.has(clone.fileB)) continue;
+    const dirA = parentDir(clone.fileA);
+    const dirB = parentDir(clone.fileB);
+    // Same-dir (including same-file) duplication is the per-file story;
+    // the structure signal is specifically cross-directory.
+    if (dirA === dirB) continue;
+    const [a, b] = dirA < dirB ? [dirA, dirB] : [dirB, dirA];
+    const key = `${a}|${b}`;
+    const cur = acc.get(key) ?? {
+      dirA: a,
+      dirB: b,
+      lines: 0,
+      blocks: 0,
+      filePairs: new Set<string>(),
+    };
+    cur.lines += clone.endA - clone.startA + 1;
+    cur.blocks++;
+    cur.filePairs.add(
+      clone.fileA < clone.fileB
+        ? `${clone.fileA}|${clone.fileB}`
+        : `${clone.fileB}|${clone.fileA}`,
+    );
+    acc.set(key, cur);
+  }
+  return [...acc.values()]
+    .filter((v) => v.lines >= minLines)
+    .map((v) => ({
+      dirA: v.dirA,
+      dirB: v.dirB,
+      lines: v.lines,
+      blocks: v.blocks,
+      filePairs: v.filePairs.size,
+    }))
+    .sort((x, y) => y.lines - x.lines || (x.dirA < y.dirA ? -1 : 1));
+}
+
 /** Pure core — testable without the jscpd binary. */
 export function buildDuplicationLane(
   jscpd: JscpdResult,
@@ -69,6 +147,7 @@ export function buildDuplicationLane(
       disclosure:
         "jscpd not available — duplication lane skipped (bundled with vibecheck; npx could not resolve it)",
       entries: [],
+      dirPairs: [],
     };
   }
 
@@ -125,7 +204,12 @@ export function buildDuplicationLane(
   }
 
   entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
-  return { lane: "duplication", available: true, entries };
+  return {
+    lane: "duplication",
+    available: true,
+    entries,
+    dirPairs: computeDirPairs(jscpd.clones, candidates),
+  };
 }
 
 export function runDuplicationLane(

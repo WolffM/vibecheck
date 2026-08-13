@@ -81,6 +81,16 @@ function healthSection(result: AuditRunResult): string[] {
     );
   }
 
+  // Structure drift: cross-directory clone concentration is a repo-level
+  // fact (one dir reads as a drifted copy of another), said once here —
+  // never a per-file finding, never a style opinion.
+  for (const pair of (result.lanes.duplication?.dirPairs ?? []).slice(0, 3)) {
+    lines.push(
+      "",
+      `> 🧭 **Structure drift** — \`${pair.dirA}/\` ↔ \`${pair.dirB}/\` share ${pair.lines} duplicated lines across ${plural(pair.blocks, "clone block")} (${plural(pair.filePairs, "file pair")}): one reads as a drifted copy of the other. Reconcile the pair — per-file fixes will not close this.`,
+    );
+  }
+
   lines.push(
     "",
     `Current stock: ${plural(entry.aggregates.offenders, "worst offender")}, ` +
@@ -482,6 +492,7 @@ export function buildMachineResult(result: AuditRunResult): object {
         ? {
             available: duplication.available,
             disclosure: duplication.disclosure,
+            dirPairs: duplication.dirPairs,
             entries: duplication.entries,
           }
         : undefined,
