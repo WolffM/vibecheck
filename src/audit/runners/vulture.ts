@@ -24,17 +24,30 @@ export interface VultureResult {
 const LINE_PATTERN = /^(.+?):(\d+): (unused .+?) \((\d+)% confidence/;
 
 export function runVulture(rootPath: string): VultureResult {
+  // A bare `vulture` depends on pip's bin dir being on PATH — runner
+  // environments routinely miss that while the module is importable, so
+  // fall back to `python3 -m vulture`.
+  let command = ["vulture"];
   const probe = spawnSync("vulture", ["--version"], {
     encoding: "utf-8",
     stdio: "pipe",
   });
   if (probe.error || probe.status !== 0) {
-    return { available: false, items: [] };
+    const moduleProbe = spawnSync("python3", ["-m", "vulture", "--version"], {
+      encoding: "utf-8",
+      stdio: "pipe",
+    });
+    if (moduleProbe.error || moduleProbe.status !== 0) {
+      console.warn("vulture unavailable: neither on PATH nor importable by python3");
+      return { available: false, items: [] };
+    }
+    command = ["python3", "-m", "vulture"];
   }
 
   const run = spawnSync(
-    "vulture",
+    command[0],
     [
+      ...command.slice(1),
       ".",
       "--min-confidence",
       "60",

@@ -76,7 +76,17 @@ export function runTypeCoverage(
     );
     const stdout = run.stdout ?? "";
     const summary = stdout.match(/\((\d+) \/ (\d+)\) [\d.]+%/);
-    if (run.error || !summary) continue;
+    if (run.error || !summary) {
+      // Never fail silently — the disclosure says "unavailable" and the
+      // log must say why (round-8: CI degradation was undiagnosable).
+      console.warn(
+        `type-coverage failed at ${root}: ` +
+          (run.error?.message ??
+            (run.stderr ?? "").trim().split("\n").slice(-3).join(" | ") ??
+            "no summary line in output"),
+      );
+      continue;
+    }
     anyAvailable = true;
     covered += Number(summary[1]);
     total += Number(summary[2]);
