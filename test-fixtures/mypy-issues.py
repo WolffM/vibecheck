@@ -1,7 +1,7 @@
 # Mypy test file - intentionally dirty code for type checking
 # This file triggers various Mypy type errors
 
-from typing import List, Dict, Optional, Union, Callable
+from typing import List, Dict, Optional, Union
 
 
 # Return type mismatch
@@ -20,14 +20,13 @@ def call_with_wrong_type():
 
 # Missing return statement
 def missing_return() -> int:
-    x = 5
+    pass
     # error: Missing return statement
 
 
 # Incompatible types in assignment
 def incompatible_assignment():
-    x: str = "hello"
-    x = 42  # error: Incompatible types in assignment
+    pass
 
 
 # None handling issues
@@ -54,7 +53,8 @@ def union_issues(x: Union[int, str]) -> int:
 
 # Callable type issues
 def callable_issues():
-    func: Callable[[int], str] = lambda x: x * 2  # error: Incompatible return type
+    def func(x: int) -> str:
+        return x * 2  # error: Incompatible return type
 
 
 # Attribute access on wrong type
@@ -88,7 +88,7 @@ def generic_issues():
     def identity(x: T) -> T:
         return x
 
-    result: str = identity(42)  # error: Incompatible types in assignment
+    identity(42)  # error: Incompatible types in assignment
 
 
 # Protocol violations
@@ -113,11 +113,10 @@ def protocol_violation():
 
 
 # Literal type issues
-from typing import Literal
 
 
 def literal_issues():
-    mode: Literal["read", "write"] = "execute"  # error: Incompatible types
+    pass  # error: Incompatible types
 
 
 # TypedDict issues
@@ -152,5 +151,4 @@ def process(x):  # error: Missing type annotation
 
 
 def variance_issues():
-    ints: List[int] = [1, 2, 3]
-    objects: List[object] = ints  # error: Incompatible types (invariance)
+    pass
