@@ -9,10 +9,13 @@ import {
   AUDIT_ISSUE_MARKER,
   AUDIT_PR_MARKER,
   commitDataFiles,
+  detectUnrecordedAcknowledgment,
+  openFindingsBatchPr,
   publishLivingIssue,
   pushDataBranch,
+  refreshOpenDataPr,
   stageRunArtifact,
-  upsertDataPr,
+  type BatchInfo,
   type IssueClient,
 } from "../src/audit/publish/github.js";
 
@@ -24,6 +27,7 @@ afterAll(() => {
 function fakeClient(
   existing: { number: number; body: string | null }[],
   openPulls: { number: number }[] = [],
+  closedPulls: { number: number; closedAt?: string | null; merged?: boolean }[] = [],
 ) {
   const calls: Record<string, unknown[]> = {
     create: [],
@@ -50,8 +54,8 @@ function fakeClient(
     async addLabels(params) {
       calls.addLabels.push(params);
     },
-    async listPulls() {
-      return openPulls;
+    async listPulls(params) {
+      return params.state === "closed" ? closedPulls : openPulls;
     },
     async createPull(params) {
       calls.createPull.push(params);
@@ -193,26 +197,65 @@ describe("stageRunArtifact", () => {
   });
 });
 
-describe("living data PR (delivery ladder rung two)", () => {
-  it("creates the PR when none is open, with the marker and merge note", async () => {
+describe("episodic findings PR", () => {
+  const batch: BatchInfo = {
+    anchor: "0123456789abcdef",
+    date: "2026-08-17",
+    newFindings: [
+      { fingerprint: "size:src/big.ts", firedAt: "2026-08-16T00:00:00Z" },
+      { fingerprint: "deadcode:src/dead.ts", firedAt: "2026-08-16T01:00:00Z" },
+    ],
+    sincePr: 8,
+  };
+
+  it("opens a batch-titled PR with the close-when-triaged contract", async () => {
     const { client, calls } = fakeClient([]);
-    const result = await upsertDataPr(client, "o", "r", "main", "Run 1: updated.");
+    const result = await openFindingsBatchPr(client, "o", "r", "main", "Briefing.", batch);
     expect(result).toEqual({ prNumber: 42, created: true });
-    const params = calls.createPull[0] as { head: string; base: string; body: string };
+    const params = calls.createPull[0] as { head: string; base: string; body: string; title: string };
     expect(params.head).toBe(AUDIT_DATA_BRANCH);
     expect(params.base).toBe("main");
+    expect(params.title).toBe("vibeCompact findings — 2026-08-17 (anchor 0123456789ab)");
     expect(params.body).toContain(AUDIT_PR_MARKER);
-    expect(params.body).toContain("required status checks");
+    expect(params.body).toContain("2 new findings since #8 was closed");
+    expect(params.body).toContain("Close this PR when the batch is triaged");
+    // The round-7 contradiction is dead: no merge instruction anywhere.
+    expect(params.body).not.toContain("merge whenever");
+    expect(
+      (calls.addLabels[0] as { labels: string[] }).labels,
+    ).toContain("do-not-merge");
   });
 
-  it("refreshes the existing PR instead of opening another", async () => {
-    const { client, calls } = fakeClient([], [{ number: 9 }]);
-    const result = await upsertDataPr(client, "o", "r", "main", "Run 2.");
+  it("refreshes an open PR and reports null when none is open", async () => {
+    const none = fakeClient([]);
+    expect(await refreshOpenDataPr(none.client, "o", "r", "B.", batch)).toBeNull();
+    expect(none.calls.updatePull).toHaveLength(0);
+
+    const open = fakeClient([], [{ number: 9 }]);
+    const result = await refreshOpenDataPr(open.client, "o", "r", "B.", batch);
     expect(result).toEqual({ prNumber: 9, created: false });
-    expect(calls.createPull).toHaveLength(0);
+    expect(open.calls.createPull).toHaveLength(0);
     expect(
-      (calls.updatePull[0] as { pull_number: number }).pull_number,
+      (open.calls.updatePull[0] as { pull_number: number }).pull_number,
     ).toBe(9);
+  });
+
+  it("detects an unrecorded acknowledgment from a closed, unmerged PR", async () => {
+    const { client } = fakeClient([], [], [
+      { number: 8, closedAt: "2026-08-15T10:00:00Z", merged: false },
+      { number: 5, closedAt: "2026-08-10T10:00:00Z", merged: false },
+      { number: 3, closedAt: "2026-08-16T10:00:00Z", merged: true },
+    ]);
+    // Nothing acknowledged yet → the latest unmerged closure wins;
+    // the merged PR is ignored (merging is against the contract).
+    expect(await detectUnrecordedAcknowledgment(client, "o", "r", null)).toEqual({
+      prNumber: 8,
+      closedAt: "2026-08-15T10:00:00Z",
+    });
+    // Already acknowledged past that point → nothing new.
+    expect(
+      await detectUnrecordedAcknowledgment(client, "o", "r", "2026-08-15T10:00:00Z"),
+    ).toBeNull();
   });
 
   it("branch push clears a protection that rejects only the default branch", () => {

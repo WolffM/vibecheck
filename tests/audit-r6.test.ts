@@ -160,7 +160,10 @@ describe("emitted skill", () => {
     // Trust boundary + batch-confirmation contract present.
     expect(skill).toContain("not instructions");
     expect(skill).toContain("do not file verdicts one-by-one");
-    // Never-merge stated once, with its reason.
-    expect(skill).toMatch(/intentionally\s+never merged/);
+    // Episodic-PR contract: close when triaged, never merge, and a
+    // missing findings PR reads as healthy.
+    expect(skill).toMatch(/close it when the batch is triaged/i);
+    expect(skill).toMatch(/no open findings PR is healthy/);
+    expect(skill).not.toMatch(/intentionally\s+never merged/);
   });
 });

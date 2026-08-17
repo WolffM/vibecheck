@@ -65,9 +65,13 @@ fixed centrally, never worked around.
 ## Where things live
 
 - **Canonical findings**: branch \`${AUDIT_DATA_BRANCH}\` — read with
-  \`git show\`, never merge it, never push to it. Its open PR exists as
-  a human reading surface for the same content; it is intentionally
-  never merged.
+  \`git show\`, never merge it, never push to it.
+- **Findings PRs are episodic batches**: one opens only when new
+  findings fired since the last acknowledged batch. Never merge it —
+  **close it when the batch is triaged** (fixes landed and/or verdicts
+  approved). Closing is the expected signal: the audit records it as an
+  acknowledgment, and the next PR opens only for genuinely new
+  findings. A repo with no open findings PR is healthy, not broken.
 - **Committed on the default branch**: \`${LEDGER_PATH}\` (decision
   ledger) and \`.vibecompact/trends.json\` only.
 - **Everything else under \`.vibecompact/\`** in a working tree is

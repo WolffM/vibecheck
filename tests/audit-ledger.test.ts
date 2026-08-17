@@ -6,6 +6,7 @@ import {
   appendEvents,
   computeRenameEvents,
   computeRunEvents,
+  firingsSinceAcknowledged,
   floorsForScoring,
   foldLedger,
   makeFingerprint,
@@ -256,6 +257,55 @@ describe("firing/fixed state machine with hysteresis", () => {
     const events = computeRunEvents(fold, new Map(), at);
     expect(events).toHaveLength(1);
     expect((events[0] as FixedEvent).verdict).toBe("fixed");
+  });
+});
+
+describe("batch acknowledgment", () => {
+  const firing = (fp: string, at: string) => ({
+    id: `01FIRE${fp.replace(/[^A-Z]/gi, "").toUpperCase().slice(0, 12)}${at.slice(8, 10)}`,
+    at,
+    kind: "firing" as const,
+    fingerprint: fp,
+    score: 1,
+    threshold: 1,
+  });
+  const ack = (at: string, prNumber: number) => ({
+    id: `01ACK${at.slice(5, 7)}${at.slice(8, 10)}A0000000000000000`,
+    at,
+    kind: "acknowledged" as const,
+    prNumber,
+  });
+
+  it("folds the latest acknowledgment", () => {
+    const fold = foldLedger([
+      ack("2026-08-10T00:00:00Z", 5),
+      ack("2026-08-15T00:00:00Z", 8),
+    ]);
+    expect(fold.lastAcknowledged?.prNumber).toBe(8);
+  });
+
+  it("firingsSinceAcknowledged returns only unfixed, post-ack firings", () => {
+    const fold = foldLedger([
+      firing("size:old.ts", "2026-08-10T00:00:00Z"),
+      ack("2026-08-15T00:00:00Z", 8),
+      firing("size:new.ts", "2026-08-16T00:00:00Z"),
+      firing("deadcode:fixedlater.ts", "2026-08-16T01:00:00Z"),
+      {
+        id: "01FIXEDLATER00000000000000",
+        at: "2026-08-16T02:00:00Z",
+        verdict: "fixed" as const,
+        fingerprint: "deadcode:fixedlater.ts",
+        score: 0,
+        threshold: 1,
+      },
+    ]);
+    const fresh = firingsSinceAcknowledged(fold);
+    expect(fresh.map((s) => s.fingerprint)).toEqual(["size:new.ts"]);
+  });
+
+  it("with no acknowledgment, every standing firing is new (bootstrap)", () => {
+    const fold = foldLedger([firing("size:a.ts", "2026-08-10T00:00:00Z")]);
+    expect(firingsSinceAcknowledged(fold)).toHaveLength(1);
   });
 });
 

@@ -144,12 +144,30 @@ export interface RenameEvent {
   to: string;
 }
 
+/**
+ * Machine-stamped when the publish path observes that a findings PR was
+ * closed since the last acknowledgment: the maintainer has seen that
+ * batch. A new findings PR opens only for firings newer than the latest
+ * acknowledgment — closure is a signal, not an accident (episodic-PR
+ * redesign, hadoku_site handoff 2026-08-17).
+ */
+export interface AcknowledgedEvent {
+  id: string;
+  at: string;
+  kind: "acknowledged";
+  /** Anchor the acknowledged batch was generated at, when known. */
+  anchor?: string;
+  /** The findings PR whose closure recorded this acknowledgment. */
+  prNumber: number;
+}
+
 export type LedgerEvent =
   | VerdictEvent
   | FiringEvent
   | FixedEvent
   | FloorResetEvent
-  | RenameEvent;
+  | RenameEvent
+  | AcknowledgedEvent;
 
 /** `<lane>:<path>` — the design's fingerprint shape for lane findings. */
 export function laneOf(fingerprint: string): string {
@@ -250,6 +268,8 @@ export interface LedgerFold {
   noiseByLane: Map<string, Set<string>>;
   /** Quantized floor steps per lane (quorum + cap applied). */
   floorSteps: Map<string, number>;
+  /** Latest batch acknowledgment (findings-PR closure), if any. */
+  lastAcknowledged: AcknowledgedEvent | null;
   /** Rename chain resolution old → final path. */
   resolvePath: (path: string) => string;
 }
@@ -298,11 +318,14 @@ export function foldLedger(rawEvents: LedgerEvent[]): LedgerFold {
   const verdicts = new Map<string, VerdictEvent>();
   const firing = new Map<string, FiringState>();
   const noiseByLane = new Map<string, Set<string>>();
+  let lastAcknowledged: AcknowledgedEvent | null = null;
 
   for (const event of events) {
     if ("kind" in event) {
       if (event.kind === "floor-reset") {
         noiseByLane.set(event.lane, new Set());
+      } else if (event.kind === "acknowledged") {
+        lastAcknowledged = event;
       } else if (event.kind === "firing") {
         const fp = migrate(event.fingerprint);
         firing.set(fp, {
@@ -337,7 +360,27 @@ export function foldLedger(rawEvents: LedgerEvent[]): LedgerFold {
     );
   }
 
-  return { events, verdicts, firing, noiseByLane, floorSteps, resolvePath };
+  return {
+    events,
+    verdicts,
+    firing,
+    noiseByLane,
+    floorSteps,
+    lastAcknowledged,
+    resolvePath,
+  };
+}
+
+/**
+ * Standing firings newer than the latest acknowledgment — the content
+ * of the next findings batch. Fixed firings are spent; with no
+ * acknowledgment yet, every standing firing is new (bootstrap).
+ */
+export function firingsSinceAcknowledged(fold: LedgerFold): FiringState[] {
+  const since = fold.lastAcknowledged?.at ?? "";
+  return [...fold.firing.values()].filter(
+    (s) => !s.fixedAt && s.firedAt > since,
+  );
 }
 
 /** Absolute per-lane floors for scoring: anchor × (1 + step-fraction × steps). */
@@ -449,7 +492,7 @@ export function computeRenameEvents(
     if (!path || trackedFiles.has(path)) continue;
     const target = follow(path);
     if (target === path || !trackedFiles.has(target)) continue;
-    const key = `${path} ${target}`;
+    const key = `${path}|${target}`;
     if (emitted.has(key)) continue;
     emitted.add(key);
     events.push({

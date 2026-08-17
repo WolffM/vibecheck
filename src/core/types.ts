@@ -223,6 +223,12 @@ export interface AuditConfig {
    * tracked package.json locations when the repo root has none.
    */
   js_roots?: string[];
+  /**
+   * Findings-PR lifecycle. "episodic" (default): a batch PR opens only
+   * when new findings fired since the last acknowledged (closed) one.
+   * "never": deliver via the data branch and living issue only.
+   */
+  data_pr?: "episodic" | "never";
   lanes?: AuditLanesConfig;
 }
 

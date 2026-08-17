@@ -1,0 +1,50 @@
+# Canonical vibeCompact audit workflow — copy to .github/workflows/vibecompact.yml.
+#
+# This file is the source of truth for audit-mode callers; hand-written
+# variants drift (hadoku_site handoff, 2026-08-17). Runner selection is
+# controlled by the CI_RUNNER repo/org variable so the file itself never
+# needs a per-repo edit; the fallback matches the hadoku fleet policy —
+# adjust it if your fleet differs.
+#
+# Delivery: findings land on the `vibecompact/data` branch and the living
+# issue. On protected default branches, an episodic findings PR opens
+# when new findings fire; close it when the batch is triaged (never
+# merge it). To enable direct default-branch delivery instead, check out
+# with a token permitted to push the default branch:
+#
+#   - uses: actions/checkout@v6
+#     with:
+#       fetch-depth: 0
+#       token: ${{ secrets.VIBECOMPACT_PUSH_TOKEN }}   # PAT with contents: write
+#
+# Repo settings audit mode needs:
+#   - Actions → "Allow GitHub Actions to create and approve pull requests"
+#   - .gitattributes:  .vibecompact/ledger.jsonl merge=union
+#   - .gitignore:      .vibecompact/audit.md  and  .vibecompact/out/
+
+name: vibeCompact
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *" # daily poll; the activity gate exits in seconds when quiet
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }}
+    steps:
+      - name: Checkout (full history — the audit reads git forensics)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run vibeCompact
+        uses: WolffM/vibecheck@main
+        with:
+          mode: audit
+          github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -8,16 +8,28 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { Octokit } from "@octokit/rest";
+import { loadVibeCopConfig } from "../../core/config-loader.js";
+import { resolveAuditConfig } from "../config.js";
 import { readDataBranchLedger } from "../data-branch.js";
-import { writeUnionLedger } from "../ledger.js";
+import {
+  appendEvents,
+  firingsSinceAcknowledged,
+  foldLedger,
+  makeUlid,
+  readLedger,
+  writeUnionLedger,
+} from "../ledger.js";
 import {
   applyRunFooter,
   AUDIT_DATA_BRANCH,
   commitDataFiles,
+  detectUnrecordedAcknowledgment,
+  openFindingsBatchPr,
   publishLivingIssue,
   pushDataBranch,
+  refreshOpenDataPr,
   stageRunArtifact,
-  upsertDataPr,
+  type BatchInfo,
   type IssueClient,
 } from "./github.js";
 
@@ -68,7 +80,11 @@ function makeOctokitClient(token: string): IssueClient {
         state: params.state,
         per_page: 10,
       });
-      return response.data.map((pr) => ({ number: pr.number }));
+      return response.data.map((pr) => ({
+        number: pr.number,
+        closedAt: pr.closed_at,
+        merged: Boolean(pr.merged_at),
+      }));
     },
     async createPull(params) {
       const response = await octokit.pulls.create(params);
@@ -117,6 +133,40 @@ async function main(): Promise<void> {
   // push would drop machine events that only ever lived on the branch.
   writeUnionLedger(rootPath, readDataBranchLedger(rootPath));
 
+  const client = makeOctokitClient(token);
+  const auditConfig = resolveAuditConfig(loadVibeCopConfig(rootPath).audit);
+
+  // Batch acknowledgment (episodic-PR lifecycle): a findings PR closed
+  // since the last acknowledgment means the maintainer has seen that
+  // batch. Record it BEFORE committing so the event ships with this run.
+  let fold = foldLedger(readLedger(rootPath));
+  try {
+    const unrecorded = await detectUnrecordedAcknowledgment(
+      client,
+      owner,
+      repo,
+      fold.lastAcknowledged?.at ?? null,
+    );
+    if (unrecorded) {
+      appendEvents(rootPath, [
+        {
+          id: makeUlid(),
+          at: unrecorded.closedAt,
+          kind: "acknowledged",
+          prNumber: unrecorded.prNumber,
+        },
+      ]);
+      fold = foldLedger(readLedger(rootPath));
+      console.log(
+        `Recorded acknowledgment: findings PR #${unrecorded.prNumber} was closed (${unrecorded.closedAt}).`,
+      );
+    }
+  } catch (error) {
+    console.warn(
+      `Acknowledgment check failed (${(error as Error).message.split("\n")[0]}) — continuing without it.`,
+    );
+  }
+
   const push = commitDataFiles(rootPath, {
     branch,
     committer: {
@@ -125,10 +175,33 @@ async function main(): Promise<void> {
     },
   });
 
-  const client = makeOctokitClient(token);
   let footer = "";
   let channel = "push";
   const runId = process.env.GITHUB_RUN_ID ?? "local";
+
+  // Batch context for PR surfaces, from this run's machine result.
+  const machinePath = join(rootPath, ".vibecompact", "out", "audit.json");
+  let anchor: string | null = null;
+  let anchorDate = "";
+  try {
+    const machine = JSON.parse(readFileSync(machinePath, "utf-8")) as {
+      anchorSha?: string | null;
+      anchorDate?: string;
+    };
+    anchor = machine.anchorSha ?? null;
+    anchorDate = (machine.anchorDate ?? "").slice(0, 10);
+  } catch {
+    // Batch header degrades gracefully without the machine file.
+  }
+  const batch: BatchInfo = {
+    anchor,
+    date: anchorDate || "current run",
+    newFindings: firingsSinceAcknowledged(fold).map((s) => ({
+      fingerprint: s.fingerprint,
+      firedAt: s.firedAt,
+    })),
+    sincePr: fold.lastAcknowledged?.prNumber ?? null,
+  };
 
   if (push.pushed) {
     console.log(
@@ -137,35 +210,60 @@ async function main(): Promise<void> {
         : "Data files unchanged — nothing to publish.",
     );
   } else {
-    // Rung two: the living data PR (design v0.4 — protected defaults are
-    // the user's stated policy, so this is the normal path there).
+    // Expected on protected default branches: GITHUB_TOKEN cannot write
+    // them. The data branch is the canonical store; a PR opens only for
+    // a new findings batch (episodic lifecycle), never as a standing
+    // surface. Grant a default-branch-writing token to use the direct
+    // push path instead.
     console.log(
-      `Direct data push rejected after ${push.attempts} attempts — opening the living data PR.`,
+      `Default branch push rejected after ${push.attempts} attempts (protected branch — expected). Delivering via ${AUDIT_DATA_BRANCH}.`,
     );
-    let prDone = false;
+    let delivered = false;
     if (pushDataBranch(rootPath)) {
       try {
         const briefingPath = join(rootPath, ".vibecompact", "out", "agent-briefing.md");
         const briefing = existsSync(briefingPath)
           ? readFileSync(briefingPath, "utf-8")
           : `Run \`${runId}\`: data files updated on \`${AUDIT_DATA_BRANCH}\`.`;
-        const pr = await upsertDataPr(client, owner, repo, branch, briefing);
-        channel = "pr";
-        footer = `---\n_Audit data (ledger events, trends, evidence packages) is awaiting merge in #${pr.prNumber}._`;
-        setOutput("data_pr", String(pr.prNumber));
-        console.log(
-          `${pr.created ? "Opened" : "Refreshed"} living data PR #${pr.prNumber}.`,
-        );
-        prDone = true;
+
+        const refreshed = await refreshOpenDataPr(client, owner, repo, briefing, batch);
+        if (refreshed) {
+          channel = "pr";
+          footer = `---\n_Findings batch awaiting triage in #${refreshed.prNumber} — close the PR when the batch is triaged._`;
+          setOutput("data_pr", String(refreshed.prNumber));
+          console.log(`Refreshed open findings PR #${refreshed.prNumber}.`);
+        } else if (auditConfig.dataPr === "never") {
+          channel = "branch";
+          footer = `---\n_Audit data lives on \`${AUDIT_DATA_BRANCH}\` (findings PRs disabled by config)._`;
+          console.log("Findings PRs disabled by config — data branch refreshed.");
+        } else if (batch.newFindings.length > 0) {
+          const pr = await openFindingsBatchPr(client, owner, repo, branch, briefing, batch);
+          channel = "pr";
+          footer = `---\n_New findings batch awaiting triage in #${pr.prNumber} — close the PR when the batch is triaged._`;
+          setOutput("data_pr", String(pr.prNumber));
+          console.log(
+            `Opened findings batch PR #${pr.prNumber} (${batch.newFindings.length} new finding${batch.newFindings.length === 1 ? "" : "s"}).`,
+          );
+        } else {
+          channel = "branch";
+          footer =
+            `---\n_Audit data refreshed on \`${AUDIT_DATA_BRANCH}\`; no new findings since the last acknowledged batch` +
+            (batch.sincePr ? ` (#${batch.sincePr})` : "") +
+            `._`;
+          console.log(
+            "No new findings since the last acknowledged batch — data branch refreshed, no PR opened.",
+          );
+        }
+        delivered = true;
       } catch (error) {
         console.warn(
-          `Data PR failed (${(error as Error).message.split("\n")[0]}) — ` +
+          `Findings PR delivery failed (${(error as Error).message.split("\n")[0]}) — ` +
             "the workflow likely needs `pull-requests: write`. Falling back to artifact.",
         );
       }
     }
-    if (!prDone) {
-      // Rung three: artifact + apply-run.
+    if (!delivered) {
+      // Last rung: artifact + apply-run.
       channel = "artifact";
       const artifactPath = stageRunArtifact(rootPath, runId);
       footer = applyRunFooter(runId);

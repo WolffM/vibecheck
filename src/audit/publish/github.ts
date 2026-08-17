@@ -70,8 +70,8 @@ export interface IssueClient {
     owner: string;
     repo: string;
     head: string;
-    state: "open";
-  }): Promise<{ number: number }[]>;
+    state: "open" | "closed";
+  }): Promise<{ number: number; closedAt?: string | null; merged?: boolean }[]>;
   createPull(params: {
     owner: string;
     repo: string;
@@ -257,72 +257,102 @@ export interface DataPrResult {
   created: boolean;
 }
 
-/** Create-or-refresh the living data PR from the audit-data branch. */
-export async function upsertDataPr(
-  client: IssueClient,
-  owner: string,
-  repo: string,
-  base: string,
-  briefing: string,
-): Promise<DataPrResult> {
-  const body = [
+/**
+ * Episodic findings-PR lifecycle (redesign, hadoku_site handoff
+ * 2026-08-17). A PR is a triage batch, not a standing surface: it opens
+ * only when new findings fired since the last acknowledgment, the
+ * maintainer closes it when the batch is triaged, and closure is
+ * recorded in the ledger as an `acknowledged` event. The data branch
+ * remains the canonical store either way; a quiet run refreshes the
+ * branch and touches no PR.
+ */
+
+export interface BatchInfo {
+  anchor: string | null;
+  date: string;
+  /** Standing firings newer than the last acknowledgment. */
+  newFindings: { fingerprint: string; firedAt: string }[];
+  /** The acknowledged PR this batch follows, if any. */
+  sincePr: number | null;
+}
+
+function batchBody(briefing: string, batch: BatchInfo): string {
+  const header =
+    `**Findings batch — ${batch.date}` +
+    (batch.anchor ? ` · anchor \`${batch.anchor.slice(0, 12)}\`` : "") +
+    `** · ${batch.newFindings.length} new finding${batch.newFindings.length === 1 ? "" : "s"}` +
+    (batch.sincePr ? ` since #${batch.sincePr} was closed.` : ".");
+  return [
     AUDIT_PR_MARKER,
+    "",
+    header,
     "",
     briefing.trim(),
     "",
     "---",
     "",
-    "Merging this PR lands vibeCompact's data files: the evidence",
-    "packages above (browsable in the diff under",
-    "`.vibecompact/findings/`), ledger machine events, and the trends",
-    "entry. The branch is force-refreshed from the latest default branch",
-    "on every run, so this PR is always current; merge whenever.",
+    "**How this PR works**",
     "",
-    "_If required status checks do not trigger on data-only changes,",
-    "merge with admin rights or adjust the ruleset for `.vibecompact/**`._",
+    "- The `vibecompact/data` branch is the canonical store; this PR is",
+    "  the triage surface for the batch above (evidence packages are",
+    "  browsable in the diff under `.vibecompact/findings/`).",
+    "- Do **not** merge it — the branch is refreshed in place by every",
+    "  audit run, and the ledger already carries every decision.",
+    "- **Close this PR when the batch is triaged** (fixes landed and/or",
+    "  verdicts filed). Closure is recorded as an acknowledgment; the",
+    "  next PR opens only when new findings fire.",
   ].join("\n");
+}
 
+/** Refresh the body of an already-open findings PR; null when none. */
+export async function refreshOpenDataPr(
+  client: IssueClient,
+  owner: string,
+  repo: string,
+  briefing: string,
+  batch: BatchInfo,
+): Promise<DataPrResult | null> {
   const existing = await client.listPulls({
     owner,
     repo,
     head: `${owner}:${AUDIT_DATA_BRANCH}`,
     state: "open",
   });
-  if (existing.length > 0) {
-    await client.updatePull({
-      owner,
-      repo,
-      pull_number: existing[0].number,
-      body,
-    });
-    try {
-      await client.addLabels({
-        owner,
-        repo,
-        issue_number: existing[0].number,
-        labels: ["do-not-merge", AUDIT_ISSUE_LABEL],
-      });
-    } catch {
-      // Labels are a guard, not a requirement.
-    }
-    return { prNumber: existing[0].number, created: false };
-  }
+  if (existing.length === 0) return null;
+  await client.updatePull({
+    owner,
+    repo,
+    pull_number: existing[0].number,
+    body: batchBody(briefing, batch),
+  });
+  return { prNumber: existing[0].number, created: false };
+}
+
+/** Open a new findings-batch PR. */
+export async function openFindingsBatchPr(
+  client: IssueClient,
+  owner: string,
+  repo: string,
+  base: string,
+  briefing: string,
+  batch: BatchInfo,
+): Promise<DataPrResult> {
   const created = await client.createPull({
     owner,
     repo,
-    title: "vibeCompact: findings & data",
+    title:
+      `vibeCompact findings — ${batch.date}` +
+      (batch.anchor ? ` (anchor ${batch.anchor.slice(0, 12)})` : ""),
     head: AUDIT_DATA_BRANCH,
     base,
-    body,
+    body: batchBody(briefing, batch),
   });
-  // Affordance guard: a permanently-open PR reads as "merge me" to
-  // humans, bots, and agents alike.
   try {
     await client.ensureLabel({
       owner,
       repo,
       name: "do-not-merge",
-      description: "Instruction-delivery PR — intentionally never merged",
+      description: "vibeCompact findings batch — close when triaged, never merge",
     });
     await client.addLabels({
       owner,
@@ -334,6 +364,34 @@ export async function upsertDataPr(
     // Labels are a guard, not a requirement.
   }
   return { prNumber: created.number, created: true };
+}
+
+/**
+ * The most recent findings PR closed after the latest acknowledgment —
+ * an acknowledgment the ledger hasn't recorded yet. Merged PRs are
+ * ignored (merging is against the contract; nothing to acknowledge).
+ */
+export async function detectUnrecordedAcknowledgment(
+  client: IssueClient,
+  owner: string,
+  repo: string,
+  lastAckAt: string | null,
+): Promise<{ prNumber: number; closedAt: string } | null> {
+  const closed = await client.listPulls({
+    owner,
+    repo,
+    head: `${owner}:${AUDIT_DATA_BRANCH}`,
+    state: "closed",
+  });
+  const candidates = closed
+    .filter((pr) => pr.closedAt && !pr.merged)
+    .filter((pr) => !lastAckAt || (pr.closedAt as string) > lastAckAt)
+    .sort((a, b) => ((a.closedAt as string) < (b.closedAt as string) ? 1 : -1));
+  if (candidates.length === 0) return null;
+  return {
+    prNumber: candidates[0].number,
+    closedAt: candidates[0].closedAt as string,
+  };
 }
 
 /**

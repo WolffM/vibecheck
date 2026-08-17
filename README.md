@@ -54,6 +54,24 @@ jobs:
 
 No secrets to configure—uses your repo's built-in `GITHUB_TOKEN`.
 
+### Audit mode (vibeCompact)
+
+The snippet above is **analyze mode**. Audit mode (the vibeCompact
+code-quality audit) has different permissions, runner, and delivery
+semantics — copy the canonical workflow instead of hand-writing one:
+[`starter-workflow/vibecompact.yml`](starter-workflow/vibecompact.yml).
+
+Delivery: findings live on the `vibecompact/data` branch and the living
+issue. With the default `GITHUB_TOKEN`, a protected default branch
+rejects the direct data push (expected — GH006); an **episodic findings
+PR** then opens whenever new findings fire. Close it when the batch is
+triaged (never merge it) — closure is recorded as an acknowledgment,
+and the next PR opens only for genuinely new findings. Direct
+default-branch delivery instead requires checking out with a token that
+can push the default branch (see the workflow's comments). Set
+`audit.data_pr: "never"` in `vibecompact.json` to disable findings PRs
+entirely.
+
 ---
 
 ## Configuration
