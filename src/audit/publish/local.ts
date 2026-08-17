@@ -62,8 +62,15 @@ export function publishLocal(
   const findingsDir = options.trackedCopies
     ? join(vibecheckDir, "findings")
     : join(outDir, "findings");
-  rmSync(join(vibecheckDir, "findings"), { recursive: true, force: true });
-  rmSync(join(outDir, "findings"), { recursive: true, force: true });
+  // Clear ONLY the directory this run is about to write. Clearing both used
+  // to mean a local run deleted the tracked `.vibecompact/findings/` from the
+  // working tree and then wrote the regenerated packages to `out/` instead —
+  // so `vibecheck audit` on a workstation left the checkout dirty with
+  // deletions it never restored, and the repo's own format gate failed on
+  // files the same run had rewritten. The intent above is to never ADD
+  // regenerated files to the default branch; deleting them was the same
+  // mistake wearing the other sign.
+  rmSync(findingsDir, { recursive: true, force: true });
   mkdirSync(findingsDir, { recursive: true });
   for (const [name, content] of packages) {
     writeFileSync(join(findingsDir, name), content, "utf-8");

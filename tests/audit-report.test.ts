@@ -1,4 +1,11 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -134,5 +141,41 @@ describe("publishLocal", () => {
     const machine = JSON.parse(readFileSync(machinePath, "utf-8"));
     expect(machine.worstOffenders).toEqual(["src/dumped.ts", "src/app.ts"]);
     expect(machine.anchorSha).toMatch(/^0123/);
+  });
+
+  // A local run used to rmSync BOTH findings directories while writing only
+  // one, so it deleted the tracked packages a CI run had delivered and never
+  // put them back — leaving the checkout dirty with deletions after every
+  // local `vibecheck audit`.
+  it("leaves tracked findings alone when writing to out/", () => {
+    const root = mkdtempSync(join(tmpdir(), "vibecheck-publish-"));
+    cleanups.push(root);
+    const tracked = join(root, ".vibecompact", "findings");
+    mkdirSync(tracked, { recursive: true });
+    const delivered = join(tracked, "DELETE__from__ci.md");
+    writeFileSync(delivered, "# delivered by CI\n", "utf-8");
+
+    const { findingsDir } = publishLocal(fixtureResult(root));
+
+    expect(findingsDir).toBe(join(root, ".vibecompact", "out", "findings"));
+    expect(existsSync(delivered)).toBe(true);
+    expect(readFileSync(delivered, "utf-8")).toContain("delivered by CI");
+  });
+
+  it("still regenerates the tracked dir wholesale on the CI path", () => {
+    const root = mkdtempSync(join(tmpdir(), "vibecheck-publish-"));
+    cleanups.push(root);
+    const tracked = join(root, ".vibecompact", "findings");
+    mkdirSync(tracked, { recursive: true });
+    const stale = join(tracked, "STALE__resolved__finding.md");
+    writeFileSync(stale, "# resolved last run\n", "utf-8");
+
+    const { findingsDir } = publishLocal(fixtureResult(root), {
+      trackedCopies: true,
+    });
+
+    expect(findingsDir).toBe(tracked);
+    // Resolved findings' packages must still vanish with them.
+    expect(existsSync(stale)).toBe(false);
   });
 });
