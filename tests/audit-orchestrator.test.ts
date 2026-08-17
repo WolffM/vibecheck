@@ -26,7 +26,11 @@ describe("runAudit (scaffold)", () => {
     expect(result.config.sizeTiers).toEqual([500, 1000, 2000]);
   });
 
-  it("reports a null anchor outside a git repository", async () => {
+  // Same full six-lane audit as above, just rooted outside a git repo — so it
+  // needs the same budget. Without it this inherits vitest's 5s default and
+  // fails on any runner slower than a dedicated hosted VM (observed on claw-1,
+  // 2026-08-17: the file takes ~29s wall-clock on the fleet).
+  it("reports a null anchor outside a git repository", { timeout: 60_000 }, async () => {
     const result = await runAudit({ rootPath: tempDir });
     expect(result.anchorSha).toBeNull();
     expect(result.dirty).toBe(false);
