@@ -1,6 +1,8 @@
 # src/github/workflow-generator.ts
 
-Deletion candidate · knip: entire file unreferenced · anchor `e9a6d3d66351`
+Single-lane finding (below the corroboration gate — one signal, weigh accordingly) · firing: deadcode · 6 lanes applicable · anchor `e38f9085d0c2` · deletion candidate (knip: entire file unreferenced)
+
+### deadcode — entire file unreferenced (knip)
 
 ### Pre-run verification
 
@@ -12,4 +14,10 @@ Delete the file; CI plus one manual smoke of any runtime loaders is the remainin
 
 ```
 vibecheck noise "consistency:src/github/workflow-generator.ts" --reason "..."
+```
+
+### If this finding is wrong or accepted
+
+```
+vibecheck wontfix|noise|justify "deadcode:src/github/workflow-generator.ts" --reason "..."
 ```

@@ -1,6 +1,8 @@
 # src/core/run-analyze.ts
 
-Deletion candidate · orphaned — zero import fan-in, no declared entry point · anchor `e9a6d3d66351`
+Single-lane finding (below the corroboration gate — one signal, weigh accordingly) · firing: consistency · 5 lanes applicable · anchor `e38f9085d0c2` · deletion candidate (orphaned — zero import fan-in, no declared entry point)
+
+### consistency — orphaned (zero import fan-in)
 
 ### Pre-run verification
 
@@ -14,4 +16,10 @@ Resolve the references above first; if they are the loading mechanism, file a no
 
 ```
 vibecheck noise "consistency:src/core/run-analyze.ts" --reason "..."
+```
+
+### If this finding is wrong or accepted
+
+```
+vibecheck wontfix|noise|justify "consistency:src/core/run-analyze.ts" --reason "..."
 ```

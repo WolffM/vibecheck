@@ -361,5 +361,47 @@
       "offenders": 0,
       "suppressedByFloor": 0
     }
+  },
+  {
+    "at": "2026-08-13T11:00:30-07:00",
+    "sha": "e38f9085d0c2058e7bb534a6d580b238b2b5753a",
+    "dirty": false,
+    "toolVersions": {
+      "scc": "3.7.0"
+    },
+    "floors": {},
+    "saturated": [],
+    "aggregates": {
+      "candidateFiles": 145,
+      "perLane": {
+        "size": {
+          "filesAssessed": 117,
+          "filesFlagged": 2
+        },
+        "arrival": {
+          "filesAssessed": 54,
+          "filesFlagged": 14
+        },
+        "deadcode": {
+          "filesAssessed": 116,
+          "filesFlagged": 12
+        },
+        "duplication": {
+          "filesAssessed": 117,
+          "filesFlagged": 0
+        },
+        "smells": {
+          "filesAssessed": 113,
+          "filesFlagged": 3
+        },
+        "consistency": {
+          "filesAssessed": 88,
+          "filesFlagged": 1
+        }
+      },
+      "gatePassing": 2,
+      "offenders": 0,
+      "suppressedByFloor": 0
+    }
   }
 ]
