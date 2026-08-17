@@ -30,7 +30,12 @@ jobs:
     # to set for speed later, and doing so would silently reopen that path.
     # vibecheck.yml / vibecompact.yml are not fork-reachable and still honour
     # CI_RUNNER.
-    runs-on: ubuntu-latest
+    # Runner SELECTION, not a job-level `if:`. Skipping the job would make a
+    # required check that never reports, so a fork PR could never merge. This
+    # keeps it always-running while an unauthorized fork PR lands on
+    # GitHub-hosted (free here) instead of a claw — a persistent machine on a
+    # home LAN. author_association is computed by GitHub, not the submitter.
+    runs-on: ${ fromJSON((github.event_name == 'pull_request' && !contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association) && '["ubuntu-latest"]') || vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }
     steps:
       - name: Checkout
         uses: actions/checkout@v6
