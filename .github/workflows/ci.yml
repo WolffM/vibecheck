@@ -16,7 +16,21 @@ concurrency:
 jobs:
   check:
     name: Lint, typecheck & test
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","hadoku-builder"]') }}
+    # HOSTED, DELIBERATELY — do not point this workflow at the self-hosted
+    # builder, and do not restore the `vars.CI_RUNNER || ...` fallback here.
+    #
+    # This repo is public and this is the only fork-triggerable workflow
+    # (`pull_request` above). The workflow file comes from the base branch, so a
+    # fork cannot edit these steps — but `pnpm install` and the `pnpm run` gates
+    # execute scripts out of the PR's own package.json. On the self-hosted
+    # builder that is arbitrary code as the runner's user, with its home
+    # directory, credentials and other checkouts in reach.
+    #
+    # Hardcoded rather than defaulted because `CI_RUNNER` is a plausible thing
+    # to set for speed later, and doing so would silently reopen that path.
+    # vibecheck.yml / vibecompact.yml are not fork-reachable and still honour
+    # CI_RUNNER.
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v6
