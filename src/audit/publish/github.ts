@@ -22,6 +22,21 @@ const FINDINGS_DIR = ".vibecompact/findings";
 const BRIEFING_PATH = ".vibecompact/briefing.md";
 const MACHINE_PATH = ".vibecompact/audit.json";
 
+/**
+ * Whether this repo gets a standing audit issue.
+ *
+ * The living issue is a dashboard: `publishLivingIssue` matches on label +
+ * marker with `state: "open"`, so it is updated in place and never closes. A
+ * repo whose convention is "an open issue means work is outstanding" cannot use
+ * one — closing it does not stick, it just makes the next publishing run open a
+ * fresh issue under a new number. `report_channel: "pr"` opts out: the episodic
+ * findings PR becomes the only report surface, and between batches nothing is
+ * open. Default stays "issue".
+ */
+export function publishesLivingIssue(reportChannel: "issue" | "pr"): boolean {
+  return reportChannel !== "pr";
+}
+
 export const AUDIT_ISSUE_MARKER = "<!-- vibecompact-living-issue -->";
 /** Legacy marker — issues created before the vibeCompact rename. */
 export const LEGACY_ISSUE_MARKER = "<!-- vibecheck-audit-living-issue -->";

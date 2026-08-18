@@ -223,7 +223,7 @@
           "type": "string",
           "enum": ["issue", "pr"],
           "default": "issue",
-          "description": "Where the action publishes the report"
+          "description": "Where the action publishes the report. \"issue\" (default) keeps a standing living issue, updated in place and never closed. \"pr\" opts out of that issue entirely — the episodic findings PR becomes the only report surface, so between triaged batches nothing is left open."
         },
         "max_report_items": {
           "type": "integer",

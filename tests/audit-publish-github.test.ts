@@ -11,6 +11,7 @@ import {
   commitDataFiles,
   detectUnrecordedAcknowledgment,
   openFindingsBatchPr,
+  publishesLivingIssue,
   publishLivingIssue,
   pushDataBranch,
   refreshOpenDataPr,
@@ -67,6 +68,20 @@ function fakeClient(
   };
   return { client, calls };
 }
+
+describe("publishesLivingIssue", () => {
+  it("publishes a standing issue by default", () => {
+    expect(publishesLivingIssue("issue")).toBe(true);
+  });
+
+  it('is opted out by report_channel: "pr"', () => {
+    // The knob existed and was parsed but never read, so every repo got a
+    // living issue regardless. Closing one does not stick — publishLivingIssue
+    // matches on state:"open", so the next run opens a fresh issue under a new
+    // number rather than reusing the closed one.
+    expect(publishesLivingIssue("pr")).toBe(false);
+  });
+});
 
 describe("publishLivingIssue", () => {
   it("creates the issue (with label) when none exists", async () => {

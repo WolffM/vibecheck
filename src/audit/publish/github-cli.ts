@@ -25,6 +25,7 @@ import {
   commitDataFiles,
   detectUnrecordedAcknowledgment,
   openFindingsBatchPr,
+  publishesLivingIssue,
   publishLivingIssue,
   pushDataBranch,
   refreshOpenDataPr,
@@ -273,6 +274,19 @@ async function main(): Promise<void> {
   }
   setOutput("data_channel", channel);
   setOutput("push_rejected", channel === "push" ? "false" : "true");
+
+  // `report_channel: "pr"` means the episodic findings PR IS the report surface,
+  // so no standing issue is published. The living issue is a dashboard that never
+  // closes; a repo that treats an open issue as "work outstanding" cannot use one,
+  // because closing it just makes the next run open a fresh one under a new number.
+  // Default stays "issue" — this only opts a repo out.
+  if (!publishesLivingIssue(auditConfig.reportChannel)) {
+    console.log(
+      'report_channel: "pr" — living issue not published; findings ride the episodic PR.',
+    );
+    setOutput("issue_number", "");
+    return;
+  }
 
   const result = await publishLivingIssue(client, owner, repo, markdown, footer);
   console.log(
