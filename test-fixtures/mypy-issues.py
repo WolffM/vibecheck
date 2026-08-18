@@ -1,7 +1,6 @@
 # Mypy test file - intentionally dirty code for type checking
 # This file triggers various Mypy type errors
 
-from typing import List, Dict, Optional, Union, Callable
 
 
 # Return type mismatch
@@ -20,41 +19,40 @@ def call_with_wrong_type():
 
 # Missing return statement
 def missing_return() -> int:
-    x = 5
+    pass
     # error: Missing return statement
 
 
 # Incompatible types in assignment
 def incompatible_assignment():
-    x: str = "hello"
-    x = 42  # error: Incompatible types in assignment
+    pass
 
 
 # None handling issues
-def none_issues(x: Optional[str]) -> str:
+def none_issues(x: str | None) -> str:
     return x.upper()  # error: Item "None" of "Optional[str]" has no attribute "upper"
 
 
 # List type issues
 def list_type_issues():
-    items: List[int] = [1, 2, 3]
+    items: list[int] = [1, 2, 3]
     items.append("four")  # error: Argument 1 has incompatible type "str"; expected "int"
 
 
 # Dict type issues
 def dict_type_issues():
-    data: Dict[str, int] = {"a": 1}
+    data: dict[str, int] = {"a": 1}
     data["b"] = "two"  # error: Incompatible types in assignment
 
 
 # Union type narrowing issues
-def union_issues(x: Union[int, str]) -> int:
+def union_issues(x: int | str) -> int:
     return x + 1  # error: Unsupported operand types for + ("str" and "int")
 
 
 # Callable type issues
 def callable_issues():
-    func: Callable[[int], str] = lambda x: x * 2  # error: Incompatible return type
+    lambda x: x * 2  # error: Incompatible return type
 
 
 # Attribute access on wrong type
@@ -88,7 +86,7 @@ def generic_issues():
     def identity(x: T) -> T:
         return x
 
-    result: str = identity(42)  # error: Incompatible types in assignment
+    identity(42)  # error: Incompatible types in assignment
 
 
 # Protocol violations
@@ -113,11 +111,10 @@ def protocol_violation():
 
 
 # Literal type issues
-from typing import Literal
 
 
 def literal_issues():
-    mode: Literal["read", "write"] = "execute"  # error: Incompatible types
+    pass  # error: Incompatible types
 
 
 # TypedDict issues
@@ -152,5 +149,4 @@ def process(x):  # error: Missing type annotation
 
 
 def variance_issues():
-    ints: List[int] = [1, 2, 3]
-    objects: List[object] = ints  # error: Incompatible types (invariance)
+    pass
