@@ -1,0 +1,5047 @@
+{
+  "anchorSha": "e38f9085d0c2058e7bb534a6d580b238b2b5753a",
+  "anchorDate": "2026-08-13T11:00:30-07:00",
+  "dirty": false,
+  "config": {
+    "enabled": true,
+    "dynamicTests": false,
+    "reportChannel": "issue",
+    "maxReportItems": 15,
+    "sizeTiers": [
+      500,
+      1000,
+      2000
+    ],
+    "exclude": [],
+    "jsRoots": [],
+    "lanes": {
+      "size": {
+        "enabled": true
+      },
+      "arrival": {
+        "enabled": true
+      },
+      "deadcode": {
+        "enabled": true
+      },
+      "duplication": {
+        "enabled": true,
+        "minLines": 30
+      },
+      "smells": {
+        "enabled": true
+      },
+      "consistency": {
+        "enabled": true
+      }
+    }
+  },
+  "candidateFiles": 145,
+  "excluded": [
+    {
+      "path": ".vibecompact/findings/DELETE__src__core__run-analyze.ts.md",
+      "reason": "path-convention"
+    },
+    {
+      "path": ".vibecompact/findings/DELETE__src__github__workflow-generator.ts.md",
+      "reason": "path-convention"
+    },
+    {
+      "path": ".vibecompact/ledger.jsonl",
+      "reason": "path-convention"
+    },
+    {
+      "path": ".vibecompact/trends.json",
+      "reason": "path-convention"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/Cargo.toml",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/PmdIssues.java",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/README.md",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/SpotBugsIssues.java",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/bandit-issues.py",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/circular-dep-a.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/circular-dep-b.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/deny.toml",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/duplicate-code-a.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/duplicate-code-b.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/eslint-issues.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/markdown-issues.md",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/mypy-issues.py",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/ruff-issues.py",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/rust-issues.rs",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/security-issues.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/GodClass.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/PmdIssues$badInnerClass.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/PmdIssues.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/SpotBugsIssues$BadSerializableField.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/SpotBugsIssues$MissingSerialVersionUID.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/SpotBugsIssues$NoHashCode.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/target/classes/testfixtures/SpotBugsIssues.class",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/tsconfig.json",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/typescript-errors.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/unused-exports.ts",
+      "reason": "path-convention"
+    },
+    {
+      "path": "test-fixtures/yaml-issues.yaml",
+      "reason": "path-convention"
+    }
+  ],
+  "lanes": {
+    "size": {
+      "available": true,
+      "toolVersion": "3.7.0",
+      "entries": [
+        {
+          "path": ".dependency-cruiser.cjs",
+          "language": "JavaScript",
+          "codeLines": 86,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.172,
+          "cohesionModifier": 1
+        },
+        {
+          "path": ".githooks/pre-commit",
+          "language": "Shell",
+          "codeLines": 10,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.02,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "bin/cli.js",
+          "language": "JavaScript",
+          "codeLines": 118,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.236,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "eslint.config.mjs",
+          "language": "JavaScript",
+          "codeLines": 66,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.132,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "scripts/audit-calibration.ts",
+          "language": "TypeScript",
+          "codeLines": 133,
+          "complexity": 39,
+          "tier": 0,
+          "score": 0.266,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "scripts/audit-power-sim.ts",
+          "language": "TypeScript",
+          "codeLines": 188,
+          "complexity": 26,
+          "tier": 0,
+          "score": 0.376,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "scripts/vibecheck-analysis.ts",
+          "language": "TypeScript",
+          "codeLines": 905,
+          "complexity": 54,
+          "tier": 1,
+          "score": 1.81,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/ado/ado-api.ts",
+          "language": "TypeScript",
+          "codeLines": 286,
+          "complexity": 44,
+          "tier": 0,
+          "score": 0.572,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/ado/findings-to-workitems.ts",
+          "language": "TypeScript",
+          "codeLines": 185,
+          "complexity": 32,
+          "tier": 0,
+          "score": 0.37,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/backtest.ts",
+          "language": "TypeScript",
+          "codeLines": 321,
+          "complexity": 64,
+          "tier": 0,
+          "score": 0.642,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/briefing.ts",
+          "language": "TypeScript",
+          "codeLines": 241,
+          "complexity": 58,
+          "tier": 0,
+          "score": 0.482,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/cli.ts",
+          "language": "TypeScript",
+          "codeLines": 114,
+          "complexity": 27,
+          "tier": 0,
+          "score": 0.228,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/config.ts",
+          "language": "TypeScript",
+          "codeLines": 95,
+          "complexity": 18,
+          "tier": 0,
+          "score": 0.19,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/data-branch.ts",
+          "language": "TypeScript",
+          "codeLines": 63,
+          "complexity": 8,
+          "tier": 0,
+          "score": 0.126,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/entrypoints.ts",
+          "language": "TypeScript",
+          "codeLines": 303,
+          "complexity": 20,
+          "tier": 0,
+          "score": 0.606,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/evidence.ts",
+          "language": "TypeScript",
+          "codeLines": 159,
+          "complexity": 30,
+          "tier": 0,
+          "score": 0.318,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/exclusions.ts",
+          "language": "TypeScript",
+          "codeLines": 157,
+          "complexity": 24,
+          "tier": 0,
+          "score": 0.314,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/findings.ts",
+          "language": "TypeScript",
+          "codeLines": 417,
+          "complexity": 70,
+          "tier": 0,
+          "score": 0.834,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/gate-cli.ts",
+          "language": "TypeScript",
+          "codeLines": 15,
+          "complexity": 4,
+          "tier": 0,
+          "score": 0.03,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/gate.ts",
+          "language": "TypeScript",
+          "codeLines": 143,
+          "complexity": 21,
+          "tier": 0,
+          "score": 0.286,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/git-arrival.ts",
+          "language": "TypeScript",
+          "codeLines": 197,
+          "complexity": 22,
+          "tier": 0,
+          "score": 0.394,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/import-graph.ts",
+          "language": "TypeScript",
+          "codeLines": 128,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.256,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/index.ts",
+          "language": "TypeScript",
+          "codeLines": 410,
+          "complexity": 59,
+          "tier": 0,
+          "score": 0.82,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/arrival.ts",
+          "language": "TypeScript",
+          "codeLines": 203,
+          "complexity": 41,
+          "tier": 0,
+          "score": 0.406,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/consistency.ts",
+          "language": "TypeScript",
+          "codeLines": 272,
+          "complexity": 61,
+          "tier": 0,
+          "score": 0.544,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/deadcode.ts",
+          "language": "TypeScript",
+          "codeLines": 223,
+          "complexity": 43,
+          "tier": 0,
+          "score": 0.446,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/duplication.ts",
+          "language": "TypeScript",
+          "codeLines": 184,
+          "complexity": 27,
+          "tier": 0,
+          "score": 0.368,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/size.ts",
+          "language": "TypeScript",
+          "codeLines": 134,
+          "complexity": 14,
+          "tier": 0,
+          "score": 0.268,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/lanes/smells.ts",
+          "language": "TypeScript",
+          "codeLines": 71,
+          "complexity": 6,
+          "tier": 0,
+          "score": 0.142,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/ledger-cli.ts",
+          "language": "TypeScript",
+          "codeLines": 277,
+          "complexity": 63,
+          "tier": 0,
+          "score": 0.554,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/ledger.ts",
+          "language": "TypeScript",
+          "codeLines": 387,
+          "complexity": 80,
+          "tier": 0,
+          "score": 0.774,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/publish/github-cli.ts",
+          "language": "TypeScript",
+          "codeLines": 165,
+          "complexity": 16,
+          "tier": 0,
+          "score": 0.33,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/publish/github.ts",
+          "language": "TypeScript",
+          "codeLines": 297,
+          "complexity": 9,
+          "tier": 0,
+          "score": 0.594,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/publish/local.ts",
+          "language": "TypeScript",
+          "codeLines": 57,
+          "complexity": 3,
+          "tier": 0,
+          "score": 0.114,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/report.ts",
+          "language": "TypeScript",
+          "codeLines": 478,
+          "complexity": 87,
+          "tier": 0,
+          "score": 0.956,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/roots.ts",
+          "language": "TypeScript",
+          "codeLines": 18,
+          "complexity": 10,
+          "tier": 0,
+          "score": 0.036,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/jscpd.ts",
+          "language": "TypeScript",
+          "codeLines": 87,
+          "complexity": 4,
+          "tier": 0,
+          "score": 0.174,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/knip.ts",
+          "language": "TypeScript",
+          "codeLines": 76,
+          "complexity": 19,
+          "tier": 0,
+          "score": 0.152,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/py-docstrings.ts",
+          "language": "TypeScript",
+          "codeLines": 50,
+          "complexity": 6,
+          "tier": 0,
+          "score": 0.1,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/scc.ts",
+          "language": "TypeScript",
+          "codeLines": 70,
+          "complexity": 12,
+          "tier": 0,
+          "score": 0.14,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/type-coverage.ts",
+          "language": "TypeScript",
+          "codeLines": 89,
+          "complexity": 18,
+          "tier": 0,
+          "score": 0.178,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/runners/vulture.ts",
+          "language": "TypeScript",
+          "codeLines": 64,
+          "complexity": 10,
+          "tier": 0,
+          "score": 0.128,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/scoring.ts",
+          "language": "TypeScript",
+          "codeLines": 162,
+          "complexity": 31,
+          "tier": 0,
+          "score": 0.324,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/skill-cli.ts",
+          "language": "TypeScript",
+          "codeLines": 169,
+          "complexity": 9,
+          "tier": 0,
+          "score": 0.338,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/trends.ts",
+          "language": "TypeScript",
+          "codeLines": 150,
+          "complexity": 36,
+          "tier": 0,
+          "score": 0.3,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/audit/triage-cli.ts",
+          "language": "TypeScript",
+          "codeLines": 73,
+          "complexity": 16,
+          "tier": 0,
+          "score": 0.146,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/core/analyze.ts",
+          "language": "TypeScript",
+          "codeLines": 296,
+          "complexity": 77,
+          "tier": 0,
+          "score": 0.592,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/core/config-loader.ts",
+          "language": "TypeScript",
+          "codeLines": 112,
+          "complexity": 23,
+          "tier": 0,
+          "score": 0.224,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/core/repo-detect.ts",
+          "language": "TypeScript",
+          "codeLines": 481,
+          "complexity": 29,
+          "tier": 0,
+          "score": 0.962,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/core/run-analyze.ts",
+          "language": "TypeScript",
+          "codeLines": 57,
+          "complexity": 28,
+          "tier": 0,
+          "score": 0.114,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/core/types.ts",
+          "language": "TypeScript",
+          "codeLines": 467,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.934,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/github/github.ts",
+          "language": "TypeScript",
+          "codeLines": 304,
+          "complexity": 24,
+          "tier": 0,
+          "score": 0.608,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/github/sarif-to-issues.ts",
+          "language": "TypeScript",
+          "codeLines": 444,
+          "complexity": 90,
+          "tier": 0,
+          "score": 0.888,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/github/workflow-generator.ts",
+          "language": "TypeScript",
+          "codeLines": 117,
+          "complexity": 19,
+          "tier": 0,
+          "score": 0.234,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/output/build-llm-json.ts",
+          "language": "TypeScript",
+          "codeLines": 154,
+          "complexity": 20,
+          "tier": 0,
+          "score": 0.308,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/output/build-sarif.ts",
+          "language": "TypeScript",
+          "codeLines": 166,
+          "complexity": 17,
+          "tier": 0,
+          "score": 0.332,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/output/issue-formatter.ts",
+          "language": "TypeScript",
+          "codeLines": 350,
+          "complexity": 68,
+          "tier": 0,
+          "score": 0.7,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/output/workitem-formatter.ts",
+          "language": "TypeScript",
+          "codeLines": 217,
+          "complexity": 28,
+          "tier": 0,
+          "score": 0.434,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/index.ts",
+          "language": "TypeScript",
+          "codeLines": 38,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.076,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/java.ts",
+          "language": "TypeScript",
+          "codeLines": 146,
+          "complexity": 9,
+          "tier": 0,
+          "score": 0.292,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/kotlin.ts",
+          "language": "TypeScript",
+          "codeLines": 77,
+          "complexity": 13,
+          "tier": 0,
+          "score": 0.154,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/python.ts",
+          "language": "TypeScript",
+          "codeLines": 187,
+          "complexity": 11,
+          "tier": 0,
+          "score": 0.374,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/rust.ts",
+          "language": "TypeScript",
+          "codeLines": 306,
+          "complexity": 38,
+          "tier": 0,
+          "score": 0.612,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/security.ts",
+          "language": "TypeScript",
+          "codeLines": 92,
+          "complexity": 25,
+          "tier": 0,
+          "score": 0.184,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/parsers/typescript.ts",
+          "language": "TypeScript",
+          "codeLines": 403,
+          "complexity": 63,
+          "tier": 0,
+          "score": 0.806,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/scoring/autofix.ts",
+          "language": "TypeScript",
+          "codeLines": 53,
+          "complexity": 13,
+          "tier": 0,
+          "score": 0.106,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/scoring/classification.ts",
+          "language": "TypeScript",
+          "codeLines": 69,
+          "complexity": 27,
+          "tier": 0,
+          "score": 0.138,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/scoring/hierarchy.ts",
+          "language": "TypeScript",
+          "codeLines": 67,
+          "complexity": 10,
+          "tier": 0,
+          "score": 0.134,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/scoring/index.ts",
+          "language": "TypeScript",
+          "codeLines": 44,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.088,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/scoring/tool-mappers.ts",
+          "language": "TypeScript",
+          "codeLines": 442,
+          "complexity": 197,
+          "tier": 0,
+          "score": 0.884,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/autofix-registry.ts",
+          "language": "TypeScript",
+          "codeLines": 97,
+          "complexity": 24,
+          "tier": 0,
+          "score": 0.194,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/autofix-runner.ts",
+          "language": "TypeScript",
+          "codeLines": 218,
+          "complexity": 33,
+          "tier": 0,
+          "score": 0.436,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/run-autofix.ts",
+          "language": "TypeScript",
+          "codeLines": 135,
+          "complexity": 23,
+          "tier": 0,
+          "score": 0.27,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/java.ts",
+          "language": "TypeScript",
+          "codeLines": 127,
+          "complexity": 29,
+          "tier": 0,
+          "score": 0.254,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/kotlin.ts",
+          "language": "TypeScript",
+          "codeLines": 117,
+          "complexity": 20,
+          "tier": 0,
+          "score": 0.234,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/python.ts",
+          "language": "TypeScript",
+          "codeLines": 189,
+          "complexity": 32,
+          "tier": 0,
+          "score": 0.378,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/rust.ts",
+          "language": "TypeScript",
+          "codeLines": 172,
+          "complexity": 35,
+          "tier": 0,
+          "score": 0.344,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/security.ts",
+          "language": "TypeScript",
+          "codeLines": 95,
+          "complexity": 16,
+          "tier": 0,
+          "score": 0.19,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/runners/typescript.ts",
+          "language": "TypeScript",
+          "codeLines": 358,
+          "complexity": 55,
+          "tier": 0,
+          "score": 0.716,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/tool-registry.ts",
+          "language": "TypeScript",
+          "codeLines": 352,
+          "complexity": 43,
+          "tier": 0,
+          "score": 0.704,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/tool-runners.ts",
+          "language": "TypeScript",
+          "codeLines": 159,
+          "complexity": 37,
+          "tier": 0,
+          "score": 0.318,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/tools/tool-utils.ts",
+          "language": "TypeScript",
+          "codeLines": 183,
+          "complexity": 27,
+          "tier": 0,
+          "score": 0.366,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/cli-utils.ts",
+          "language": "TypeScript",
+          "codeLines": 58,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.116,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/fingerprints.ts",
+          "language": "TypeScript",
+          "codeLines": 409,
+          "complexity": 106,
+          "tier": 0,
+          "score": 0.818,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/fix-templates.ts",
+          "language": "TypeScript",
+          "codeLines": 535,
+          "complexity": 6,
+          "tier": 1,
+          "score": 1.07,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/parser-utils.ts",
+          "language": "TypeScript",
+          "codeLines": 144,
+          "complexity": 18,
+          "tier": 0,
+          "score": 0.288,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/rule-docs.ts",
+          "language": "TypeScript",
+          "codeLines": 94,
+          "complexity": 31,
+          "tier": 0,
+          "score": 0.188,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "src/utils/shared.ts",
+          "language": "TypeScript",
+          "codeLines": 175,
+          "complexity": 40,
+          "tier": 0,
+          "score": 0.35,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-arrival-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 236,
+          "complexity": 9,
+          "tier": 0,
+          "score": 0.472,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-backtest.test.ts",
+          "language": "TypeScript",
+          "codeLines": 117,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.234,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-config.test.ts",
+          "language": "TypeScript",
+          "codeLines": 42,
+          "complexity": 1,
+          "tier": 0,
+          "score": 0.084,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-consistency-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 177,
+          "complexity": 6,
+          "tier": 0,
+          "score": 0.354,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-deadcode-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 181,
+          "complexity": 5,
+          "tier": 0,
+          "score": 0.362,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-duplication-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 184,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.368,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-evidence.test.ts",
+          "language": "TypeScript",
+          "codeLines": 262,
+          "complexity": 3,
+          "tier": 0,
+          "score": 0.524,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-exclusions.test.ts",
+          "language": "TypeScript",
+          "codeLines": 116,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.232,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-gate.test.ts",
+          "language": "TypeScript",
+          "codeLines": 180,
+          "complexity": 3,
+          "tier": 0,
+          "score": 0.36,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-git-arrival.test.ts",
+          "language": "TypeScript",
+          "codeLines": 179,
+          "complexity": 6,
+          "tier": 0,
+          "score": 0.358,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-ledger-cli.test.ts",
+          "language": "TypeScript",
+          "codeLines": 156,
+          "complexity": 7,
+          "tier": 0,
+          "score": 0.312,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-ledger.test.ts",
+          "language": "TypeScript",
+          "codeLines": 274,
+          "complexity": 1,
+          "tier": 0,
+          "score": 0.548,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-orchestrator.test.ts",
+          "language": "TypeScript",
+          "codeLines": 35,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.07,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-power-sim.test.ts",
+          "language": "TypeScript",
+          "codeLines": 40,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.08,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-publish-github.test.ts",
+          "language": "TypeScript",
+          "codeLines": 213,
+          "complexity": 1,
+          "tier": 0,
+          "score": 0.426,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-r6.test.ts",
+          "language": "TypeScript",
+          "codeLines": 148,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.296,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-report.test.ts",
+          "language": "TypeScript",
+          "codeLines": 127,
+          "complexity": 1,
+          "tier": 0,
+          "score": 0.254,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-roots.test.ts",
+          "language": "TypeScript",
+          "codeLines": 47,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.094,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-round2.test.ts",
+          "language": "TypeScript",
+          "codeLines": 394,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.788,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-scoring.test.ts",
+          "language": "TypeScript",
+          "codeLines": 135,
+          "complexity": 1,
+          "tier": 0,
+          "score": 0.27,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-size-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 121,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.242,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-smells-lane.test.ts",
+          "language": "TypeScript",
+          "codeLines": 54,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.108,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/audit-trends.test.ts",
+          "language": "TypeScript",
+          "codeLines": 146,
+          "complexity": 2,
+          "tier": 0,
+          "score": 0.292,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/fingerprints.test.ts",
+          "language": "TypeScript",
+          "codeLines": 232,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.464,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/helpers/audit-fixture.ts",
+          "language": "TypeScript",
+          "codeLines": 184,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.368,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/local-preview.ts",
+          "language": "TypeScript",
+          "codeLines": 140,
+          "complexity": 11,
+          "tier": 0,
+          "score": 0.28,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/scoring.test.ts",
+          "language": "TypeScript",
+          "codeLines": 232,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.464,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "tests/workflow-generator.test.ts",
+          "language": "TypeScript",
+          "codeLines": 204,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.408,
+          "cohesionModifier": 1
+        },
+        {
+          "path": "vitest.config.ts",
+          "language": "TypeScript",
+          "codeLines": 14,
+          "complexity": 0,
+          "tier": 0,
+          "score": 0.028,
+          "cohesionModifier": 1
+        }
+      ]
+    },
+    "arrival": {
+      "lane": "arrival",
+      "available": true,
+      "disclosures": [],
+      "bulkMuted": false,
+      "entries": [
+        {
+          "path": ".dependency-cruiser.cjs",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 2.175,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "bin/cli.js",
+          "touches": 11,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 2.7,
+          "snapshotChurnShare": 0,
+          "score": 1.0405
+        },
+        {
+          "path": "eslint.config.mjs",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 1.2,
+          "snapshotChurnShare": 0,
+          "score": 1.018
+        },
+        {
+          "path": "scripts/audit-calibration.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 4.675,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "scripts/audit-power-sim.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 5.8,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "scripts/vibecheck-analysis.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 25.275,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/ado/ado-api.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 10.05,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/ado/findings-to-workitems.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 6.175,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/backtest.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 9.55,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/briefing.ts",
+          "touches": 7,
+          "applicable": true,
+          "untestedShare": 0.14285714285714285,
+          "coChangeMode": "graph",
+          "bulkScore": 4.025,
+          "snapshotChurnShare": 0,
+          "score": 0.20323214285714286
+        },
+        {
+          "path": "src/audit/cli.ts",
+          "touches": 11,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 1.7,
+          "snapshotChurnShare": 0,
+          "score": 1.0255
+        },
+        {
+          "path": "src/audit/config.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.225,
+          "snapshotChurnShare": 0,
+          "score": 0.033375
+        },
+        {
+          "path": "src/audit/data-branch.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.2,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/entrypoints.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 4.6,
+          "snapshotChurnShare": 0,
+          "score": 0.06899999999999999
+        },
+        {
+          "path": "src/audit/evidence.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 3.775,
+          "snapshotChurnShare": 0,
+          "score": 0.056624999999999995
+        },
+        {
+          "path": "src/audit/exclusions.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 4.2,
+          "snapshotChurnShare": 0,
+          "score": 0.063
+        },
+        {
+          "path": "src/audit/findings.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 0.2,
+          "coChangeMode": "graph",
+          "bulkScore": 6.875,
+          "snapshotChurnShare": 0,
+          "score": 0.303125
+        },
+        {
+          "path": "src/audit/gate-cli.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 0.7,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/gate.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0.3333333333333333,
+          "coChangeMode": "graph",
+          "bulkScore": 4.45,
+          "snapshotChurnShare": 0,
+          "score": 0.40008333333333335
+        },
+        {
+          "path": "src/audit/git-arrival.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 5.575,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/import-graph.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.9,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/index.ts",
+          "touches": 14,
+          "applicable": true,
+          "untestedShare": 0.42857142857142855,
+          "coChangeMode": "graph",
+          "bulkScore": 2.45,
+          "snapshotChurnShare": 0,
+          "score": 0.46532142857142855
+        },
+        {
+          "path": "src/audit/lanes/arrival.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 6.075,
+          "snapshotChurnShare": 0,
+          "score": 0.091125
+        },
+        {
+          "path": "src/audit/lanes/consistency.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0.3333333333333333,
+          "coChangeMode": "graph",
+          "bulkScore": 8.75,
+          "snapshotChurnShare": 0,
+          "score": 0.46458333333333335
+        },
+        {
+          "path": "src/audit/lanes/deadcode.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 5.075,
+          "snapshotChurnShare": 0,
+          "score": 0.07612500000000001
+        },
+        {
+          "path": "src/audit/lanes/duplication.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.75,
+          "snapshotChurnShare": 0,
+          "score": 0.04125
+        },
+        {
+          "path": "src/audit/lanes/size.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.9,
+          "snapshotChurnShare": 0,
+          "score": 0.0435
+        },
+        {
+          "path": "src/audit/lanes/smells.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.2,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/ledger-cli.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 7.575,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/ledger.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 11.475,
+          "snapshotChurnShare": 0,
+          "score": 0.15
+        },
+        {
+          "path": "src/audit/publish/github-cli.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 3.225,
+          "snapshotChurnShare": 0,
+          "score": 1.048375
+        },
+        {
+          "path": "src/audit/publish/github.ts",
+          "touches": 10,
+          "applicable": true,
+          "untestedShare": 0.4,
+          "coChangeMode": "graph",
+          "bulkScore": 4.95,
+          "snapshotChurnShare": 0,
+          "score": 0.47425
+        },
+        {
+          "path": "src/audit/publish/local.ts",
+          "touches": 7,
+          "applicable": true,
+          "untestedShare": 0.7142857142857143,
+          "coChangeMode": "graph",
+          "bulkScore": 0.9,
+          "snapshotChurnShare": 0,
+          "score": 0.7277857142857143
+        },
+        {
+          "path": "src/audit/report.ts",
+          "touches": 9,
+          "applicable": true,
+          "untestedShare": 0.2222222222222222,
+          "coChangeMode": "graph",
+          "bulkScore": 7.7,
+          "snapshotChurnShare": 0,
+          "score": 0.3377222222222222
+        },
+        {
+          "path": "src/audit/roots.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 0.95,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/runners/jscpd.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.575,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/runners/knip.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 1.725,
+          "snapshotChurnShare": 0,
+          "score": 0.025875000000000002
+        },
+        {
+          "path": "src/audit/runners/py-docstrings.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 1.725,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/runners/scc.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.225,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/runners/type-coverage.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 0.6,
+          "coChangeMode": "graph",
+          "bulkScore": 1.925,
+          "snapshotChurnShare": 0,
+          "score": 0.628875
+        },
+        {
+          "path": "src/audit/runners/vulture.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0.3333333333333333,
+          "coChangeMode": "graph",
+          "bulkScore": 1.675,
+          "snapshotChurnShare": 0,
+          "score": 0.3584583333333333
+        },
+        {
+          "path": "src/audit/scoring.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 4.65,
+          "snapshotChurnShare": 0,
+          "score": 0.06975
+        },
+        {
+          "path": "src/audit/skill-cli.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 4.725,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/audit/trends.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 4.15,
+          "snapshotChurnShare": 0,
+          "score": 0.06225
+        },
+        {
+          "path": "src/audit/triage-cli.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 2.2,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/core/analyze.ts",
+          "touches": 7,
+          "applicable": true,
+          "untestedShare": 0.5714285714285714,
+          "coChangeMode": "graph",
+          "bulkScore": 8.9,
+          "snapshotChurnShare": 0,
+          "score": 0.7049285714285713
+        },
+        {
+          "path": "src/core/config-loader.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0.5,
+          "coChangeMode": "graph",
+          "bulkScore": 4.3,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/core/repo-detect.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.5,
+          "coChangeMode": "graph",
+          "bulkScore": 11.475,
+          "snapshotChurnShare": 0,
+          "score": 0.65
+        },
+        {
+          "path": "src/core/run-analyze.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 1.725,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/core/types.ts",
+          "touches": 16,
+          "applicable": true,
+          "untestedShare": 0.4375,
+          "coChangeMode": "graph",
+          "bulkScore": 11.75,
+          "snapshotChurnShare": 0,
+          "score": 0.5875
+        },
+        {
+          "path": "src/github/github.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 10.575,
+          "snapshotChurnShare": 0,
+          "score": 0.9
+        },
+        {
+          "path": "src/github/sarif-to-issues.ts",
+          "touches": 8,
+          "applicable": true,
+          "untestedShare": 0.875,
+          "coChangeMode": "graph",
+          "bulkScore": 15.475,
+          "snapshotChurnShare": 0,
+          "score": 1.025
+        },
+        {
+          "path": "src/github/workflow-generator.ts",
+          "touches": 6,
+          "applicable": true,
+          "untestedShare": 0.3333333333333333,
+          "coChangeMode": "graph",
+          "bulkScore": 3.35,
+          "snapshotChurnShare": 0,
+          "score": 0.38358333333333333
+        },
+        {
+          "path": "src/output/build-llm-json.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 0.8,
+          "coChangeMode": "graph",
+          "bulkScore": 4.6,
+          "snapshotChurnShare": 0,
+          "score": 0.869
+        },
+        {
+          "path": "src/output/build-sarif.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0.5,
+          "coChangeMode": "graph",
+          "bulkScore": 6.325,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/output/issue-formatter.ts",
+          "touches": 8,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 15.725,
+          "snapshotChurnShare": 0,
+          "score": 0.9
+        },
+        {
+          "path": "src/output/workitem-formatter.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 6.7,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/parsers/index.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 1.275,
+          "snapshotChurnShare": 0,
+          "score": 1.019125
+        },
+        {
+          "path": "src/parsers/java.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0.5,
+          "coChangeMode": "graph",
+          "bulkScore": 4.6,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/parsers/kotlin.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 2.625,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/parsers/python.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 4.4,
+          "snapshotChurnShare": 0,
+          "score": 0.8160000000000001
+        },
+        {
+          "path": "src/parsers/rust.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 9.45,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/parsers/security.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 2.325,
+          "snapshotChurnShare": 0,
+          "score": 0.784875
+        },
+        {
+          "path": "src/parsers/typescript.ts",
+          "touches": 6,
+          "applicable": true,
+          "untestedShare": 0.8333333333333334,
+          "coChangeMode": "graph",
+          "bulkScore": 10.4,
+          "snapshotChurnShare": 0,
+          "score": 0.9833333333333334
+        },
+        {
+          "path": "src/scoring/autofix.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 1.875,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/scoring/classification.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 2.5,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/scoring/hierarchy.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 0,
+          "coChangeMode": "graph",
+          "bulkScore": 3.4,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/scoring/index.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.25,
+          "coChangeMode": "graph",
+          "bulkScore": 1.275,
+          "snapshotChurnShare": 0,
+          "score": 0.269125
+        },
+        {
+          "path": "src/scoring/tool-mappers.ts",
+          "touches": 6,
+          "applicable": true,
+          "untestedShare": 0.3333333333333333,
+          "coChangeMode": "graph",
+          "bulkScore": 12.5,
+          "snapshotChurnShare": 0,
+          "score": 0.4833333333333333
+        },
+        {
+          "path": "src/tools/autofix-registry.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 4.2,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/tools/autofix-runner.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 6.55,
+          "snapshotChurnShare": 0,
+          "score": 1.09825
+        },
+        {
+          "path": "src/tools/run-autofix.ts",
+          "touches": 1,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 5.025,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/tools/runners/java.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 3.375,
+          "snapshotChurnShare": 0,
+          "score": 1.050625
+        },
+        {
+          "path": "src/tools/runners/kotlin.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 3.325,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/tools/runners/python.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 4.225,
+          "snapshotChurnShare": 0,
+          "score": 1.063375
+        },
+        {
+          "path": "src/tools/runners/rust.ts",
+          "touches": 10,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 4.25,
+          "snapshotChurnShare": 0,
+          "score": 1.06375
+        },
+        {
+          "path": "src/tools/runners/security.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 2.1,
+          "snapshotChurnShare": 0,
+          "score": 1.0315
+        },
+        {
+          "path": "src/tools/runners/typescript.ts",
+          "touches": 15,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 7.3,
+          "snapshotChurnShare": 0,
+          "score": 1.1095
+        },
+        {
+          "path": "src/tools/tool-registry.ts",
+          "touches": 10,
+          "applicable": true,
+          "untestedShare": 0.9,
+          "coChangeMode": "graph",
+          "bulkScore": 6.65,
+          "snapshotChurnShare": 0,
+          "score": 0.99975
+        },
+        {
+          "path": "src/tools/tool-runners.ts",
+          "touches": 11,
+          "applicable": true,
+          "untestedShare": 0.9090909090909091,
+          "coChangeMode": "graph",
+          "bulkScore": 19.25,
+          "snapshotChurnShare": 0,
+          "score": 1.059090909090909
+        },
+        {
+          "path": "src/tools/tool-utils.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0.6666666666666666,
+          "coChangeMode": "graph",
+          "bulkScore": 6.675,
+          "snapshotChurnShare": 0,
+          "score": 0.7667916666666666
+        },
+        {
+          "path": "src/utils/cli-utils.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 2.075,
+          "snapshotChurnShare": 0,
+          "score": 0.781125
+        },
+        {
+          "path": "src/utils/fingerprints.ts",
+          "touches": 13,
+          "applicable": true,
+          "untestedShare": 0.6923076923076923,
+          "coChangeMode": "graph",
+          "bulkScore": 15.225,
+          "snapshotChurnShare": 0,
+          "score": 0.8423076923076923
+        },
+        {
+          "path": "src/utils/fix-templates.ts",
+          "touches": 4,
+          "applicable": true,
+          "untestedShare": 0.75,
+          "coChangeMode": "graph",
+          "bulkScore": 15.125,
+          "snapshotChurnShare": 0,
+          "score": 0.9
+        },
+        {
+          "path": "src/utils/parser-utils.ts",
+          "touches": 3,
+          "applicable": true,
+          "untestedShare": 0.6666666666666666,
+          "coChangeMode": "graph",
+          "bulkScore": 5.975,
+          "snapshotChurnShare": 0,
+          "score": 0.7562916666666666
+        },
+        {
+          "path": "src/utils/rule-docs.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 0.5,
+          "coChangeMode": "graph",
+          "bulkScore": 3.75,
+          "snapshotChurnShare": 0,
+          "score": 0
+        },
+        {
+          "path": "src/utils/shared.ts",
+          "touches": 5,
+          "applicable": true,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 4.3,
+          "snapshotChurnShare": 0,
+          "score": 1.0645
+        },
+        {
+          "path": "vitest.config.ts",
+          "touches": 2,
+          "applicable": false,
+          "untestedShare": 1,
+          "coChangeMode": "graph",
+          "bulkScore": 0.375,
+          "snapshotChurnShare": 0,
+          "score": 0
+        }
+      ]
+    },
+    "deadcode": {
+      "available": true,
+      "disclosures": [
+        "13 declared entry points exempt from dead-surface claims"
+      ],
+      "filesSignalMuted": false,
+      "coverage": [
+        "ts-js"
+      ],
+      "assessedCount": 116,
+      "entries": [
+        {
+          "path": "src/ado/ado-api.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 12,
+          "deadDetail": [
+            {
+              "name": "addWorkItemComment",
+              "line": 225,
+              "internalUse": true
+            }
+          ],
+          "score": 0.08333333333333333
+        },
+        {
+          "path": "src/audit/config.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 5,
+          "deadDetail": [
+            {
+              "name": "DEFAULT_AUDIT_CONFIG",
+              "line": 39,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2
+        },
+        {
+          "path": "src/audit/gate.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 5,
+          "deadDetail": [
+            {
+              "name": "GATE_VOLUME_LINES",
+              "line": 41,
+              "internalUse": true
+            },
+            {
+              "name": "GATE_STALENESS_DAYS",
+              "line": 42,
+              "internalUse": true
+            },
+            {
+              "name": "GateReason",
+              "line": 44,
+              "internalUse": true
+            }
+          ],
+          "score": 0.6
+        },
+        {
+          "path": "src/audit/git-arrival.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 12,
+          "deadDetail": [
+            {
+              "name": "parseGitLog",
+              "line": 104,
+              "internalUse": true
+            },
+            {
+              "name": "detectWorkflowShape",
+              "line": 128,
+              "internalUse": true
+            },
+            {
+              "name": "serializeHistory",
+              "line": 221,
+              "internalUse": false
+            }
+          ],
+          "score": 0.25
+        },
+        {
+          "path": "src/audit/import-graph.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 2,
+          "definitionCount": 7,
+          "deadDetail": [
+            {
+              "name": "extractImportSpecifiers",
+              "line": 36,
+              "internalUse": true
+            },
+            {
+              "name": "resolveSpecifier",
+              "line": 51,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2857142857142857
+        },
+        {
+          "path": "src/audit/lanes/arrival.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 6,
+          "definitionCount": 9,
+          "deadDetail": [
+            {
+              "name": "ARRIVAL_MIN_TOUCHES",
+              "line": 28,
+              "internalUse": true
+            },
+            {
+              "name": "ARRIVAL_WINDOW_DAYS",
+              "line": 30,
+              "internalUse": true
+            },
+            {
+              "name": "isSnapshotFile",
+              "line": 45,
+              "internalUse": true
+            },
+            {
+              "name": "arrivalLanguageFamily",
+              "line": 67,
+              "internalUse": true
+            },
+            {
+              "name": "buildArrivalLane",
+              "line": 118,
+              "internalUse": true
+            },
+            {
+              "name": "buildTestReachability",
+              "line": 243,
+              "internalUse": true
+            }
+          ],
+          "score": 0.6666666666666666
+        },
+        {
+          "path": "src/audit/lanes/consistency.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 7,
+          "deadDetail": [
+            {
+              "name": "CONSISTENCY_CATEGORIES",
+              "line": 32,
+              "internalUse": true
+            },
+            {
+              "name": "copyArtifactBase",
+              "line": 50,
+              "internalUse": true
+            },
+            {
+              "name": "findCycleMembers",
+              "line": 67,
+              "internalUse": true
+            }
+          ],
+          "score": 0.42857142857142855
+        },
+        {
+          "path": "src/audit/lanes/deadcode.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 6,
+          "definitionCount": 9,
+          "deadDetail": [
+            {
+              "name": "SINGLE_SOURCE_DEMOTION",
+              "line": 23,
+              "internalUse": true
+            },
+            {
+              "name": "KNIP_FILES_MUTE_SHARE",
+              "line": 25,
+              "internalUse": true
+            },
+            {
+              "name": "KNIP_FILES_MUTE_MIN_CANDIDATES",
+              "line": 28,
+              "internalUse": true
+            },
+            {
+              "name": "classifyInternalUse",
+              "line": 69,
+              "internalUse": true
+            },
+            {
+              "name": "countDefinitions",
+              "line": 90,
+              "internalUse": true
+            },
+            {
+              "name": "buildDeadcodeLane",
+              "line": 116,
+              "internalUse": true
+            }
+          ],
+          "score": 0.6666666666666666
+        },
+        {
+          "path": "src/audit/lanes/duplication.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 4,
+          "definitionCount": 8,
+          "deadDetail": [
+            {
+              "name": "DIR_PAIR_MIN_LINES",
+              "line": 42,
+              "internalUse": true
+            },
+            {
+              "name": "computeDirPairs",
+              "line": 85,
+              "internalUse": true
+            },
+            {
+              "name": "buildDuplicationLane",
+              "line": 138,
+              "internalUse": true
+            },
+            {
+              "name": "CloneRef",
+              "line": 13,
+              "internalUse": true
+            }
+          ],
+          "score": 0.5
+        },
+        {
+          "path": "src/audit/lanes/size.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 5,
+          "definitionCount": 8,
+          "deadDetail": [
+            {
+              "name": "SIZE_LANGUAGE_MULTIPLIERS",
+              "line": 18,
+              "internalUse": true
+            },
+            {
+              "name": "sizeMultiplier",
+              "line": 27,
+              "internalUse": true
+            },
+            {
+              "name": "isDataLanguage",
+              "line": 54,
+              "internalUse": true
+            },
+            {
+              "name": "buildSizeLane",
+              "line": 106,
+              "internalUse": true
+            },
+            {
+              "name": "SizeTier",
+              "line": 58,
+              "internalUse": true
+            }
+          ],
+          "score": 0.625
+        },
+        {
+          "path": "src/audit/lanes/smells.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 2,
+          "definitionCount": 5,
+          "deadDetail": [
+            {
+              "name": "ANY_DENSITY_SCALE",
+              "line": 16,
+              "internalUse": true
+            },
+            {
+              "name": "buildSmellsLane",
+              "line": 37,
+              "internalUse": true
+            }
+          ],
+          "score": 0.4
+        },
+        {
+          "path": "src/audit/ledger.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 6,
+          "definitionCount": 30,
+          "deadDetail": [
+            {
+              "name": "RATCHET_QUORUM",
+              "line": 33,
+              "internalUse": true
+            },
+            {
+              "name": "RATCHET_CAP",
+              "line": 35,
+              "internalUse": true
+            },
+            {
+              "name": "FLOOR_STEP_FRACTION",
+              "line": 37,
+              "internalUse": true
+            },
+            {
+              "name": "FiringEvent",
+              "line": 114,
+              "internalUse": true
+            },
+            {
+              "name": "FixedEvent",
+              "line": 123,
+              "internalUse": true
+            },
+            {
+              "name": "FloorResetEvent",
+              "line": 132,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2
+        },
+        {
+          "path": "src/audit/publish/github.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 5,
+          "definitionCount": 16,
+          "deadDetail": [
+            {
+              "name": "AUDIT_ISSUE_MARKER",
+              "line": 25,
+              "internalUse": true
+            },
+            {
+              "name": "LEGACY_ISSUE_MARKER",
+              "line": 27,
+              "internalUse": true
+            },
+            {
+              "name": "AUDIT_ISSUE_LABEL",
+              "line": 28,
+              "internalUse": true
+            },
+            {
+              "name": "LEGACY_ISSUE_LABEL",
+              "line": 29,
+              "internalUse": true
+            },
+            {
+              "name": "AUDIT_PR_MARKER",
+              "line": 33,
+              "internalUse": true
+            }
+          ],
+          "score": 0.3125
+        },
+        {
+          "path": "src/audit/runners/scc.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 4,
+          "deadDetail": [
+            {
+              "name": "SCC_PINNED_VERSION",
+              "line": 12,
+              "internalUse": false
+            }
+          ],
+          "score": 0.25
+        },
+        {
+          "path": "src/audit/scoring.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 4,
+          "definitionCount": 14,
+          "deadDetail": [
+            {
+              "name": "LANE_WEIGHTS",
+              "line": 45,
+              "internalUse": true
+            },
+            {
+              "name": "ENTRY_THRESHOLD",
+              "line": 58,
+              "internalUse": true
+            },
+            {
+              "name": "SATURATION_FIRING_RATE",
+              "line": 100,
+              "internalUse": true
+            },
+            {
+              "name": "SATURATION_MIN_APPLICABLE",
+              "line": 101,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2857142857142857
+        },
+        {
+          "path": "src/audit/skill-cli.ts",
+          "applicable": true,
+          "unusedFile": true,
+          "deadItems": 0,
+          "definitionCount": 1,
+          "deadDetail": [],
+          "score": 1
+        },
+        {
+          "path": "src/audit/trends.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 2,
+          "definitionCount": 9,
+          "deadDetail": [
+            {
+              "name": "TREND_BASELINE_MIN_DAYS",
+              "line": 17,
+              "internalUse": true
+            },
+            {
+              "name": "selectBaseline",
+              "line": 106,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2222222222222222
+        },
+        {
+          "path": "src/core/types.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 4,
+          "definitionCount": 50,
+          "deadDetail": [
+            {
+              "name": "AutofixToolConfig",
+              "line": 175,
+              "internalUse": true
+            },
+            {
+              "name": "AuditLaneConfig",
+              "line": 194,
+              "internalUse": true
+            },
+            {
+              "name": "AuditDuplicationLaneConfig",
+              "line": 198,
+              "internalUse": true
+            },
+            {
+              "name": "KnownToolName",
+              "line": 326,
+              "internalUse": true
+            }
+          ],
+          "score": 0.08
+        },
+        {
+          "path": "src/github/github.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 10,
+          "deadDetail": [
+            {
+              "name": "addIssueComment",
+              "line": 194,
+              "internalUse": true
+            }
+          ],
+          "score": 0.1
+        },
+        {
+          "path": "src/github/workflow-generator.ts",
+          "applicable": true,
+          "unusedFile": true,
+          "deadItems": 0,
+          "definitionCount": 5,
+          "deadDetail": [],
+          "score": 1
+        },
+        {
+          "path": "src/output/issue-formatter.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 7,
+          "deadDetail": [
+            {
+              "name": "getSeverityEmoji",
+              "line": 23,
+              "internalUse": true
+            },
+            {
+              "name": "getToolLanguage",
+              "line": 23,
+              "internalUse": true
+            },
+            {
+              "name": "formatGitHubLink",
+              "line": 32,
+              "internalUse": true
+            }
+          ],
+          "score": 0.42857142857142855
+        },
+        {
+          "path": "src/output/workitem-formatter.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 4,
+          "deadDetail": [
+            {
+              "name": "truncateAtWordBoundary",
+              "line": 23,
+              "internalUse": true
+            }
+          ],
+          "score": 0.25
+        },
+        {
+          "path": "src/parsers/index.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 2,
+          "definitionCount": 6,
+          "deadDetail": [
+            {
+              "name": "TrunkOutput",
+              "line": 21,
+              "internalUse": false
+            },
+            {
+              "name": "OpengrepOutput",
+              "line": 49,
+              "internalUse": false
+            }
+          ],
+          "score": 0.3333333333333333
+        },
+        {
+          "path": "src/scoring/autofix.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 1,
+          "deadDetail": [
+            {
+              "name": "determineAutofixLevel",
+              "line": 41,
+              "internalUse": false
+            }
+          ],
+          "score": 1
+        },
+        {
+          "path": "src/scoring/hierarchy.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 6,
+          "definitionCount": 8,
+          "deadDetail": [
+            {
+              "name": "SEVERITY_ORDER",
+              "line": 18,
+              "internalUse": true
+            },
+            {
+              "name": "compareSeverity",
+              "line": 32,
+              "internalUse": false
+            },
+            {
+              "name": "meetsSeverityThreshold",
+              "line": 40,
+              "internalUse": true
+            },
+            {
+              "name": "CONFIDENCE_ORDER",
+              "line": 54,
+              "internalUse": true
+            },
+            {
+              "name": "compareConfidence",
+              "line": 63,
+              "internalUse": false
+            },
+            {
+              "name": "meetsConfidenceThreshold",
+              "line": 70,
+              "internalUse": true
+            }
+          ],
+          "score": 0.75
+        },
+        {
+          "path": "src/scoring/index.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 9,
+          "definitionCount": 4,
+          "deadDetail": [
+            {
+              "name": "CONFIDENCE_ORDER",
+              "line": 11,
+              "internalUse": false
+            },
+            {
+              "name": "compareConfidence",
+              "line": 12,
+              "internalUse": false
+            },
+            {
+              "name": "compareSeverity",
+              "line": 14,
+              "internalUse": false
+            },
+            {
+              "name": "meetsConfidenceThreshold",
+              "line": 15,
+              "internalUse": false
+            },
+            {
+              "name": "meetsSeverityThreshold",
+              "line": 16,
+              "internalUse": false
+            },
+            {
+              "name": "SEVERITY_ORDER",
+              "line": 18,
+              "internalUse": false
+            },
+            {
+              "name": "mapEslintConfidence",
+              "line": 27,
+              "internalUse": false
+            },
+            {
+              "name": "mapEslintSeverity",
+              "line": 28,
+              "internalUse": false
+            },
+            {
+              "name": "determineAutofixLevel",
+              "line": 60,
+              "internalUse": false
+            }
+          ],
+          "score": 1
+        },
+        {
+          "path": "src/scoring/tool-mappers.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 2,
+          "definitionCount": 30,
+          "deadDetail": [
+            {
+              "name": "mapEslintSeverity",
+              "line": 16,
+              "internalUse": false
+            },
+            {
+              "name": "mapEslintConfidence",
+              "line": 80,
+              "internalUse": false
+            }
+          ],
+          "score": 0.06666666666666667
+        },
+        {
+          "path": "src/tools/autofix-registry.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 6,
+          "deadDetail": [
+            {
+              "name": "BUILTIN_AUTOFIX",
+              "line": 37,
+              "internalUse": true
+            },
+            {
+              "name": "getAutofixTools",
+              "line": 131,
+              "internalUse": false
+            },
+            {
+              "name": "hasAutofixSupport",
+              "line": 163,
+              "internalUse": false
+            }
+          ],
+          "score": 0.5
+        },
+        {
+          "path": "src/tools/autofix-runner.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 4,
+          "deadDetail": [
+            {
+              "name": "groupAutofixFindings",
+              "line": 61,
+              "internalUse": true
+            }
+          ],
+          "score": 0.25
+        },
+        {
+          "path": "src/tools/runners/rust.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 1,
+          "definitionCount": 4,
+          "deadDetail": [
+            {
+              "name": "EXCLUDE_DIRS_RUST",
+              "line": 22,
+              "internalUse": false
+            }
+          ],
+          "score": 0.25
+        },
+        {
+          "path": "src/tools/tool-utils.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 3,
+          "definitionCount": 15,
+          "deadDetail": [
+            {
+              "name": "COMMON_EXCLUDE_DIRS",
+              "line": 156,
+              "internalUse": true
+            },
+            {
+              "name": "EXCLUDE_DIRS_RUST",
+              "line": 179,
+              "internalUse": false
+            },
+            {
+              "name": "stripAnsiCodes",
+              "line": 257,
+              "internalUse": true
+            }
+          ],
+          "score": 0.2
+        },
+        {
+          "path": "src/utils/fingerprints.ts",
+          "applicable": true,
+          "unusedFile": false,
+          "deadItems": 12,
+          "definitionCount": 22,
+          "deadDetail": [
+            {
+              "name": "LINE_BUCKET_SIZE",
+              "line": 23,
+              "internalUse": true
+            },
+            {
+              "name": "FLAP_PROTECTION_RUNS",
+              "line": 29,
+              "internalUse": false
+            },
+            {
+              "name": "bucketLine",
+              "line": 35,
+              "internalUse": true
+            },
+            {
+              "name": "normalizePathForFingerprint",
+              "line": 48,
+              "internalUse": true
+            },
+            {
+              "name": "normalizePathForComparison",
+              "line": 54,
+              "internalUse": false
+            },
+            {
+              "name": "normalizeMessage",
+              "line": 63,
+              "internalUse": true
+            },
+            {
+              "name": "normalizeRuleId",
+              "line": 72,
+              "internalUse": true
+            },
+            {
+              "name": "buildFingerprintKey",
+              "line": 82,
+              "internalUse": true
+            },
+            {
+              "name": "computeFingerprint",
+              "line": 102,
+              "internalUse": true
+            },
+            {
+              "name": "fingerprintsMatch",
+              "line": 198,
+              "internalUse": false
+            },
+            {
+              "name": "groupByFingerprint",
+              "line": 206,
+              "internalUse": false
+            },
+            {
+              "name": "MergeStrategy",
+              "line": 16,
+              "internalUse": true
+            }
+          ],
+          "score": 0.5454545454545454
+        }
+      ]
+    },
+    "duplication": {
+      "available": true,
+      "dirPairs": [],
+      "entries": []
+    },
+    "smells": {
+      "available": true,
+      "disclosures": [
+        "smells lane currently carries type-coverage only; the ast-grep rulepack is M2 backlog"
+      ],
+      "typedPercent": 99.64,
+      "assessedCount": 113,
+      "entries": [
+        {
+          "path": "src/audit/backtest.ts",
+          "applicable": true,
+          "anyCount": 5,
+          "codeLines": 321,
+          "score": 0.1557632398753894
+        },
+        {
+          "path": "src/audit/cli.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 114,
+          "score": 0.2631578947368421
+        },
+        {
+          "path": "src/audit/entrypoints.ts",
+          "applicable": true,
+          "anyCount": 2,
+          "codeLines": 303,
+          "score": 0.066006600660066
+        },
+        {
+          "path": "src/audit/lanes/consistency.ts",
+          "applicable": true,
+          "anyCount": 7,
+          "codeLines": 272,
+          "score": 0.25735294117647056
+        },
+        {
+          "path": "src/audit/ledger-cli.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 277,
+          "score": 0.10830324909747292
+        },
+        {
+          "path": "src/audit/publish/github-cli.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 165,
+          "score": 0.18181818181818182
+        },
+        {
+          "path": "src/audit/triage-cli.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 73,
+          "score": 0.410958904109589
+        },
+        {
+          "path": "src/core/analyze.ts",
+          "applicable": true,
+          "anyCount": 11,
+          "codeLines": 296,
+          "score": 0.37162162162162166
+        },
+        {
+          "path": "src/core/repo-detect.ts",
+          "applicable": true,
+          "anyCount": 26,
+          "codeLines": 481,
+          "score": 0.5405405405405406
+        },
+        {
+          "path": "src/core/run-analyze.ts",
+          "applicable": true,
+          "anyCount": 2,
+          "codeLines": 57,
+          "score": 0.3508771929824561
+        },
+        {
+          "path": "src/github/sarif-to-issues.ts",
+          "applicable": true,
+          "anyCount": 2,
+          "codeLines": 444,
+          "score": 0.04504504504504504
+        },
+        {
+          "path": "src/parsers/security.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 92,
+          "score": 0.32608695652173914
+        },
+        {
+          "path": "src/tools/run-autofix.ts",
+          "applicable": true,
+          "anyCount": 2,
+          "codeLines": 135,
+          "score": 0.14814814814814814
+        },
+        {
+          "path": "src/tools/runners/python.ts",
+          "applicable": true,
+          "anyCount": 1,
+          "codeLines": 189,
+          "score": 0.05291005291005291
+        },
+        {
+          "path": "src/tools/runners/rust.ts",
+          "applicable": true,
+          "anyCount": 7,
+          "codeLines": 172,
+          "score": 0.40697674418604657
+        },
+        {
+          "path": "src/tools/runners/security.ts",
+          "applicable": true,
+          "anyCount": 3,
+          "codeLines": 95,
+          "score": 0.3157894736842105
+        },
+        {
+          "path": "src/tools/runners/typescript.ts",
+          "applicable": true,
+          "anyCount": 23,
+          "codeLines": 358,
+          "score": 0.6424581005586593
+        },
+        {
+          "path": "src/tools/tool-runners.ts",
+          "applicable": true,
+          "anyCount": 11,
+          "codeLines": 159,
+          "score": 0.6918238993710691
+        },
+        {
+          "path": "tests/audit-report.test.ts",
+          "applicable": true,
+          "anyCount": 5,
+          "codeLines": 127,
+          "score": 0.39370078740157477
+        }
+      ]
+    },
+    "consistency": {
+      "available": true,
+      "disclosures": [
+        "orphan + cycle + category signals are TS/JS-only (import-graph jurisdiction); copy artifacts are language-agnostic"
+      ],
+      "categoryFindings": [],
+      "assessedCount": 88,
+      "entries": [
+        {
+          "path": "src/audit/briefing.ts",
+          "applicable": true,
+          "cycleSize": 2,
+          "score": 0.5
+        },
+        {
+          "path": "src/audit/findings.ts",
+          "applicable": true,
+          "cycleSize": 2,
+          "score": 0.5
+        },
+        {
+          "path": "src/core/run-analyze.ts",
+          "applicable": true,
+          "orphan": true,
+          "score": 0.8
+        }
+      ]
+    }
+  },
+  "fileScores": [
+    {
+      "path": ".dependency-cruiser.cjs",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": ".githooks/pre-commit",
+      "applicableLanes": [
+        "duplication",
+        "size"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "bin/cli.js",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.0405,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.0405,
+      "gatePassed": false
+    },
+    {
+      "path": "eslint.config.mjs",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.018,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.018,
+      "gatePassed": false
+    },
+    {
+      "path": "scripts/audit-calibration.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "scripts/audit-power-sim.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "scripts/vibecheck-analysis.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "size",
+          "score": 1.81,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.81,
+      "gatePassed": false
+    },
+    {
+      "path": "src/ado/ado-api.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/ado/findings-to-workitems.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/backtest.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/briefing.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/cli.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.0255,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.0255,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/config.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/data-branch.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/entrypoints.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/evidence.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/exclusions.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/findings.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/gate-cli.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/gate.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.6,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.2,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/git-arrival.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/import-graph.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/index.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/arrival.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.6666666666666666,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.3333333333333333,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/consistency.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/deadcode.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.6666666666666666,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.3333333333333333,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/duplication.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.5,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/size.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.625,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.25,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/lanes/smells.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/ledger-cli.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/ledger.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/publish/github-cli.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.048375,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.048375,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/publish/github.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/publish/local.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/report.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/roots.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/jscpd.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/knip.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/py-docstrings.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/scc.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/type-coverage.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/runners/vulture.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/scoring.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/skill-cli.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 1,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 2,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/trends.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/audit/triage-cli.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/core/analyze.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/core/config-loader.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/core/repo-detect.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "smells",
+          "score": 0.5405405405405406,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 0.5405405405405406,
+      "gatePassed": false
+    },
+    {
+      "path": "src/core/run-analyze.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "consistency",
+          "score": 0.8,
+          "threshold": 0.7
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.142857142857143,
+      "gatePassed": false
+    },
+    {
+      "path": "src/core/types.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/github/github.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/github/sarif-to-issues.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.025,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.025,
+      "gatePassed": false
+    },
+    {
+      "path": "src/github/workflow-generator.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 1,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 2,
+      "gatePassed": false
+    },
+    {
+      "path": "src/output/build-llm-json.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/output/build-sarif.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/output/issue-formatter.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/output/workitem-formatter.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/index.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.019125,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.019125,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/java.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/kotlin.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/python.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/rust.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/security.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/parsers/typescript.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/scoring/autofix.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 1,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 2,
+      "gatePassed": false
+    },
+    {
+      "path": "src/scoring/classification.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/scoring/hierarchy.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.75,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.5,
+      "gatePassed": false
+    },
+    {
+      "path": "src/scoring/index.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 1,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 2,
+      "gatePassed": false
+    },
+    {
+      "path": "src/scoring/tool-mappers.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/autofix-registry.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.5,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/autofix-runner.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.09825,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.09825,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/run-autofix.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/java.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.050625,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.050625,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/kotlin.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/python.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.063375,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.063375,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/rust.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.06375,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.06375,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/security.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.0315,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.0315,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/runners/typescript.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.1095,
+          "threshold": 1
+        },
+        {
+          "lane": "smells",
+          "score": 0.6424581005586593,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.7519581005586593,
+      "gatePassed": true
+    },
+    {
+      "path": "src/tools/tool-registry.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/tools/tool-runners.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.059090909090909,
+          "threshold": 1
+        },
+        {
+          "lane": "smells",
+          "score": 0.6918238993710691,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.7509148084619781,
+      "gatePassed": true
+    },
+    {
+      "path": "src/tools/tool-utils.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/cli-utils.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/fingerprints.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "deadcode",
+          "score": 0.5454545454545454,
+          "threshold": 0.5
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.0909090909090908,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/fix-templates.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "size",
+          "score": 1.07,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.07,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/parser-utils.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/rule-docs.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "src/utils/shared.ts",
+      "applicableLanes": [
+        "arrival",
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [
+        {
+          "lane": "arrival",
+          "score": 1.0645,
+          "threshold": 1
+        }
+      ],
+      "suppressedByFloor": [],
+      "weightedScore": 1.0645,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-arrival-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-backtest.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-config.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-consistency-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-deadcode-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-duplication-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-evidence.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-exclusions.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-gate.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-git-arrival.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-ledger-cli.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-ledger.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-orchestrator.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-power-sim.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-publish-github.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-r6.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-report.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-roots.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-round2.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-scoring.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-size-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-smells-lane.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/audit-trends.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/fingerprints.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/helpers/audit-fixture.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/local-preview.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/scoring.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "tests/workflow-generator.test.ts",
+      "applicableLanes": [
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    },
+    {
+      "path": "vitest.config.ts",
+      "applicableLanes": [
+        "consistency",
+        "deadcode",
+        "duplication",
+        "size",
+        "smells"
+      ],
+      "firingLanes": [],
+      "suppressedByFloor": [],
+      "weightedScore": 0,
+      "gatePassed": false
+    }
+  ],
+  "worstOffenders": [],
+  "bestFirstTargets": [],
+  "ledger": {
+    "floors": {},
+    "suppressed": [],
+    "agingJustifications": [],
+    "verdicts": [],
+    "reopened": [],
+    "stampedEvents": 1,
+    "improving": {}
+  },
+  "trends": {
+    "entry": {
+      "at": "2026-08-13T11:00:30-07:00",
+      "sha": "e38f9085d0c2058e7bb534a6d580b238b2b5753a",
+      "dirty": false,
+      "toolVersions": {
+        "scc": "3.7.0"
+      },
+      "floors": {},
+      "saturated": [],
+      "aggregates": {
+        "candidateFiles": 145,
+        "perLane": {
+          "size": {
+            "filesAssessed": 117,
+            "filesFlagged": 2
+          },
+          "arrival": {
+            "filesAssessed": 54,
+            "filesFlagged": 14
+          },
+          "deadcode": {
+            "filesAssessed": 116,
+            "filesFlagged": 12
+          },
+          "duplication": {
+            "filesAssessed": 117,
+            "filesFlagged": 0
+          },
+          "smells": {
+            "filesAssessed": 113,
+            "filesFlagged": 3
+          },
+          "consistency": {
+            "filesAssessed": 88,
+            "filesFlagged": 1
+          }
+        },
+        "gatePassing": 2,
+        "offenders": 0,
+        "suppressedByFloor": 0
+      }
+    },
+    "derivative": null
+  }
+}

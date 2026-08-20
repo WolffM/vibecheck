@@ -51,3 +51,6 @@
 {"id":"01KZANYFV8769ZT5FYVD8768D4","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/bandit-issues.py","score":0,"threshold":0.5}
 {"id":"01KZANYFV8769ZT5FYVD8768D5","at":"2026-08-05T21:40:17-07:00","verdict":"fixed","fingerprint":"deadcode:test-fixtures/ruff-issues.py","score":0,"threshold":0.5}
 {"id":"01KZES5QTGZW5WHXG610DJ9P9W","at":"2026-08-07T11:53:38-07:00","kind":"firing","fingerprint":"deadcode:src/audit/gate.ts","score":0.6,"threshold":0.5}
+{"id":"01KZHMFFXGDR9T6XPC8VFMXWNV","at":"2026-08-08T14:29:18-07:00","kind":"firing","fingerprint":"arrival:src/audit/publish/github-cli.ts","score":1.045,"threshold":1}
+{"id":"01KZHNWW28APER2DGWXMGY5B11","at":"2026-08-08T14:54:05-07:00","kind":"firing","fingerprint":"deadcode:src/audit/skill-cli.ts","score":1,"threshold":0.5}
+{"id":"01KZY4GRHGAEM70NQBKFH2Z3TF","at":"2026-08-13T11:00:30-07:00","kind":"firing","fingerprint":"deadcode:src/audit/lanes/duplication.ts","score":0.5,"threshold":0.5}
