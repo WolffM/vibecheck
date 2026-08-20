@@ -262,6 +262,14 @@ runs:
 
     - name: Setup Python
       if: inputs.mode != 'audit'
+      # Soft-fail, for the same reason the linter installs below are soft: a
+      # host with no 3.11 build available degrades the Python lanes, it does
+      # not invalidate the JS/TS scan. Debian 13 claws have no x64 3.11 in the
+      # tool cache and the download 404s, so this step is the difference
+      # between "Python lanes skipped with disclosure" and a red run that
+      # reports nothing at all. Every downstream Python step already guards on
+      # `command -v python3`, and the system interpreter remains on PATH.
+      continue-on-error: true
       uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: "3.11"
