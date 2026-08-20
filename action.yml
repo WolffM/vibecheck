@@ -314,7 +314,44 @@ runs:
         # Install Python-specific tools only if Python files detected
         if [ "${{ steps.detect-python.outputs.has_python }}" == "true" ]; then
           echo "Installing Python analysis tools (ruff, mypy, bandit)..."
-          pip install ruff mypy bandit
+          # Soft-fail, like the vulture install: a missing linter degrades its
+          # lane with disclosure (the runners already skip on isToolAvailable),
+          # whereas a hard failure takes the whole scan down with it.
+          # python3 -m pip, never bare pip: a PATH'd pip from another
+          # interpreter installs somewhere python3 can't import from — the
+          # install "succeeds" and the lane still degrades.
+          # setup-python's interpreter is itself externally managed here (the
+          # claws resolve it to a uv-provided build), so PEP 668 rejects even a
+          # --user install and every path needs a fallback. Preference:
+          # uv → pipx → python3 -m pip (user, then PEP 668) → ensurepip.
+          mkdir -p "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          for tool in ruff mypy bandit; do
+            if command -v "$tool" >/dev/null 2>&1; then
+              echo "$tool already available"
+            elif command -v uv >/dev/null 2>&1 && uv tool install --quiet "$tool" >/dev/null 2>&1; then
+              echo "$tool installed via uv"
+            elif command -v pipx >/dev/null 2>&1 && pipx install --force "$tool" >/dev/null 2>&1; then
+              echo "$tool installed via pipx"
+            elif python3 -m pip --version >/dev/null 2>&1; then
+              python3 -m pip install --quiet --user "$tool" \
+                || python3 -m pip install --quiet --user --break-system-packages "$tool" \
+                || echo "::warning::$tool pip install failed; its findings will be skipped with disclosure"
+            elif python3 -m ensurepip --user >/dev/null 2>&1; then
+              python3 -m pip install --quiet --user --break-system-packages "$tool" \
+                || echo "::warning::$tool install failed after ensurepip bootstrap"
+            else
+              echo "::warning::runner has no pip module, uv, or pipx for $(command -v python3) — $tool will be skipped with disclosure (provision uv, pipx, or python3-pip on this runner)"
+            fi
+          done
+          # uv tool install puts shims under ~/.local/bin, which GITHUB_PATH
+          # only exports to *later* steps — check there too so the log tells
+          # the truth about what this run will actually have.
+          for tool in ruff mypy bandit; do
+            { command -v "$tool" >/dev/null 2>&1 || [ -x "$HOME/.local/bin/$tool" ]; } \
+              && echo "$tool OK" \
+              || echo "::warning::$tool still unavailable after install attempts"
+          done
         else
           echo "Skipping Python-specific tools (no Python files detected)"
         fi
