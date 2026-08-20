@@ -94,6 +94,12 @@ runs:
       run: |
         cd ${{ github.action_path }}
         pnpm install --frozen-lockfile
+        # Put OUR bin dir on PATH. Every later step runs with cwd set to the
+        # caller's workspace, so a bare `tsx` resolves against THEIR
+        # node_modules, not ours — and tsx is our devDependency, not theirs.
+        # It only ever appeared to work on repos that happened to carry a
+        # hoisted tsx of their own.
+        echo "${{ github.action_path }}/node_modules/.bin" >> $GITHUB_PATH
 
     # ------------------------------------------------------------------
     # mode: audit — activity gate, pinned scc, audit run, publish.
@@ -575,7 +581,7 @@ runs:
         OUTPUT_DIR="${{ github.workspace }}/.vibecheck-output"
 
         # Run the analysis
-        npx tsx ${{ github.action_path }}/src/core/analyze.ts \
+        tsx ${{ github.action_path }}/src/core/analyze.ts \
           --root "${{ github.workspace }}" \
           --cadence "${{ inputs.cadence }}" \
           --config "${{ inputs.config_path }}" \
@@ -795,7 +801,7 @@ runs:
         # Run the TypeScript autofix runner
         # This runs fix commands for all tools with safe autofix findings
         echo "Running autofix commands..."
-        npx tsx ${{ github.action_path }}/src/tools/run-autofix.ts \
+        tsx ${{ github.action_path }}/src/tools/run-autofix.ts \
           --results "$OUTPUT_DIR/results.llm.json" \
           --root "${{ github.workspace }}" \
           --output "$OUTPUT_DIR/autofix-results.json"
