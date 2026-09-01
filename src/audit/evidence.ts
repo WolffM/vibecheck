@@ -100,11 +100,100 @@ export interface SymbolSpan {
   start: number;
   end: number;
   lines: number;
+  /** True when the extent could not be measured and the span falls back
+   * to the next declaration — the package must say so rather than
+   * assert a number it did not verify. */
+  approximate?: boolean;
 }
 
 const TSJS_SYMBOL =
   /^(?:export\s+)?(?:default\s+)?(async\s+function|function|class|const|let|interface|type|enum)\s+([\w$]+)/;
 const PY_SYMBOL = /^(async\s+def|def|class)\s+([\w]+)/;
+
+/**
+ * Real extent of the symbol starting at `startIdx`, as an inclusive end
+ * index — brace depth for TS/JS, indentation for Python.
+ *
+ * The previous implementation ended a symbol where the *next* one began,
+ * which attributed every intervening route registration, `useEffect`,
+ * const and JSX return to whichever declaration preceded it. Field
+ * reports #380/#386: a 13-line function claimed 777 lines and a 4-line
+ * handler claimed 406, so "suggested first cut" named the smallest
+ * symbol in the file. Returns null when the extent cannot be determined
+ * (unbalanced by an unhandled construct), so callers can fall back and
+ * say the number is approximate rather than assert a wrong one.
+ */
+export function measureExtent(
+  lines: string[],
+  startIdx: number,
+  isPython: boolean,
+): number | null {
+  if (isPython) {
+    const line = lines[startIdx];
+    const baseIndent = line.length - line.trimStart().length;
+    let end = startIdx;
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      const text = lines[i];
+      if (!text.trim()) continue;
+      const indent = text.length - text.trimStart().length;
+      if (indent <= baseIndent) return end;
+      end = i;
+    }
+    return end;
+  }
+
+  let depth = 0;
+  let sawBrace = false;
+  let inBlockComment = false;
+  let quote: string | null = null;
+  for (let i = startIdx; i < lines.length; i++) {
+    const text = lines[i];
+    for (let c = 0; c < text.length; c++) {
+      const ch = text[c];
+      const next = text[c + 1];
+      if (inBlockComment) {
+        if (ch === "*" && next === "/") {
+          inBlockComment = false;
+          c++;
+        }
+        continue;
+      }
+      if (quote) {
+        if (ch === "\\") c++;
+        else if (ch === quote) quote = null;
+        continue;
+      }
+      if (ch === "/" && next === "/") break; // line comment
+      if (ch === "/" && next === "*") {
+        inBlockComment = true;
+        c++;
+        continue;
+      }
+      if (ch === '"' || ch === "'" || ch === "`") {
+        quote = ch;
+        continue;
+      }
+      if (ch === "{" || ch === "(" || ch === "[") {
+        depth++;
+        if (ch === "{") sawBrace = true;
+        continue;
+      }
+      if (ch === "}" || ch === ")" || ch === "]") {
+        depth--;
+        if (depth < 0) return null; // unbalanced — do not guess
+        if (depth === 0 && sawBrace) return i;
+        continue;
+      }
+      // A braceless declaration (`type X = string;`, `const n = 1;`)
+      // ends at its statement terminator.
+      if (ch === ";" && depth === 0 && !sawBrace) return i;
+    }
+    // A braceless declaration with no semicolon ends at its own line,
+    // provided nothing is left open.
+    if (depth === 0 && !sawBrace && i > startIdx) return i - 1;
+  }
+  return null;
+}
 
 /**
  * Top-level symbols with approximate spans. A symbol ends where the next
@@ -134,11 +223,19 @@ export function extractSymbolMap(
   }
   const symbols: SymbolSpan[] = [];
   for (let i = 0; i < starts.length; i++) {
-    const end = i + 1 < starts.length ? starts[i + 1].start - 1 : lines.length;
+    const boundary =
+      i + 1 < starts.length ? starts[i + 1].start - 1 : lines.length;
+    const measured = measureExtent(lines, starts[i].start - 1, isPython);
+    // Never let a measured extent run past the next declaration: that
+    // would mean the scanner lost track, and the boundary is the safe
+    // upper bound.
+    const end =
+      measured !== null && measured + 1 <= boundary ? measured + 1 : boundary;
     symbols.push({
       ...starts[i],
       end,
       lines: end - starts[i].start + 1,
+      approximate: measured === null,
     });
   }
   return symbols;
@@ -172,7 +269,8 @@ export function extractNestedSymbols(
   } catch {
     return [];
   }
-  const pattern = file.endsWith(".py") ? NESTED_PY_SYMBOL : NESTED_TSJS_SYMBOL;
+  const isPython = file.endsWith(".py");
+  const pattern = isPython ? NESTED_PY_SYMBOL : NESTED_TSJS_SYMBOL;
   const lines = splitLines(source);
   const starts: { name: string; kind: string; start: number; indent: number }[] =
     [];
@@ -191,13 +289,17 @@ export function extractNestedSymbols(
   const shallow = starts.filter((s) => s.indent === minIndent);
   const symbols: SymbolSpan[] = [];
   for (let i = 0; i < shallow.length; i++) {
-    const end = i + 1 < shallow.length ? shallow[i + 1].start - 1 : span.end;
+    const boundary = i + 1 < shallow.length ? shallow[i + 1].start - 1 : span.end;
+    const measured = measureExtent(lines, shallow[i].start - 1, isPython);
+    const end =
+      measured !== null && measured + 1 <= boundary ? measured + 1 : boundary;
     symbols.push({
       name: shallow[i].name,
       kind: shallow[i].kind,
       start: shallow[i].start,
       end,
       lines: end - shallow[i].start + 1,
+      approximate: measured === null,
     });
   }
   return symbols;

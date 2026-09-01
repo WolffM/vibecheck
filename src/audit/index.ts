@@ -208,7 +208,7 @@ export async function runAudit(
   const importData = buildImportData(rootPath, kept);
   const importGraph = importData.graph;
 
-  const entryPoints = detectEntryPoints(rootPath, kept);
+  const entryPoints = detectEntryPoints(rootPath, kept, config.entryPoints);
   // Where the JS/TS project(s) actually live — the repo root only when a
   // package.json sits there (pygmalion beta finding 2: a Python root
   // with a frontend/ subproject left knip and type-coverage blind).

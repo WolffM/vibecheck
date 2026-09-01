@@ -41,13 +41,15 @@ export function buildSmellsLane(
 ): SmellsLaneResult {
   const disclosures = [
     "smells lane currently carries type-coverage only; the ast-grep rulepack is M2 backlog",
+    ...(typeCoverage.disclosures ?? []),
   ];
   if (!typeCoverage.available) {
     return {
       lane: "smells",
       available: false,
       disclosures: [
-        "type-coverage unavailable (no tsconfig.json at any JS project root, or typescript not resolvable) — smells lane skipped",
+        "type-coverage unavailable (no tsconfig.json at any JS project root, dependencies not installed, or typescript not resolvable) — smells lane skipped",
+        ...(typeCoverage.disclosures ?? []),
       ],
       typedPercent: null,
       entries: [],

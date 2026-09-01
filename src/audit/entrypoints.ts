@@ -36,6 +36,7 @@
 
 import { readFileSync } from "node:fs";
 import { dirname, join, posix } from "node:path";
+import { globToRegExp } from "./ledger.js";
 
 
 /** Candidate-set lookup with extension fallbacks for TS sources. */
@@ -107,6 +108,15 @@ export interface EntryPointResult {
 export function detectEntryPoints(
   rootPath: string,
   candidateFiles: string[],
+  /**
+   * Repo-declared globs (`audit.entry_points`). Some code is reachable
+   * only by a mechanism no detector can model — an OpenClaw hook loaded
+   * by directory convention, whose loader is not even in this repo.
+   * Zero import fan-in is its designed state, and the lane recommended
+   * deleting one with "CI plus one manual smoke" as the only guard
+   * (#381). A repo must be able to say so once.
+   */
+  declaredGlobs: string[] = [],
 ): EntryPointResult {
   const candidates = new Set(candidateFiles);
   const entries = new Set<string>();
@@ -145,6 +155,18 @@ export function detectEntryPoints(
       if (!unresolvedArtifacts.has(base)) unresolvedArtifacts.set(base, source);
     }
   };
+
+  // --- repo-declared entry points ----------------------------------------
+  for (const glob of declaredGlobs) {
+    const re = globToRegExp(glob);
+    for (const file of candidateFiles) {
+      if (!re.test(file)) continue;
+      entries.add(file);
+      if (!sources.has(file)) {
+        sources.set(file, `declared in audit.entry_points (${glob})`);
+      }
+    }
+  }
 
   // --- package.json (every one in the repo) -------------------------------
   for (const pkgPath of candidateFiles.filter(

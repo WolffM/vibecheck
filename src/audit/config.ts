@@ -26,6 +26,8 @@ export interface ResolvedAuditConfig {
   exclude: string[];
   /** JS/TS project roots for knip/type-coverage; [] = auto-discover. */
   jsRoots: string[];
+  /** Repo-declared entry-point globs (convention-loaded code). */
+  entryPoints: string[];
   /** Findings-PR lifecycle: "episodic" opens a batch PR only when new
    * findings fired since the last acknowledged (closed) one; "never"
    * delivers via the data branch and living issue only. */
@@ -48,6 +50,7 @@ export const DEFAULT_AUDIT_CONFIG: ResolvedAuditConfig = {
   sizeTiers: [500, 1000, 2000],
   exclude: [],
   jsRoots: [],
+  entryPoints: [],
   dataPr: "episodic",
   lanes: {
     size: { enabled: true },
@@ -89,6 +92,9 @@ export function resolveAuditConfig(raw?: AuditConfig): ResolvedAuditConfig {
     ),
     jsRoots: (raw?.js_roots ?? []).map((p) =>
       p.replace(/\\/g, "/").replace(/^\.?\//, "").replace(/\/+$/, ""),
+    ),
+    entryPoints: (raw?.entry_points ?? []).map((p) =>
+      p.replace(/\\/g, "/").replace(/^\.?\//, ""),
     ),
     dataPr: raw?.data_pr === "never" ? "never" : d.dataPr,
     lanes: {

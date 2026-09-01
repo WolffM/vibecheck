@@ -7,6 +7,8 @@
  * fan-out is evidence, not score.
  */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { ResolvedAuditConfig } from "../config.js";
 import { runJscpd, type JscpdResult } from "../runners/jscpd.js";
 
@@ -59,21 +61,61 @@ export interface DuplicationLaneResult {
   dirPairs: DirPairConcentration[];
 }
 
-function mergedCoverage(intervals: [number, number][]): number {
-  if (intervals.length === 0) return 0;
+/**
+ * Lines inside a span that scc would also count as code. jscpd reports
+ * raw line spans while the denominator is scc's code lines, so a clone
+ * straddling a doc-comment block inflates the density score (#387): one
+ * "45 duplicated lines" finding was 5 imports, 2 consts and ~38 lines of
+ * per-spec comment scaffolding. Counting on the same basis as the
+ * denominator is the whole fix.
+ */
+export function countCodeLinesInSpan(
+  lines: string[],
+  start: number,
+  end: number,
+): number {
+  let count = 0;
+  let inBlock = false;
+  for (let i = start - 1; i < Math.min(end, lines.length); i++) {
+    const text = (lines[i] ?? "").trim();
+    if (inBlock) {
+      if (text.includes("*/")) inBlock = false;
+      continue;
+    }
+    if (!text) continue;
+    if (text.startsWith("/*")) {
+      if (!text.includes("*/")) inBlock = true;
+      continue;
+    }
+    if (text.startsWith("//") || text.startsWith("*") || text.startsWith("#")) {
+      continue;
+    }
+    count++;
+  }
+  return count;
+}
+
+export function mergedIntervals(
+  intervals: [number, number][],
+): [number, number][] {
+  if (intervals.length === 0) return [];
   const sorted = [...intervals].sort((a, b) => a[0] - b[0]);
-  let total = 0;
+  const out: [number, number][] = [];
   let [start, end] = sorted[0];
   for (const [s, e] of sorted.slice(1)) {
     if (s > end + 1) {
-      total += end - start + 1;
+      out.push([start, end]);
       [start, end] = [s, e];
     } else if (e > end) {
       end = e;
     }
   }
-  total += end - start + 1;
-  return total;
+  out.push([start, end]);
+  return out;
+}
+
+function mergedCoverage(intervals: [number, number][]): number {
+  return mergedIntervals(intervals).reduce((sum, [a, b]) => sum + (b - a + 1), 0);
 }
 
 function parentDir(path: string): string {
@@ -139,6 +181,8 @@ export function buildDuplicationLane(
   jscpd: JscpdResult,
   candidateFiles: string[],
   codeLines: Map<string, number>,
+  /** Source reader; without it spans are counted raw (comments included). */
+  readSource: (path: string) => string | null = () => null,
 ): DuplicationLaneResult {
   if (!jscpd.available) {
     return {
@@ -187,7 +231,17 @@ export function buildDuplicationLane(
 
   const entries: DuplicationLaneEntry[] = [];
   for (const [path, list] of intervals) {
-    const duplicatedLines = mergedCoverage(list);
+    const source = readSource(path);
+    const sourceLines = source === null ? null : source.split("\n");
+    // Merge first so overlapping clones never double-count, then measure
+    // the merged spans on scc's basis.
+    const duplicatedLines =
+      sourceLines === null
+        ? mergedCoverage(list)
+        : mergedIntervals(list).reduce(
+            (sum, [a, b]) => sum + countCodeLinesInSpan(sourceLines, a, b),
+            0,
+          );
     const lines = codeLines.get(path) ?? 0;
     entries.push({
       path,
@@ -222,5 +276,12 @@ export function runDuplicationLane(
     runJscpd(rootPath, config.lanes.duplication.minLines),
     candidateFiles,
     codeLines,
+    (path) => {
+      try {
+        return readFileSync(join(rootPath, path), "utf-8");
+      } catch {
+        return null;
+      }
+    },
   );
 }

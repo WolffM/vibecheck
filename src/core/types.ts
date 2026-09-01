@@ -229,6 +229,13 @@ export interface AuditConfig {
    * "never": deliver via the data branch and living issue only.
    */
   data_pr?: "episodic" | "never";
+  /**
+   * Globs for files that are reachable by a mechanism no detector can
+   * see — convention-loaded plugins, hook directories, anything a
+   * program outside this repo loads. Declared entry points are exempt
+   * from orphan and dead-surface claims.
+   */
+  entry_points?: string[];
   lanes?: AuditLanesConfig;
 }
 

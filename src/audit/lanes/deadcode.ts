@@ -15,6 +15,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { isTestFile } from "../git-arrival.js";
 import { isTsJsFile } from "../import-graph.js";
 import { runKnip, type DeadExport, type KnipResult } from "../runners/knip.js";
 import { runVulture, type VultureResult } from "../runners/vulture.js";
@@ -136,6 +137,9 @@ export function buildDeadcodeLane(
     disclosures.push(
       "Python findings are single-source (vulture without Skylos) — scores demoted",
     );
+    disclosures.push(
+      "registration decorators (routes, CLI commands, fixtures, tasks) are treated as consumers, and Python test files are exempt from dead-surface claims",
+    );
   }
   if (coverage.length === 0) {
     return {
@@ -179,8 +183,18 @@ export function buildDeadcodeLane(
     string,
     { description: string; line: number }[]
   >();
+  // Python test files are where the framework idioms live — fixtures
+  // consumed as parameters, pytestmark, conftest hooks. vulture reads
+  // every one as unused, and a correctly-used fixture inflated one
+  // file's item count fourfold (#385). Dead code in tests is real but
+  // low-value; the false-positive rate here is not worth it.
+  let vultureTestItemsSkipped = 0;
   for (const item of vulture.items) {
     if (!candidates.has(item.path)) continue;
+    if (isTestFile(item.path)) {
+      vultureTestItemsSkipped++;
+      continue;
+    }
     const list = vultureDetailByFile.get(item.path) ?? [];
     list.push({ description: item.description, line: item.line });
     vultureDetailByFile.set(item.path, list);
@@ -240,6 +254,11 @@ export function buildDeadcodeLane(
     });
   }
 
+  if (vultureTestItemsSkipped > 0) {
+    disclosures.push(
+      `${vultureTestItemsSkipped} Python dead-surface items in test files were skipped (framework idioms, not dead code)`,
+    );
+  }
   entries.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
   return {
     lane: "deadcode",

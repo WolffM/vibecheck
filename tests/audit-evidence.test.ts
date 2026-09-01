@@ -116,9 +116,12 @@ describe("extractSymbolMap", () => {
       ].join("\n"),
     });
     const symbols = extractSymbolMap(root, "src/big.ts");
+    // Real extents: a symbol ends at its own closing brace or statement
+    // terminator, not where the next declaration happens to start (the
+    // blank line 4 belongs to nobody).
     expect(symbols.map((s) => [s.name, s.start, s.end])).toEqual([
-      ["alpha", 1, 4],
-      ["helper", 5, 6],
+      ["alpha", 1, 3],
+      ["helper", 5, 5],
       ["Beta", 7, 9],
     ]);
   });

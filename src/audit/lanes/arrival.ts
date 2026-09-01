@@ -53,6 +53,25 @@ const CODE_EXTENSIONS = new Set([
   "c", "h", "cpp", "hpp", "cc", "hh", "swift", "scala", "ex", "exs",
 ]);
 
+/**
+ * Tooling configs are discovered by filename, never imported — so
+ * `untestedShare` is 100% by construction and the lane's own remedy
+ * ("add one test whose static import path reaches this file") has no
+ * achievable form (#384). Same category as test files and snapshots:
+ * co-change cannot discriminate them, so the lane abstains.
+ */
+export function isToolingConfig(path: string): boolean {
+  const base = path.replace(/\\/g, "/").split("/").pop() ?? "";
+  return (
+    /\.config\.[cm]?[jt]sx?$/.test(base) ||
+    /^\.?(eslintrc|prettierrc|stylelintrc|babelrc|swcrc)(\..*)?$/.test(base) ||
+    /^(eslint|vite|vitest|jest|rollup|webpack|babel|next|nuxt|svelte|astro|tailwind|postcss|playwright|cypress|drizzle|knip|commitlint|lint-staged|tsup|turbo)\.config\./.test(
+      base,
+    ) ||
+    /^wrangler\.[cm]?[jt]s$/.test(base)
+  );
+}
+
 function isCodeFile(path: string): boolean {
   const ext = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
   return CODE_EXTENSIONS.has(ext);
@@ -162,10 +181,19 @@ export function buildArrivalLane(
   const entries: ArrivalLaneEntry[] = [];
   let graphCount = 0;
   let commitCount = 0;
+  let configsSkipped = 0;
 
   for (const [path, fileCommits] of perFile) {
     if (!candidates.has(path)) continue;
-    if (!isCodeFile(path) || isTestFile(path) || isSnapshotFile(path)) continue;
+    if (
+      !isCodeFile(path) ||
+      isTestFile(path) ||
+      isSnapshotFile(path) ||
+      isToolingConfig(path)
+    ) {
+      if (isToolingConfig(path)) configsSkipped++;
+      continue;
+    }
 
     const family = arrivalLanguageFamily(path);
     const familyHasTests = testedFamilies.has(family);
@@ -222,6 +250,11 @@ export function buildArrivalLane(
   for (const [family, count] of [...untestableByFamily.entries()].sort()) {
     disclosures.push(
       `${family}: no test files exist anywhere in the repo — arrival abstains for ${count} ${family} file${count === 1 ? "" : "s"} (repo-level fact: that subtree has no test infrastructure, not a per-file finding)`,
+    );
+  }
+  if (configsSkipped > 0) {
+    disclosures.push(
+      `${configsSkipped} tooling config file${configsSkipped === 1 ? "" : "s"} exempt — discovered by filename, so no test import path can ever reach them`,
     );
   }
   if (commitCount > 0) {
