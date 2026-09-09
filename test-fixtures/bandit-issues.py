@@ -81,7 +81,7 @@ def process(item):
 # B201: flask_debug_true (simulated)
 # B301: pickle - Pickle usage detected
 def unsafe_pickle():
-    data = pickle.loads(b"cos\nsystem\n(S'echo hacked'\ntR.")
+    pickle.loads(b"cos\nsystem\n(S'echo hacked'\ntR.")
 
 
 # B303: md5 - Use of insecure MD5 hash function
@@ -93,14 +93,14 @@ def weak_hash(data):
 def weak_cipher():
     from Crypto.Cipher import DES
     key = b'12345678'
-    cipher = DES.new(key, DES.MODE_ECB)
+    DES.new(key, DES.MODE_ECB)
 
 
 # B305: cipher_modes - Use of insecure cipher mode
 def insecure_cipher_mode():
     from Crypto.Cipher import AES
     key = b'sixteen byte key'
-    cipher = AES.new(key, AES.MODE_ECB)
+    AES.new(key, AES.MODE_ECB)
 
 
 # B306: mktemp_q - Use of insecure mktemp
@@ -130,7 +130,7 @@ def insecure_random():
 # B312: telnetlib - Telnet-related functions
 def use_telnet():
     import telnetlib
-    tn = telnetlib.Telnet("example.com")
+    telnetlib.Telnet("example.com")
 
 
 # B320, B410: xml - XML parsing vulnerable to XXE attacks
@@ -142,7 +142,7 @@ def parse_xml(xml_string):
 # B321: ftplib - FTP-related functions
 def use_ftp():
     import ftplib
-    ftp = ftplib.FTP("ftp.example.com")
+    ftplib.FTP("ftp.example.com")
 
 
 # B323: unverified_context - SSL certificate verification disabled
@@ -154,7 +154,7 @@ def insecure_ssl():
 # B324: hashlib_new_insecure_functions - Insecure hash functions
 def more_weak_hashes(data):
     h1 = hashlib.new('md5')
-    h2 = hashlib.new('sha1')
+    hashlib.new('sha1')
     h1.update(data.encode())
     return h1.hexdigest()
 
@@ -162,7 +162,7 @@ def more_weak_hashes(data):
 # B501: request_with_no_cert_validation
 def insecure_request():
     import requests
-    response = requests.get("https://example.com", verify=False)
+    requests.get("https://example.com", verify=False)
 
 
 # B506: yaml_load - Use of unsafe YAML load
@@ -219,10 +219,10 @@ def wildcard_injection():
 # B701: jinja2_autoescape_false - Jinja2 templates with autoescape disabled
 def jinja_template():
     from jinja2 import Environment
-    env = Environment(autoescape=False)
+    Environment(autoescape=False)
 
 
 # B702: use_of_mako_templates - Mako templates (no autoescape)
 def mako_template():
     from mako.template import Template
-    t = Template("<html>${user_input}</html>")
+    Template("<html>${user_input}</html>")

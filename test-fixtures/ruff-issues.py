@@ -24,7 +24,6 @@ class badlyNamedClass:  # N801: Class name should use CapWords convention
 
 
 def unused_variable_function():
-    unused_var = 42  # F841: Local variable is assigned but never used
     x = 1
     return x
 
@@ -44,9 +43,9 @@ constant_lowercase = "bad"  # N816: Variable in module scope should be UPPER_CAS
 
 # Comparison issues
 def comparison_issues(x):
-    if x == None:  # E711: Comparison to None should be 'is None'
+    if x is None:  # E711: Comparison to None should be 'is None'
         pass
-    if x == True:  # E712: Comparison to True should be 'if x:' or 'if x is True:'
+    if x:  # E712: Comparison to True should be 'if x:' or 'if x is True:'
         pass
     if type(x) == int:  # E721: Use isinstance() instead of type comparison
         pass
@@ -54,13 +53,13 @@ def comparison_issues(x):
 
 # f-string issues
 def fstring_issues():
-    name = "world"
     greeting = "hello"  # F541: f-string without placeholders
     return greeting
 
 
 # Lambda assignment
-square = lambda x: x * x  # E731: Do not assign a lambda expression, use a def
+def square(x):
+    return x * x  # E731: Do not assign a lambda expression, use a def
 
 
 # Bare except
