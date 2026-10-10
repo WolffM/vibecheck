@@ -1,0 +1,13 @@
+# src/tools/tool-registry.ts
+
+Single-lane finding (below the corroboration gate — one signal, weigh accordingly) · firing: arrival · 6 lanes applicable · anchor `e147b1d50b7a`
+
+### arrival — 90% of 10 commits arrived with no reaching test; largest single-commit arrival 7× the repo median
+
+Before further changes: add one test whose static import path reaches this file.
+
+### If this finding is wrong or accepted
+
+```
+vibecheck wontfix|noise|justify "arrival:src/tools/tool-registry.ts" --reason "..."
+```
