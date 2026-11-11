@@ -4,7 +4,7 @@
  * Defines ordering and comparison functions for severity and confidence levels.
  */
 
-import type { Confidence, Severity } from "../core/types.js";
+import type { Confidence, Finding, Severity } from "../core/types.js";
 
 // ============================================================================
 // Severity Ordering
@@ -133,4 +133,32 @@ export function compareFindingsForSort(
   const lineA = a.locations[0]?.startLine ?? 0;
   const lineB = b.locations[0]?.startLine ?? 0;
   return lineA - lineB;
+}
+
+/**
+ * Filter and sort findings for issue/work-item creation.
+ */
+export function prepareActionableFindings(
+  findings: Finding[],
+  severityThreshold: Severity | "info",
+  confidenceThreshold: Confidence,
+): {
+  filteredFindings: Finding[];
+  actionableFindings: Finding[];
+  skippedBelowThreshold: number;
+} {
+  const filteredFindings = findings.filter((finding) =>
+    meetsThresholds(
+      finding.severity,
+      finding.confidence,
+      severityThreshold,
+      confidenceThreshold,
+    ),
+  );
+
+  return {
+    filteredFindings,
+    actionableFindings: [...filteredFindings].sort(compareFindingsForSort),
+    skippedBelowThreshold: findings.length - filteredFindings.length,
+  };
 }
