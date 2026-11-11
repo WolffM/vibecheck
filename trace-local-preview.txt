@@ -1,0 +1,166 @@
+Command: npx tsx tests/local-preview.ts
+Date: 2026-04-16
+
+--- Trace (beginning) ---
+=== vibeCheck ===
+Root: /home/runner/work/vibecheck/vibecheck
+Cadence: weekly
+
+Step 1: Detecting repository profile...
+=== Local Issue Output Tester ===
+
+Running analysis (skip-issues mode)...
+
+=== vibeCheck ===
+Root: /home/runner/work/vibecheck/vibecheck
+Cadence: weekly
+
+Step 1: Detecting repository profile...
+  Languages: typescript, python, rust, java
+  Package manager: pnpm
+  Monorepo: false
+
+Step 2: Loading configuration...
+No config file found at /home/runner/work/vibecheck/vibecheck/vibecheck.json or /home/runner/work/vibecheck/vibecheck/vibecheck.yml, using defaults
+
+Step 3: Running analysis tools...
+
+=== Running Analysis Tools ===
+
+::group::🔍 Trunk (ESLint, Prettier, etc.)
+Running Trunk...
+  Trunk not installed, skipping
+✅ Found 0 findings
+::endgroup::
+::group::🔍 TypeScript
+Running TypeScript check...
+  Also checking test-fixtures...
+  Found 8 TypeScript errors in test-fixtures
+✅ Found 8 findings
+::endgroup::
+::group::🔍 ESLint
+Running ESLint...
+  Using config: eslint.config.mjs
+  Scanning directories: src, test-fixtures
+
+--- Trace (failure excerpt) ---
+  request: {
+    method: 'POST',
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    headers: {
+      accept: 'application/vnd.github.v3+json',
+      'user-agent': 'octokit-rest.js/22.0.1 octokit-core.js/7.0.6 Node.js/24',
+      authorization: 'token [REDACTED]',
+      'content-type': 'application/json; charset=utf-8'
+    },
+    body: [Object: null prototype] {
+      name: 'lang:java',
+      color: 'b07219',
+      description: 'Java finding'
+    },
+    request: { hook: [Function: bound bound register] }
+  },
+  response: {
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    status: 403,
+    headers: { connection: 'close', 'content-type': 'text/plain' },
+    data: 'Blocked by DNS monitoring proxy'
+  },
+  [cause]: undefined
+}
+POST /repos/WolffM/vibecheck/labels - 403 with id UNKNOWN in 6ms
+Failed to create label "lang:rust": RequestError [HttpError]: Blocked by DNS monitoring proxy
+    at fetchWrapper (file:///home/runner/work/vibecheck/vibecheck/node_modules/.pnpm/@octokit+request@10.0.7/node_modules/@octokit/request/dist-bundle/index.js:123:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ensureLabels (/home/runner/work/vibecheck/vibecheck/src/github/github.ts:284:7)
+    at async processFindings (/home/runner/work/vibecheck/vibecheck/src/github/sarif-to-issues.ts:92:3)
+    at async analyze (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:235:19)
+    at async main (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:347:20) {
+  status: 403,
+  request: {
+    method: 'POST',
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    headers: {
+      accept: 'application/vnd.github.v3+json',
+      'user-agent': 'octokit-rest.js/22.0.1 octokit-core.js/7.0.6 Node.js/24',
+      authorization: 'token [REDACTED]',
+      'content-type': 'application/json; charset=utf-8'
+    },
+    body: [Object: null prototype] {
+      name: 'lang:rust',
+      color: 'dea584',
+      description: 'Rust finding'
+    },
+    request: { hook: [Function: bound bound register] }
+  },
+  response: {
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    status: 403,
+    headers: { connection: 'close', 'content-type': 'text/plain' },
+    data: 'Blocked by DNS monitoring proxy'
+  },
+  [cause]: undefined
+}
+POST /repos/WolffM/vibecheck/labels - 403 with id UNKNOWN in 6ms
+Failed to create label "demo": RequestError [HttpError]: Blocked by DNS monitoring proxy
+    at fetchWrapper (file:///home/runner/work/vibecheck/vibecheck/node_modules/.pnpm/@octokit+request@10.0.7/node_modules/@octokit/request/dist-bundle/index.js:123:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ensureLabels (/home/runner/work/vibecheck/vibecheck/src/github/github.ts:284:7)
+    at async processFindings (/home/runner/work/vibecheck/vibecheck/src/github/sarif-to-issues.ts:92:3)
+    at async analyze (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:235:19)
+    at async main (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:347:20) {
+  status: 403,
+  request: {
+    method: 'POST',
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    headers: {
+      accept: 'application/vnd.github.v3+json',
+      'user-agent': 'octokit-rest.js/22.0.1 octokit-core.js/7.0.6 Node.js/24',
+      authorization: 'token [REDACTED]',
+      'content-type': 'application/json; charset=utf-8'
+    },
+    body: [Object: null prototype] {
+      name: 'demo',
+      color: '7057ff',
+      description: 'Demo issue from test-fixtures'
+    },
+    request: { hook: [Function: bound bound register] }
+  },
+  response: {
+    url: 'https://api.github.com/repos/WolffM/vibecheck/labels',
+    status: 403,
+    headers: { connection: 'close', 'content-type': 'text/plain' },
+    data: 'Blocked by DNS monitoring proxy'
+  },
+  [cause]: undefined
+}
+Fetching existing vibeCheck issues...
+GET /repos/WolffM/vibecheck/issues?labels=vibeCheck&state=open&per_page=100 - 403 with id UNKNOWN in 5ms
+Analysis failed: RequestError [HttpError]: Blocked by DNS monitoring proxy
+    at fetchWrapper (file:///home/runner/work/vibecheck/vibecheck/node_modules/.pnpm/@octokit+request@10.0.7/node_modules/@octokit/request/dist-bundle/index.js:123:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Object.next (file:///home/runner/work/vibecheck/vibecheck/node_modules/.pnpm/@octokit+plugin-paginate-rest@14.0.0_@octokit+core@7.0.6/node_modules/@octokit/plugin-paginate-rest/dist-bundle/index.js:48:28)
+    at async fetchIssuesByLabel (/home/runner/work/vibecheck/vibecheck/src/github/github.ts:118:20)
+    at async processFindings (/home/runner/work/vibecheck/vibecheck/src/github/sarif-to-issues.ts:106:24)
+    at async analyze (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:235:19)
+    at async main (/home/runner/work/vibecheck/vibecheck/src/core/analyze.ts:347:20) {
+  status: 403,
+  request: {
+    method: 'GET',
+    url: 'https://api.github.com/repos/WolffM/vibecheck/issues?labels=vibeCheck&state=open&per_page=100',
+    headers: {
+      accept: 'application/vnd.github.v3+json',
+      'user-agent': 'octokit-rest.js/22.0.1 octokit-core.js/7.0.6 Node.js/24',
+      authorization: 'token [REDACTED]'
+    },
+    request: { hook: [Function: bound bound register] }
+  },
+  response: {
+    url: 'https://api.github.com/repos/WolffM/vibecheck/issues?labels=vibeCheck&state=open&per_page=100',
+    status: 403,
+    headers: { connection: 'close', 'content-type': 'text/plain' },
+    data: 'Blocked by DNS monitoring proxy'
+  },
+  [cause]: undefined
+}
+\n[exit_code]=1
