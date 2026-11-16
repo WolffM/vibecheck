@@ -35,6 +35,17 @@ node bin/cli.js detect .                          # just the language/tool detec
 
 ## Architecture
 
+Analyze mode's data flow, stage to stage:
+
+```mermaid
+flowchart LR
+    A[src/core: detect languages] --> B[src/tools: run language runners]
+    B --> C[src/parsers: normalize to Finding]
+    C --> D[src/scoring: severity and confidence]
+    D --> E[src/output: SARIF and issue bodies]
+    E --> F[src/github or src/ado: file or update]
+```
+
 ```
 action.yml            the GitHub Action itself: inputs, outputs, the steps for
                        analyze mode, audit mode and autofix PRs
@@ -70,11 +81,11 @@ pnpm test            # vitest run
 ```
 
 `.github/workflows/ci.yml` runs all three (`pnpm install --frozen-lockfile`
-first) on every push to `main` and every pull request, and is this repo's
-only fork-triggerable workflow — it deliberately always runs on a
+first) on every push to `main` and every pull request. It is this repo's
+only fork-triggerable workflow, and it deliberately always runs on a
 GitHub-hosted runner rather than the self-hosted one `vibecheck.yml` and
-`vibecompact.yml` use, specifically because a fork's `package.json` scripts
-run as part of `pnpm install`/`pnpm run`, and a self-hosted runner is a
+`vibecompact.yml` use. That's because a fork's `package.json` scripts run
+as part of `pnpm install`/`pnpm run`, and a self-hosted runner is a
 persistent machine, not a disposable one.
 
 ## How it deploys

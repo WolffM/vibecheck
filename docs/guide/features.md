@@ -4,15 +4,21 @@
 
 The default mode (`mode: analyze` in `action.yml`, the default). On a run,
 vibeCheck detects the repo's languages and monorepo shape, then runs the
-matching tools: Trunk (which wraps ESLint and others), `tsc`, `jscpd`,
-dependency-cruiser and `knip` for TypeScript/JavaScript; Ruff, Mypy and
-Bandit for Python; PMD and SpotBugs for Java; `detekt` for Kotlin; Clippy,
-`cargo-audit` and `cargo-deny` for Rust. Findings are normalized, scored by
-severity and confidence, and written out two ways: a SARIF file for GitHub
-Code Scanning, and one GitHub issue per finding (deduplicated by a
-fingerprint of the tool, rule, file, a line bucketed to ±20 lines, and the
-normalized message, so a finding survives minor code movement without being
-re-filed).
+matching tools:
+
+| Language          | Tools                                                    |
+| ----------------- | --------------------------------------------------------- |
+| TypeScript/JavaScript | Trunk (wraps ESLint and others), `tsc`, `jscpd`, dependency-cruiser, `knip` |
+| Python             | Ruff, Mypy, Bandit                                       |
+| Java               | PMD, SpotBugs                                            |
+| Kotlin             | `detekt`                                                 |
+| Rust               | Clippy, `cargo-audit`, `cargo-deny`                      |
+
+Findings are normalized, scored by severity and confidence, and written out
+two ways: a SARIF file for GitHub Code Scanning, and one GitHub issue per
+finding. Issues are deduplicated by a fingerprint of the tool, rule, file, a
+line bucketed to ±20 lines, and the normalized message, so a finding
+survives minor code movement without being re-filed.
 
 Use it by adding `.github/workflows/vibecheck.yml` (see
 [one-click install](#one-click-install)) and running it from the repo's
@@ -58,28 +64,34 @@ analysis pass — the same findings go to one place or the other, not both.
 
 A different question than analyze mode: not "what is wrong right now" but
 "what does this file's own history and shape say, repeatedly". Six
-independent lanes score every tracked file — `size` (code lines against a
-language-adjusted tier), `arrival` (the share of a file's commits that
-landed with no reaching test), `deadcode` (unused exported surface, via
-`knip` for TS/JS and `vulture` for Python), `duplication` (via `jscpd`),
-`smells` (`any`-density, via `type-coverage`) and `consistency` (copy
-artifacts, orphans, import cycles) — and a file is only reported as a
-finding when at least two lanes agree on it (`src/audit/index.ts`). It was
-split out from vibeCheck's own identity on 2026-08-08: distinct workflow
-(`vibecompact.yml`), distinct data directory (`.vibecompact/`, with the
-earlier `.vibecheck/` still read for compatibility) and branch
-(`vibecompact/data`), "so the audit product no longer shares vibeCheck's
-identity" (`0db9fe9`).
+independent lanes score every tracked file:
+
+- `size` (code lines against a language-adjusted tier);
+- `arrival` (the share of a file's commits that landed with no reaching
+  test);
+- `deadcode` (unused exported surface, via `knip` for TS/JS and `vulture`
+  for Python);
+- `duplication` (via `jscpd`);
+- `smells` (`any`-density, via `type-coverage`); and
+- `consistency` (copy artifacts, orphans, import cycles).
+
+A file is only reported as a finding when at least two lanes agree on it
+(`src/audit/index.ts`). It was split out from vibeCheck's own identity on
+2026-08-08: a distinct workflow (`vibecompact.yml`), a distinct data
+directory (`.vibecompact/`, with the earlier `.vibecheck/` still read for
+compatibility) and a distinct branch (`vibecompact/data`), "so the audit
+product no longer shares vibeCheck's identity" (`0db9fe9`).
 
 Delivery is two surfaces: a living issue that is always the current
 picture, and an **episodic findings PR** that opens only when new findings
-fire since the last one was closed — closing that PR (never merging it) is
+fire since the last one was closed. Closing that PR (never merging it) is
 what the ledger records as the batch being acknowledged, so the same
 findings don't reopen a PR next run. A protected default branch gets this
 PR-based delivery automatically; a repo that instead gives the workflow a
 token that can push its default branch gets the data committed straight to
-`vibecompact/data`. Run it from the canonical `starter-workflow/vibecompact.yml`
-on a schedule, or by hand with `vibecheck audit`.
+`vibecompact/data`. Run it from the canonical
+`starter-workflow/vibecompact.yml` on a schedule, or by hand with
+`vibecheck audit`.
 
 ## Verdicts and the ledger
 
@@ -87,12 +99,12 @@ A human reviewing an audit finding records one of four verdicts from the
 CLI — `vibecheck justify|wontfix|noise|detector-gap <lane>:<path> --reason "..."`
 — and it is kept forever in `.vibecompact/ledger.jsonl`, an append-only,
 ULID-keyed log that every later run reads before deciding what's new.
-`justify` and `wontfix` close a specific finding; `noise` additionally
+`justify` and `wontfix` close a specific finding. `noise` additionally
 raises that lane's floor repo-wide, since a lane that is wrong about one
-file is probably wrong about others like it; `detector-gap` records that
-the finding is mechanically wrong and never ratchets anything, which exists
+file is probably wrong about others like it. `detector-gap` records that
+the finding is mechanically wrong, and never ratchets anything; it exists
 because maintainers found a floor-wide consequence too costly to accept for
-a true detector bug and were filing GitHub issues about it instead of
+a true detector bug, and were filing GitHub issues about it instead of
 telling the ledger. `vibecheck floors reset <lane>` reverses a floor raise.
 `vibecheck fleet-report` aggregates `detector-gap` verdicts filed across
 sibling repos running the same audit, so a defect confirmed once doesn't
@@ -103,7 +115,7 @@ need re-confirming everywhere it fires.
 `vibecheck triage` walks every open audit finding from the terminal one at
 a time and files the verdict interactively instead of editing the ledger by
 hand. `vibecheck skill emit [--dir <dir>]` writes the same workflow out as
-an agent skill file, so an AI agent triaging a repo's findings follows the
+an agent skill file. An AI agent triaging a repo's findings then follows the
 same justify/wontfix/noise/detector-gap vocabulary a person would, including
 the rule that a `noise` verdict raises a floor and should not be used to
 dodge a real finding.
