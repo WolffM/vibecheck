@@ -556,6 +556,10 @@ runs:
       uses: actions-rust-lang/setup-rust-toolchain@a188e68d0fd2bd36ad51dccb2b07ba6e75105f30 # v2.0.1
       with:
         components: clippy
+        # rust-cache's post step deletes every binary that was in
+        # ~/.cargo/bin before the job. On a self-hosted runner that is the
+        # node's own toolchain, not a throwaway image.
+        cache-bin: false
 
     - name: Install Rust Analysis Tools
       if: steps.detect-rust.outputs.has_rust == 'true'
