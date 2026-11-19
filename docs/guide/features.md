@@ -6,13 +6,13 @@ The default mode (`mode: analyze` in `action.yml`, the default). On a run,
 vibeCheck detects the repo's languages and monorepo shape, then runs the
 matching tools:
 
-| Language          | Tools                                                    |
-| ----------------- | --------------------------------------------------------- |
-| TypeScript/JavaScript | Trunk (wraps ESLint and others), `tsc`, `jscpd`, dependency-cruiser, `knip` |
-| Python             | Ruff, Mypy, Bandit                                       |
-| Java               | PMD, SpotBugs                                            |
-| Kotlin             | `detekt`                                                 |
-| Rust               | Clippy, `cargo-audit`, `cargo-deny`                      |
+| Language              | Tools                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| TypeScript/JavaScript | Trunk (wraps ESLint and others), `tsc`, `jscpd`, dependency-cruiser, `knip`, Opengrep (security) |
+| Python                | Ruff, Mypy, Bandit                                                                               |
+| Java                  | PMD, SpotBugs                                                                                    |
+| Kotlin                | `detekt`                                                                                         |
+| Rust                  | Clippy, `cargo-audit`, `cargo-deny`                                                              |
 
 Findings are normalized, scored by severity and confidence, and written out
 two ways: a SARIF file for GitHub Code Scanning, and one GitHub issue per
@@ -27,6 +27,26 @@ Actions tab, or on a schedule. `severity_threshold` and
 it as a dry run that writes no issues. It does not fix anything itself
 (except through [autofix PRs](#autofix-prs)) and it does not run
 continuously — only on dispatch or whatever schedule the workflow sets.
+
+A run writes two output artifacts: `results.sarif` (SARIF 2.1.0, for
+GitHub Code Scanning) and `results.llm.json` (the same findings, structured
+for an AI agent to read directly). Each filed issue carries a summary (the
+tool, rule, severity and confidence), the file location as a clickable
+GitHub link, a code snippet as evidence, a suggested fix with acceptance
+criteria, and a hidden fingerprint for deduplication.
+
+A severity is `critical` (security vulnerabilities, data loss risks),
+`high` (type errors, circular dependencies, forbidden imports), `medium`
+(code smells, unused code, complexity), `low` (style issues, minor
+suggestions) or `info` (purely stylistic). A confidence is `high` (definite
+issues: type errors, exact duplicates), `medium` (likely issues that may
+need context) or `low` (suggestions, style preferences). The default is
+`severity >= medium` and `confidence >= low`.
+
+**What it does not do.** It does not suppress a finding for you. To stop
+one recurring: fix it; add the tool's own inline suppression comment;
+configure the tool to ignore that rule; or add the path to the tool's own
+ignore list.
 
 ## One-click install
 
@@ -89,7 +109,8 @@ what the ledger records as the batch being acknowledged, so the same
 findings don't reopen a PR next run. A protected default branch gets this
 PR-based delivery automatically; a repo that instead gives the workflow a
 token that can push its default branch gets the data committed straight to
-`vibecompact/data`. Run it from the canonical
+`vibecompact/data`. Set `audit.data_pr: "never"` in `vibecompact.json` to
+disable findings PRs entirely. Run it from the canonical
 `starter-workflow/vibecompact.yml` on a schedule, or by hand with
 `vibecheck audit`.
 

@@ -72,6 +72,22 @@ docs/                  install.html (the one-click install page), the
 starter-workflow/      the canonical vibecompact.yml to copy into a caller repo
 ```
 
+## Monorepo detection
+
+`src/core/` treats a repo as a monorepo when it finds `pnpm-workspace.yaml`,
+a `package.json` `workspaces` field, or `turbo.json`/`nx.json`/
+`lerna.json`. Analysis still runs once, at the repo root, and covers every
+package it finds underneath.
+
+## Rate limiting and permissions
+
+Issues created in one run are capped at `max_new_per_run`; API calls between
+them carry small delays. A workflow should authenticate with the repo-scoped
+`GITHUB_TOKEN`, not a personal access token, to stay inside GitHub's
+per-repo API limits. A SARIF-upload permission error means the workflow is
+missing `security-events: write` alongside `contents: read` and
+`issues: write`.
+
 ## Tests and gates
 
 ```bash

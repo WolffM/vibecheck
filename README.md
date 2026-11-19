@@ -4,7 +4,7 @@
 
 > Cross-repo static analysis + actionable GitHub issue generator for AI agents
 
-vibeCheck is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents.
+vibeCheck is a **GitHub Action** that runs static analysis on any repository and turns findings into **actionable GitHub Issues** designed to be resolved by AI coding agents. A second mode, vibeCompact, runs a slower code-quality audit instead — see the guide's [features](docs/guide/features.md) for both.
 
 | Example Issues |
 |:---:|
@@ -58,21 +58,12 @@ No secrets to configure—uses your repo's built-in `GITHUB_TOKEN`.
 
 ### Audit mode (vibeCompact)
 
-The snippet above is **analyze mode**. Audit mode (the vibeCompact
-code-quality audit) has different permissions, runner, and delivery
-semantics — copy the canonical workflow instead of hand-writing one:
-[`starter-workflow/vibecompact.yml`](starter-workflow/vibecompact.yml).
-
-Delivery: findings live on the `vibecompact/data` branch and the living
-issue. With the default `GITHUB_TOKEN`, a protected default branch
-rejects the direct data push (expected — GH006); an **episodic findings
-PR** then opens whenever new findings fire. Close it when the batch is
-triaged (never merge it) — closure is recorded as an acknowledgment,
-and the next PR opens only for genuinely new findings. Direct
-default-branch delivery instead requires checking out with a token that
-can push the default branch (see the workflow's comments). Set
-`audit.data_pr: "never"` in `vibecompact.json` to disable findings PRs
-entirely.
+The snippet above is **analyze mode**. Audit mode has a different workflow,
+runner and delivery semantics — copy the canonical file instead of
+hand-writing one: [`starter-workflow/vibecompact.yml`](starter-workflow/vibecompact.yml).
+Its delivery (episodic findings PRs, when a protected branch applies, and
+how to disable them) is in the guide's
+[vibeCompact audit](docs/guide/features.md#the-vibecompact-audit).
 
 ---
 
@@ -172,176 +163,8 @@ tools:
     enabled: weekly # Run unused code detection weekly
 ```
 
----
-
-## How It Works
-
-### Analysis Pipeline
-
-```text
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  Repo       │───▶│  Trunk +    │───▶│  Normalize  │───▶│  Create     │
-│  Detection  │    │  Tools      │    │  Findings   │    │  Issues     │
-└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
-                          │                  │
-                          ▼                  ▼
-                   ┌─────────────┐    ┌─────────────┐
-                   │  SARIF      │    │  LLM JSON   │
-                   │  (Code Scan)│    │  (Artifacts)│
-                   └─────────────┘    └─────────────┘
-```
-
-### Issue Lifecycle
-
-1. **Creation**: Issues are created for findings meeting thresholds
-2. **Deduplication**: Fingerprints prevent duplicates across runs
-3. **Updates**: Existing issues get refreshed with latest evidence
-4. **Closure**: (Optional) Issues auto-close after N runs without the finding
-
-### Fingerprinting
-
-Findings are fingerprinted using:
-
-- Tool name
-- Rule ID
-- File path
-- Line number (bucketed to ±20 lines)
-- Normalized message
-
-This allows vibeCheck to track issues across minor code changes.
-
-## Tools
-
-### JavaScript/TypeScript
-
-| Tool               | Purpose                    |
-| ------------------ | -------------------------- |
-| Trunk              | Meta-linter (ESLint, etc.) |
-| TypeScript (tsc)   | Type checking              |
-| jscpd              | Duplicate code detection   |
-| dependency-cruiser | Circular dependencies      |
-| knip               | Unused exports/files       |
-| Opengrep           | Security scanning          |
-
-### Python
-
-| Tool   | Purpose           |
-| ------ | ----------------- |
-| Ruff   | Fast linting      |
-| Mypy   | Type checking     |
-| Bandit | Security scanning |
-
-### Java
-
-| Tool     | Purpose                |
-| -------- | ---------------------- |
-| PMD      | Code analysis          |
-| SpotBugs | Bytecode bug detection |
-
-### Rust
-
-| Tool        | Purpose                      |
-| ----------- | ---------------------------- |
-| Clippy      | Linting (750+ lints)         |
-| cargo-audit | Dependency vulnerabilities   |
-| cargo-deny  | Licenses, bans, advisories   |
-
-## Severity & Confidence
-
-### Severity Levels
-
-| Level      | Description                                           |
-| ---------- | ----------------------------------------------------- |
-| `critical` | Security vulnerabilities, data loss risks             |
-| `high`     | Type errors, circular dependencies, forbidden imports |
-| `medium`   | Code smells, unused code, complexity                  |
-| `low`      | Style issues, minor suggestions                       |
-| `info`     | Informational, purely stylistic preferences           |
-
-### Confidence Levels
-
-| Level    | Description                                     |
-| -------- | ----------------------------------------------- |
-| `high`   | Definite issues (type errors, exact duplicates) |
-| `medium` | Likely issues, may need context                 |
-| `low`    | Suggestions, style preferences                  |
-
-### Default Thresholds
-
-The default is `severity >= medium` and `confidence >= low` to balance signal-to-noise. Use `low` or `info` severity to see more findings, or `high` to reduce noise.
-
-## Issue Format
-
-Each issue includes:
-- Summary with tool, rule, severity, and confidence
-- File location with clickable GitHub links
-- Code snippets as evidence
-- Suggested fix with acceptance criteria
-- Hidden fingerprint for deduplication
-
-## Output Artifacts
-
-| File               | Description                          |
-| ------------------ | ------------------------------------ |
-| `results.sarif`    | SARIF 2.1.0 for GitHub Code Scanning |
-| `results.llm.json` | Structured findings for AI agents    |
-
-## FAQ
-
-### SARIF upload permission errors
-
-Ensure your workflow has `security-events: write` permission:
-
-```yaml
-permissions:
-  contents: read
-  security-events: write
-  issues: write
-```
-
-### Too many issues created
-
-Reduce noise by:
-
-1. Increasing `severity_threshold` to `high`
-2. Reducing `max_new_per_run`
-3. Disabling noisy tools
-
-### How to suppress a finding
-
-Options:
-
-1. Fix the issue (recommended)
-2. Add inline suppression comment (tool-specific)
-3. Configure tool to ignore the rule
-4. Add path to tool's ignore list
-
-### Monorepo behavior
-
-vibeCheck detects monorepos via:
-
-- `pnpm-workspace.yaml`
-- `package.json` workspaces
-- `turbo.json` / `nx.json` / `lerna.json`
-
-Analysis runs at the repo root and covers all packages.
-
-### Rate limiting
-
-vibeCheck respects GitHub API limits:
-
-- Issues are capped at `max_new_per_run` per execution
-- API calls include small delays
-- Use `GITHUB_TOKEN` (not PAT) for repo-scoped limits
-
-## Development
-
-```bash
-git clone https://github.com/WolffM/vibecheck.git
-cd vibecheck
-pnpm install
-pnpm test
-```
+Too many issues on a noisy repo? Raise `severity_threshold` to `high`,
+lower `max_new_per_run`, or disable a noisy tool above.
 
 ## License
 
