@@ -72,7 +72,21 @@ jobs:
         run: pnpm run typecheck
 
       - name: Test
+        id: test
         run: pnpm test
+
+      # Every test, red runs too, into the fleet test store (hadoku_site
+      # docs/planning/unified-test-reporting-2026-11-23.md). vitest.config.ts
+      # writes the JSON report. Advisory: it never fails the job. A fork PR has
+      # no secrets, so its run is printed but not posted.
+      - name: Report the tests
+        if: always() && steps.test.outcome != 'skipped'
+        uses: WolffM/hadoku-actions/report-tests@v1
+        with:
+          suite: unit
+          kind: unit
+          reports: vitest reports/vitest.json
+          key: ${{ secrets.KEY_SERVICE_VIBECHECK }}
 
       # A red run is seen by nobody unless it says so itself: nothing polls
       # these repos. `always()` so RECOVERIES report too -- without the success

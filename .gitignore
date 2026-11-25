@@ -29,8 +29,9 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
-# Test coverage
+# Test coverage and the vitest JSON report
 coverage/
+reports/
 
 # Environment
 .env

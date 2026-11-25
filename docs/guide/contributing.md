@@ -97,12 +97,14 @@ pnpm test            # vitest run
 ```
 
 `.github/workflows/ci.yml` runs all three (`pnpm install --frozen-lockfile`
-first) on every push to `main` and every pull request. It is this repo's
-only fork-triggerable workflow, and it deliberately always runs on a
-GitHub-hosted runner rather than the self-hosted one `vibecheck.yml` and
-`vibecompact.yml` use. That's because a fork's `package.json` scripts run
-as part of `pnpm install`/`pnpm run`, and a self-hosted runner is a
-persistent machine, not a disposable one.
+first) on every push to `main` and every pull request. `pnpm test` also
+writes `reports/vitest.json` (set in `vitest.config.ts`, gitignored), and a
+`report-tests` step posts every test, red runs included, to the fleet test
+store as suite `unit`. It is this repo's only fork-triggerable workflow, so
+a pull request from an outside fork runs on a GitHub-hosted runner rather
+than the self-hosted one. A fork's `package.json` scripts run as part of
+`pnpm install`/`pnpm run`, and a self-hosted runner is a persistent
+machine, not a disposable one.
 
 ## How it deploys
 
